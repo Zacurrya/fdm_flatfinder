@@ -1,7 +1,11 @@
-import { Tabs } from "expo-router";
+import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+
   return (
     <Tabs
       screenOptions={{
@@ -57,6 +61,17 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubble-outline" size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin"
+        options={{
+          tabBarLabel: "Admin",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="shield-checkmark-outline" size={size} color={color} />
+          ),
+          // Hide the admin tab for non-admin users
+          href: isAdmin ? ("/(tabs)/admin" as any) : null,
         }}
       />
       <Tabs.Screen

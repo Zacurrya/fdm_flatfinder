@@ -1,0 +1,136 @@
+import { Session } from "@supabase/supabase-js";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+import {
+    AuthResponse,
+    LoginDTO,
+    RegistrationDTO,
+    User,
+} from "../services/auth/auth.types";
+import * as AuthController from "../services/auth/authController";
+import * as AuthService from "../services/auth/authService";
+
+// ─── Context Shape ───────────────────────────────────────────────────────────
+
+interface AuthContextType {
+    /** The current Supabase session, null when logged out */
+    session: Session | null;
+    /** The user's profile from the Users table, null when logged out */
+    user: User | null;
+    /** True while the initial session is being restored */
+    isLoading: boolean;
+    /** Refetch the current user profile from the Users table */
+    refreshUser: () => Promise<AuthResponse<User>>;
+    /** Sign in with email + password */
+    login: (dto: LoginDTO) => Promise<AuthResponse<{ session: Session; user: User }>>;
+    /** Create a new account */
+    register: (dto: RegistrationDTO) => Promise<AuthResponse>;
+    /** Sign out and clear the session */
+    logout: () => Promise<AuthResponse>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// ─── Provider ────────────────────────────────────────────────────────────────
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const [session, setSession] = useState<Session | null>(null);
+    const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const refreshUser = async (): Promise<AuthResponse<User>> => {
+        if (!session?.user?.id) {
+            return { success: false, error: "No active session." };
+        }
+
+        const result = await AuthService.getUserProfile(session.user.id);
+        if (result.success && result.data) {
+            setUser(result.data);
+        }
+
+        return result;
+    };
+
+    useEffect(() => {
+        // 1. Restore existing session on mount
+        supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
+            if (existingSession?.user) {
+                setSession(existingSession);
+
+                // Fetch profile from Users table
+                const result = await AuthService.getUserProfile(existingSession.user.id);
+                if (result.success && result.data) {
+                    setUser(result.data);
+                }
+            }
+            setIsLoading(false);
+        });
+
+        // 2. Listen for auth state changes (sign in, sign out, token refresh)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async (event, newSession) => {
+                setSession(newSession);
+
+                if (event === "SIGNED_OUT" || !newSession?.user) {
+                    setUser(null);
+                    return;
+                }
+
+                if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+                    const result = await AuthService.getUserProfile(newSession.user.id);
+                    if (result.success && result.data) {
+                        setUser(result.data);
+                    }
+                }
+            }
+        );
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    // ── Actions ──────────────────────────────────────────────────────────────
+
+    const login = async (dto: LoginDTO) => {
+        const result = await AuthController.loginUser(dto);
+
+        if (result.success && result.data) {
+            setSession(result.data.session);
+            setUser(result.data.user);
+        }
+
+        return result;
+    };
+
+    const register = async (dto: RegistrationDTO) => {
+        return AuthController.registerUser(dto);
+    };
+
+    const logout = async () => {
+        const result = await AuthController.logoutUser();
+
+        if (result.success) {
+            setSession(null);
+            setUser(null);
+        }
+
+        return result;
+    };
+
+    return (
+        <AuthContext.Provider
+            value={{ session, user, isLoading, refreshUser, login, register, logout }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
+}
+
+// ─── Hook ────────────────────────────────────────────────────────────────────
+
+export function useAuth() {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
+}

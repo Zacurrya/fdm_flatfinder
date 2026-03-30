@@ -14,6 +14,7 @@ export default function Index() {
       <View className="absolute bottom-10 left-0 w-72 h-72 bg-fdm-accent/5 rounded-full dark:bg-fdm-accent/10 blur-3xl opacity-50" />
 
       <View className="items-center w-full max-w-sm z-10 mt-12">
+        {/* FDM Logo */}
         <Image
           source={require("../assets/images/logo.svg")}
           style={{ width: 320, height: 50 }}
@@ -21,8 +22,9 @@ export default function Index() {
           tintColor="#ccff00"
         />
 
-        <View className="items-center mt-3 mb-12 w-full">
-          <Text className="text-fdm-fg text-3xl mb-3 tracking-tighter text-center" style={{ fontFamily: 'Michroma_400Regular' }}>
+        <View className="items-center mb-12 w-full">
+          {/* App name and tagline */}
+          <Text className="text-fdm-fg text-3xl mt-1 mb-2 tracking-tighter text-center" style={{ fontFamily: 'Michroma_400Regular' }}>
             <Text className="text-fdm-accent">Relocate</Text>
           </Text>
           <Text className="text-fdm-fg/70 text-base text-center font-medium px-4 leading-6">

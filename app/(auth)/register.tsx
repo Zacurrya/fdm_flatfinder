@@ -1,11 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
+import BackButton from "@/components/ui/BackButton";
+import RegisterForm from "@components/auth/RegisterForm";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, TouchableOpacity, View } from "react-native";
-
-// Component Imports
-import RegisterForm from "./components/RegisterForm";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 
 export default function Register() {
   const router = useRouter();
@@ -22,6 +20,69 @@ export default function Register() {
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [formError, setFormError] = useState("");
+
+  const handleFirstNameChange = (value: string) => {
+    setFirstName(value);
+    if (firstNameError) {
+      setFirstNameError("");
+    }
+    if (formError) {
+      setFormError("");
+    }
+  };
+
+  const handleLastNameChange = (value: string) => {
+    setLastName(value);
+    if (lastNameError) {
+      setLastNameError("");
+    }
+    if (formError) {
+      setFormError("");
+    }
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (emailError) {
+      setEmailError("");
+    }
+    if (formError) {
+      setFormError("");
+    }
+  };
+
+  const handlePhoneNumberChange = (value: string) => {
+    setPhoneNumber(value);
+    if (phoneNumberError) {
+      setPhoneNumberError("");
+    }
+    if (formError) {
+      setFormError("");
+    }
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (passwordError) {
+      setPasswordError("");
+    }
+    if (confirmPasswordError) {
+      setConfirmPasswordError("");
+    }
+    if (formError) {
+      setFormError("");
+    }
+  };
+
+  const handleConfirmPasswordChange = (value: string) => {
+    setConfirmPassword(value);
+    if (confirmPasswordError) {
+      setConfirmPasswordError("");
+    }
+    if (formError) {
+      setFormError("");
+    }
+  };
 
   const handleSubmitStepOne = () => {
     const trimmedFirstName = firstName.trim();
@@ -89,7 +150,17 @@ export default function Register() {
       return;
     }
 
-    router.push("/(auth)/office-location");
+    // Pass validated form data to the office-location step via route params
+    router.push({
+      pathname: "/(auth)/office-location",
+      params: {
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+        email: trimmedEmail,
+        phoneNumber: trimmedPhoneNumber,
+        password,
+      },
+    });
   };
 
   return (
@@ -105,12 +176,7 @@ export default function Register() {
 
       {/* Header */}
       <View className="pt-10 pb-2 w-full max-w-sm self-center flex-row items-center z-10">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="w-11 h-11 items-center justify-center rounded-full bg-fdm-fg/10 active:bg-fdm-fg/20 border border-fdm-fg/10"
-        >
-          <Ionicons name="arrow-back" size={20} color="#ffffff" />
-        </TouchableOpacity>
+        <BackButton />
       </View>
 
       <RegisterForm
@@ -127,13 +193,14 @@ export default function Register() {
         passwordError={passwordError}
         confirmPasswordError={confirmPasswordError}
         formError={formError}
-        setFirstName={setFirstName}
-        setLastName={setLastName}
-        setEmail={setEmail}
-        setPhoneNumber={setPhoneNumber}
-        setPassword={setPassword}
-        setConfirmPassword={setConfirmPassword}
-        onSubmitStepOne={handleSubmitStepOne}
+        onFirstNameChange={handleFirstNameChange}
+        onLastNameChange={handleLastNameChange}
+        onEmailChange={handleEmailChange}
+        onPhoneNumberChange={handlePhoneNumberChange}
+        onPasswordChange={handlePasswordChange}
+        onConfirmPasswordChange={handleConfirmPasswordChange}
+        onSubmit={handleSubmitStepOne}
+        onPressLogin={() => router.push("/(auth)/login")}
       />
     </KeyboardAvoidingView>
   );

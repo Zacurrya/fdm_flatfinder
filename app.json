@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.svg",
     "scheme": "fdmflatfinder",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
@@ -17,12 +16,11 @@
         "foregroundImage": "./assets/images/icon.svg",
         "backgroundColor": "#1b1b1b"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/icon.svg"
     },
     "plugins": [
       "expo-router",

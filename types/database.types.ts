@@ -16,59 +16,54 @@ export type Database = {
     Tables: {
       Users: {
         Row: {
-          approvalStatus: string | null
+          approvalStatus: Database["public"]["Enums"]["ApprovalStatus"] | null
           created_at: string
+          email: string | null
           firstName: string | null
           lastName: string | null
           officeLocation: string | null
           phoneNumber: string | null
-          role: string | null
-          userId: number
+          role: Database["public"]["Enums"]["Role"]
+          userId: string
         }
         Insert: {
-          approvalStatus?: string | null
+          approvalStatus?: Database["public"]["Enums"]["ApprovalStatus"] | null
           created_at?: string
+          email?: string | null
           firstName?: string | null
           lastName?: string | null
           officeLocation?: string | null
           phoneNumber?: string | null
-          role?: string | null
-          userId?: number
+          role?: Database["public"]["Enums"]["Role"]
+          userId?: string
         }
         Update: {
-          approvalStatus?: string | null
+          approvalStatus?: Database["public"]["Enums"]["ApprovalStatus"] | null
           created_at?: string
+          email?: string | null
           firstName?: string | null
           lastName?: string | null
           officeLocation?: string | null
           phoneNumber?: string | null
-          role?: string | null
-          userId?: number
+          role?: Database["public"]["Enums"]["Role"]
+          userId?: string
         }
         Relationships: []
       }
       UserSettings: {
         Row: {
           created_at: string
-          userId: number
+          userId: string | null
         }
         Insert: {
           created_at?: string
-          userId?: number
+          userId?: string | null
         }
         Update: {
           created_at?: string
-          userId?: number
+          userId?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "UserSettings_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: true
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {

@@ -1,13 +1,14 @@
-import { Ionicons } from '@expo/vector-icons';
+import BackButton from '@/components/ui/BackButton';
+import { useAuth } from "@/context/AuthContext";
+import LoginForm from "@components/auth/LoginForm";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, TouchableOpacity, View } from "react-native";
-import { login as loginUser } from "../../services/auth/authService";
-import { LoginForm } from "./components";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 
 export default function Login() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -72,7 +73,7 @@ export default function Login() {
     setIsSubmitting(true);
     setErrorMessage("");
 
-    const result = await loginUser(trimmedEmail, password);
+    const result = await login({ email: trimmedEmail, password });
 
     setIsSubmitting(false);
 
@@ -81,12 +82,12 @@ export default function Login() {
       return;
     }
 
-    router.replace("/(tabs)/home");
+    // Navigation is handled by RootNavigator in _layout.tsx
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-fdm-bg p-6"
     >
       <StatusBar style="light" />
@@ -97,12 +98,7 @@ export default function Login() {
 
       {/* Header */}
       <View className="pt-10 pb-2 w-full max-w-sm self-center flex-row items-center z-10">
-        <TouchableOpacity 
-          onPress={() => router.back()}
-          className="w-11 h-11 items-center justify-center rounded-full bg-fdm-fg/10 active:bg-fdm-fg/20 border border-fdm-fg/10"
-        >
-          <Ionicons name="arrow-back" size={20} color="#ffffff" />
-        </TouchableOpacity>
+        <BackButton />
       </View>
 
       <LoginForm

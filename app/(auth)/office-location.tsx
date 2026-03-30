@@ -1,23 +1,39 @@
+import CityModal from "@components/auth/CityModal";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { fdmOfficeCitiesByRegion } from "../../library/office-cities";
-import CityModal from "./components/CityModal";
+import BackButton from "../../components/ui/BackButton";
+import { useAuth } from "../../context/AuthContext";
+import { fdmOfficeCitiesByRegion } from "../../lib/office-cities";
 
 export default function OfficeLocation() {
   const router = useRouter();
+  const { register } = useAuth();
+
+  // Receive form data from the register step
+  const params = useLocalSearchParams<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+    password: string;
+  }>();
+
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedLabel = useMemo(() => {
     if (!selectedCity) {
@@ -34,13 +50,37 @@ export default function OfficeLocation() {
     setIsDropdownOpen(false);
   };
 
-  const handleCompleteSignup = () => {
+  const handleCompleteSignup = async () => {
     if (!selectedCity) {
       setErrorMessage("Please choose your FDM office city before continuing.");
       return;
     }
 
-    router.replace("/(auth)/login");
+    setIsSubmitting(true);
+    setErrorMessage("");
+
+    const result = await register({
+      firstName: params.firstName ?? "",
+      lastName: params.lastName ?? "",
+      email: params.email ?? "",
+      password: params.password ?? "",
+      phoneNumber: params.phoneNumber ?? "",
+      officeLocation: selectedCity,
+    });
+
+    setIsSubmitting(false);
+
+    if (!result.success) {
+      setErrorMessage(result.error ?? "Registration failed. Please try again.");
+      return;
+    }
+
+    // Registration successful — show confirmation and redirect to login
+    Alert.alert(
+      "Account Created",
+      "Your account has been created and is pending admin approval. You'll be able to sign in once approved.",
+      [{ text: "OK", onPress: () => router.replace("/(auth)/login") }]
+    );
   };
 
   return (
@@ -56,12 +96,7 @@ export default function OfficeLocation() {
 
       {/* Header */}
       <View className="pt-10 pb-2 w-full max-w-sm self-center flex-row items-center z-10">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="w-11 h-11 items-center justify-center rounded-full bg-fdm-fg/10 active:bg-fdm-fg/20 border border-fdm-fg/10"
-        >
-          <Ionicons name="arrow-back" size={20} color="#ffffff" />
-        </TouchableOpacity>
+        <BackButton />
       </View>
 
       <View className="flex-1 w-full max-w-sm self-center justify-center z-10 mb-12">
@@ -82,6 +117,7 @@ export default function OfficeLocation() {
             className="h-17 bg-fdm-fg/5 border-[1.5px] border-fdm-fg/10 rounded-2xl px-4 py-3 flex-row items-center justify-between"
             onPress={() => setIsDropdownOpen(true)}
             activeOpacity={0.8}
+            disabled={isSubmitting}
           >
             <Text className={`${selectedCity ? "text-fdm-fg" : "text-fdm-fg/50"} text-base`}>
               {selectedLabel}
@@ -94,8 +130,13 @@ export default function OfficeLocation() {
         <TouchableOpacity
           className="w-2/3 self-center bg-fdm-accent py-4 rounded-2xl items-center shadow-lg shadow-fdm-accent/20 active:opacity-80 transition-opacity mt-8"
           onPress={handleCompleteSignup}
+          disabled={isSubmitting}
         >
-          <Text className="text-fdm-bg font-bold tracking-wide uppercase">Finish Sign Up</Text>
+          {isSubmitting ? (
+            <ActivityIndicator color="#1b1b1b" />
+          ) : (
+            <Text className="text-fdm-bg font-bold tracking-wide uppercase">Finish Sign Up</Text>
+          )}
         </TouchableOpacity>
       </View>
 
