@@ -1,6 +1,6 @@
+import { RegionCities } from "@lib/office-cities";
 import React from "react";
 import { Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { RegionCities } from "../../../lib/office-cities";
 
 type CityModalProps = {
   visible: boolean;

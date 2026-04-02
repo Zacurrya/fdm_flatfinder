@@ -2,7 +2,7 @@ import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
 import { useAuth } from "@context/AuthContext";
 import { ScrollView, Text, View } from "react-native";
 
-export default function SavedScreen() {
+export default function FavouritesScreen() {
   const { user } = useAuth();
 
   if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
@@ -24,7 +24,7 @@ export default function SavedScreen() {
       contentContainerStyle={{ flexGrow: 1 }}
     >
       <View className="flex-1 items-center justify-center">
-        <Text className="text-fdm-fg/40 text-sm">Saved — coming soon</Text>
+        <Text className="text-fdm-fg/40 text-sm">Favourites - coming soon</Text>
       </View>
     </ScrollView>
   );

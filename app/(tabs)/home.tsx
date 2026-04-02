@@ -1,5 +1,4 @@
 import HomeHeader from "@/components/home/HomeHeader";
-import QuickActions from "@/components/home/QuickActions";
 import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
 import ListingCard, { ListingCardData } from "@/components/ui/ListingCard";
 import { useAuth } from "@/context/AuthContext";
@@ -45,8 +44,6 @@ export default function HomeScreen() {
           firstName={user?.firstName}
           officeLocation={user?.officeLocation}
         />
-
-        <QuickActions />
 
         {/* ── Featured Listings ───────────────────────────────────── */}
         <View className="px-6 mb-2">

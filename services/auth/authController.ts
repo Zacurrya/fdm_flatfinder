@@ -10,9 +10,9 @@ import {
 } from "./auth.types";
 import * as AuthService from "./authService";
 
-// ─── Register ────────────────────────────────────────────────────────────────
+// Register
 
-export const registerUser = async (
+export const register = async (
     request: RegistrationDTO
 ): Promise<AuthResponse> => {
     if (!request.email || !request.password) {
@@ -31,9 +31,9 @@ export const registerUser = async (
     return AuthService.register(request);
 };
 
-// ─── Login ───────────────────────────────────────────────────────────────────
+// Login
 
-export const loginUser = async (
+export const login = async (
     request: LoginDTO
 ): Promise<AuthResponse<{ session: Session; user: User }>> => {
     if (!request.email || !request.password) {
@@ -43,13 +43,13 @@ export const loginUser = async (
     return AuthService.login(request.email, request.password);
 };
 
-// ─── Logout ──────────────────────────────────────────────────────────────────
+// Logout 
 
-export const logoutUser = async (): Promise<AuthResponse> => {
+export const logout = async (): Promise<AuthResponse> => {
     return AuthService.logout();
 };
 
-// ─── Password Reset ──────────────────────────────────────────────────────────
+// Password Reset 
 
 export const resetPassword = async (
     request: PasswordResetDTO
@@ -61,7 +61,7 @@ export const resetPassword = async (
     return AuthService.resetPassword(request);
 };
 
-// ─── Approve User (Admin) ────────────────────────────────────────────────────
+// Approve User (Admin)
 
 export const approveUser = async (
     request: ApprovalDTO
@@ -73,7 +73,7 @@ export const approveUser = async (
     return AuthService.approveUser(request);
 };
 
-// ─── Reject User (Admin) ────────────────────────────────────────────────────
+// Reject User (Admin) 
 
 export const rejectUser = async (
     request: ApprovalDTO
@@ -85,7 +85,7 @@ export const rejectUser = async (
     return AuthService.rejectUser(request);
 };
 
-// ─── Delete User (Admin) ─────────────────────────────────────────────────────
+// Delete User (Admin)
 
 export const deleteUser = async (
     request: DeletionDTO
@@ -95,4 +95,24 @@ export const deleteUser = async (
     }
 
     return AuthService.deleteUser(request);
+};
+
+// Get User Profile
+
+export const getUserProfile = async (
+    authUserId: string
+): Promise<AuthResponse<User>> => {
+    if (!authUserId) {
+        return { success: false, error: "User ID is required." };
+    }
+
+    return AuthService.getUserProfile(authUserId);
+};
+
+// Get Pending Users (Admin)
+
+export const getPendingUsers = async (): Promise<
+    AuthResponse<Omit<User, "email">[]>
+> => {
+    return AuthService.getPendingUsers();
 };

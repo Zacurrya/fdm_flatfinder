@@ -3,6 +3,7 @@ import { Michroma_400Regular, useFonts } from "@expo-google-fonts/michroma";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync();
@@ -26,7 +27,7 @@ function RootNavigator() {
       // Not signed in but on tabs → go to landing
       router.replace("/");
     }
-  }, [session, user, isLoading, segments]);
+  }, [session, user, isLoading, segments, router]);
 
   return (
     <Stack
@@ -53,8 +54,10 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <RootNavigator />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

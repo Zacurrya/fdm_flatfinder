@@ -8,30 +8,30 @@ import {
     User,
 } from "../services/auth/auth.types";
 import * as AuthController from "../services/auth/authController";
-import * as AuthService from "../services/auth/authService";
 
-// ─── Context Definition ───
+// Context Definition 
 
 interface AuthContextType {
-    /** The current Supabase session, null when logged out */
+    // The current Supabase session, null when logged out
     session: Session | null;
-    /** The user's profile from the Users table, null when logged out */
+    // The user's profile from the Users table, null when logged out
     user: User | null;
-    /** True while the initial session is being restored */
+    // True while the initial session is being restored
     isLoading: boolean;
-    /** Refetch the current user profile from the Users table */
+
+    // Refetch the current user profile from the Users table
     refreshUser: () => Promise<AuthResponse<User>>;
-    /** Sign in with email + password */
+    // Sign in with email + password
     login: (dto: LoginDTO) => Promise<AuthResponse<{ session: Session; user: User }>>;
-    /** Create a new account */
+    // Create a new account
     register: (dto: RegistrationDTO) => Promise<AuthResponse>;
-    /** Sign out and clear the session */
+    // Sign out and clear the session
     logout: () => Promise<AuthResponse>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ─── Provider ───
+// Provider
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [session, setSession] = useState<Session | null>(null);
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return { success: false, error: "No active session." };
         }
 
-        const result = await AuthService.getUserProfile(session.user.id);
+        const result = await AuthController.getUserProfile(session.user.id);
         if (result.success && result.data) {
             setUser(result.data);
         }
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setSession(existingSession);
 
                 // Fetch profile from Users table
-                const result = await AuthService.getUserProfile(existingSession.user.id);
+                const result = await AuthController.getUserProfile(existingSession.user.id);
                 if (result.success && result.data) {
                     setUser(result.data);
                 }
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-                    const result = await AuthService.getUserProfile(newSession.user.id);
+                    const result = await AuthController.getUserProfile(newSession.user.id);
                     if (result.success && result.data) {
                         setUser(result.data);
                     }
@@ -88,10 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
-    // ── Actions ───
+    // Actions
 
     const login = async (dto: LoginDTO) => {
-        const result = await AuthController.loginUser(dto);
+        const result = await AuthController.login(dto);
 
         if (result.success && result.data) {
             setSession(result.data.session);
@@ -100,19 +100,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return result;
     };
-
+    
     const register = async (dto: RegistrationDTO) => {
-        return AuthController.registerUser(dto);
+        return AuthController.register(dto);
     };
 
     const logout = async () => {
-        const result = await AuthController.logoutUser();
+        const result = await AuthController.logout();
 
         if (result.success) {
             setSession(null);
             setUser(null);
         }
-
         return result;
     };
 
@@ -125,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-// ─── Hook ────────────────────────────────────────────────────────────────
+// Hook
 
 export function useAuth() {
     const context = useContext(AuthContext);

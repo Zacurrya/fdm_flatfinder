@@ -13,7 +13,6 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { User } from "../../services/auth/auth.types";
 import * as AuthController from "../../services/auth/authController";
-import * as AuthService from "../../services/auth/authService";
 
 type PendingUser = Omit<User, "email">;
 
@@ -24,7 +23,7 @@ export default function AdminScreen() {
     const [processingId, setProcessingId] = useState<string | null>(null);
 
     const fetchPendingUsers = useCallback(async () => {
-        const result = await AuthService.getPendingUsers();
+        const result = await AuthController.getPendingUsers();
         if (result.success && result.data) {
             setPendingUsers(result.data);
         }

@@ -1,10 +1,15 @@
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
+  const insets = useSafeAreaInsets();
+  const tabBarTopPadding = 8;
+  const tabBarBottomPadding = Math.max(insets.bottom, 12);
+  const tabBarContentHeight = 36;
 
   return (
     <Tabs
@@ -14,9 +19,9 @@ export default function TabsLayout() {
           backgroundColor: "#222222",
           borderTopColor: "#ffffff15",
           borderTopWidth: 1,
-          height: 64,
-          paddingBottom: 10,
-          paddingTop: 8,
+          height: tabBarContentHeight + tabBarTopPadding + tabBarBottomPadding,
+          paddingBottom: tabBarBottomPadding * 2.5,
+          paddingTop: tabBarTopPadding,
         },
         tabBarActiveTintColor: "#ccff00",
         tabBarInactiveTintColor: "#ffffff50",
@@ -46,12 +51,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="saved"
+        name="favourites"
         options={{
-          tabBarLabel: "Saved",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="bookmark-outline" size={size} color={color} />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen

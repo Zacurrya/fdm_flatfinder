@@ -1,7 +1,7 @@
+import NotificationButton from "@/components/home/NotificationButton";
 import CityImage from "@/components/ui/CityImage";
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, View } from "react-native";
 
 type HomeHeaderProps = {
   cityName: string;
@@ -14,12 +14,10 @@ export default function HomeHeader({
   cityName,
   firstName,
   officeLocation,
-  onPressNotifications,
+  onPressNotifications = () => {},
 }: HomeHeaderProps) {
   return (
       <View className="flex-row items-center gap-8 px-8 pb-4 mt-12">
-
-        {/* Logo, Greeting & City Image */}
         <View className="flex-row items-center gap-8 mt-10">
         {/* Logo + Greeting */}
         <View>
@@ -45,13 +43,9 @@ export default function HomeHeader({
         </View>
 
         {/* Notifications Button */}
-        <TouchableOpacity
-          className="ml-auto w-10 h-10 self-start rounded-full bg-fdm-fg/10 border border-fdm-fg/10 items-center justify-center"
-          onPress={onPressNotifications}
-          accessibilityLabel="Open notifications"
-        >
-          <Ionicons name="notifications-outline" size={20} color="#ffffff" />
-        </TouchableOpacity>
+        <NotificationButton 
+          onPressNotifications={onPressNotifications}
+        />
       </View>
   );
 }
