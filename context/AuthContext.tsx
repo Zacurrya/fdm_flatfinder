@@ -10,7 +10,7 @@ import {
 import * as AuthController from "../services/auth/authController";
 import * as AuthService from "../services/auth/authService";
 
-// ─── Context Shape ───────────────────────────────────────────────────────────
+// ─── Context Definition ───
 
 interface AuthContextType {
     /** The current Supabase session, null when logged out */
@@ -31,7 +31,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ─── Provider ────────────────────────────────────────────────────────────────
+// ─── Provider ───
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [session, setSession] = useState<Session | null>(null);
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     useEffect(() => {
-        // 1. Restore existing session on mount
+        // Restore existing session on mount
         supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
             if (existingSession?.user) {
                 setSession(existingSession);
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsLoading(false);
         });
 
-        // 2. Listen for auth state changes (sign in, sign out, token refresh)
+        // Listen for auth state changes (sign in, sign out, token refresh)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, newSession) => {
                 setSession(newSession);
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
-    // ── Actions ──────────────────────────────────────────────────────────────
+    // ── Actions ───
 
     const login = async (dto: LoginDTO) => {
         const result = await AuthController.loginUser(dto);
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-// ─── Hook ────────────────────────────────────────────────────────────────────
+// ─── Hook ────────────────────────────────────────────────────────────────
 
 export function useAuth() {
     const context = useContext(AuthContext);

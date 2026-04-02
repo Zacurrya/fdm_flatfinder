@@ -4,7 +4,7 @@
     "slug": "fdm_flatfinder",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.svg",
+    "icon": "./assets/images/favicon.svg",
     "scheme": "fdmflatfinder",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -13,21 +13,21 @@
     "android": {
       "package": "com.fdm.flatfinder",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.svg",
+        "foregroundImage": "./assets/images/favicon.svg",
         "backgroundColor": "#1b1b1b"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/icon.svg"
+      "favicon": "./assets/images/favicon.svg"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.svg",
+          "image": "./assets/images/favicon.svg",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#1b1b1b",

@@ -1,9 +1,9 @@
+import { AuthProvider, useAuth } from "@context/AuthContext";
 import { Michroma_400Regular, useFonts } from "@expo-google-fonts/michroma";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import "../global.css";
-import { AuthProvider, useAuth } from "../context/AuthContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -16,7 +16,6 @@ function RootNavigator() {
     if (isLoading) return;
 
     const rawSegments = segments as string[];
-    const inAuthGroup = rawSegments[0] === "(auth)";
     const inTabsGroup = rawSegments[0] === "(tabs)";
     const isAuthenticated = session && user;
 
