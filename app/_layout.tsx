@@ -1,5 +1,4 @@
 import { AuthProvider, useAuth } from "@context/AuthContext";
-import { Michroma_400Regular, useFonts } from "@expo-google-fonts/michroma";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -9,26 +8,6 @@ import "../global.css";
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { session, user, isLoading } = useAuth();
-  const segments = useSegments();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    const rawSegments = segments as string[];
-    const inTabsGroup = rawSegments[0] === "(tabs)";
-    const isAuthenticated = session && user;
-
-    if (isAuthenticated && !inTabsGroup) {
-      // Signed in but not on tabs → go to home
-      router.replace("/(tabs)/home");
-    } else if (!isAuthenticated && inTabsGroup) {
-      // Not signed in but on tabs → go to landing
-      router.replace("/");
-    }
-  }, [session, user, isLoading, segments, router]);
-
   return (
     <Stack
       screenOptions={{
@@ -38,25 +17,50 @@ function RootNavigator() {
   );
 }
 
-export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    Michroma_400Regular,
-  });
+// Redirects the user to auth or main app based on their auth status
+function AppShell() {
+  const { session, user, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  const rawSegments = segments as string[];
+  const inTabsGroup = rawSegments[0] === "(tabs)";
+  const isAuthenticated = Boolean(session && user);
+  const shouldRedirectToHome = !isLoading && isAuthenticated && !inTabsGroup;
+  const shouldRedirectToLanding = !isLoading && !isAuthenticated && inTabsGroup;
+  const isRouteReady = !shouldRedirectToHome && !shouldRedirectToLanding;
 
   useEffect(() => {
-    if (loaded || error) {
+    if (isLoading) return;
+
+    if (shouldRedirectToHome) {
+      router.replace("/(tabs)/home");
+      return;
+    }
+
+    if (shouldRedirectToLanding) {
+      router.replace("/");
+    }
+  }, [isLoading, shouldRedirectToHome, shouldRedirectToLanding, router]);
+
+  useEffect(() => {
+    if (!isLoading && isRouteReady) {
       SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [isLoading, isRouteReady]);
 
-  if (!loaded && !error) {
+  if (isLoading || !isRouteReady) {
     return null;
   }
 
+  return <RootNavigator />;
+}
+
+export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <RootNavigator />
+        <AppShell />
       </AuthProvider>
     </SafeAreaProvider>
   );

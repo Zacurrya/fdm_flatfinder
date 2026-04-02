@@ -6,10 +6,10 @@ type CityImageProps = {
 };
 
 const SKYLINE_SOURCES: Record<string, number> = {
-  london: require("@assets/images/skylines/london.svg"),
-  "hong-kong": require("@assets/images/skylines/hong-kong.svg"),
-  singapore: require("@assets/images/skylines/singapore.svg"),
-  tokyo: require("@assets/images/skylines/tokyo.svg"),
+  london: require("@assets/images/city-icons/london.svg"),
+  "hong-kong": require("@assets/images/city-icons/hong-kong.svg"),
+  singapore: require("@assets/images/city-icons/singapore.svg"),
+  tokyo: require("@assets/images/city-icons/tokyo.svg"),
 };
 
 export default function CityImage({ officeLocation }: CityImageProps) {

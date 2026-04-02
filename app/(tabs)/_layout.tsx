@@ -7,9 +7,9 @@ export default function TabsLayout() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const insets = useSafeAreaInsets();
-  const tabBarTopPadding = 8;
+  const tabBarTopPadding = 10;
   const tabBarBottomPadding = Math.max(insets.bottom, 12);
-  const tabBarContentHeight = 36;
+  const tabBarContentHeight = 50;
 
   return (
     <Tabs
@@ -26,7 +26,6 @@ export default function TabsLayout() {
         tabBarActiveTintColor: "#ccff00",
         tabBarInactiveTintColor: "#ffffff50",
         tabBarLabelStyle: {
-          fontSize: 11,
           fontWeight: "600",
           letterSpacing: 0.5,
         },
