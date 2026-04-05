@@ -1,11 +1,11 @@
-import React from "react";
-import EmailInput from "@components/auth/EmailInput";
 import PasswordInput from "@/components/auth/PasswordInput";
+import EmailInput from "@components/auth/EmailInput";
+import React from "react";
 import {
-    ActivityIndicator,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 type LoginFormProps = {

@@ -29,7 +29,7 @@ export const fdmOfficeCitiesByRegion: RegionCities[] = [
     cities: ["Shanghai", "Hong Kong", "Singapore", "Kuala Lumpur"],
   },
   {
-    region: "Australasia",
+    region: "Oceania",
     cities: ["Sydney", "Melbourne", "Auckland"],
   },
   {

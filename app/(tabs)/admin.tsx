@@ -1,5 +1,5 @@
-import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
 import ApprovalRequestCard from "@/components/admin/ApprovalRequestCard";
+import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
@@ -31,19 +31,23 @@ export default function AdminScreen() {
         fetchPendingUsers().finally(() => setIsLoading(false));
     }, [fetchPendingUsers]);
 
-    const handleApprove = (pendingUser: User) => {
+    const handleDecision = (pendingUser: User, action: "approve" | "reject") => {
+        const isApprove = action === "approve";
+        const actionLabel = isApprove ? "Approve" : "Reject";
+
         Alert.alert(
-            "Approve User",
-            `Are you sure you want to approve ${pendingUser.firstName} ${pendingUser.lastName}?`,
+            `${actionLabel} User`,
+            `Are you sure you want to ${action} ${pendingUser.firstName} ${pendingUser.lastName}?`,
             [
                 { text: "Cancel", style: "cancel" },
                 {
-                    text: "Approve",
+                    text: actionLabel,
+                    style: isApprove ? "default" : "destructive",
                     onPress: async () => {
                         setProcessingId(pendingUser.userId);
-                        const result = await AuthController.approveUser({
-                            userId: pendingUser.userId,
-                        });
+                        const result = isApprove
+                            ? await AuthController.approveUser({ userId: pendingUser.userId })
+                            : await AuthController.rejectUser({ userId: pendingUser.userId });
                         setProcessingId(null);
 
                         if (result.success) {
@@ -51,7 +55,7 @@ export default function AdminScreen() {
                                 prev.filter((u) => u.userId !== pendingUser.userId)
                             );
                         } else {
-                            Alert.alert("Error", result.error ?? "Failed to approve user.");
+                            Alert.alert("Error", result.error ?? `Failed to ${action} user.`);
                         }
                     },
                 },
@@ -59,34 +63,9 @@ export default function AdminScreen() {
         );
     };
 
-    const handleReject = (pendingUser: User) => {
-        Alert.alert(
-            "Reject User",
-            `Are you sure you want to reject ${pendingUser.firstName} ${pendingUser.lastName}?`,
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Reject",
-                    style: "destructive",
-                    onPress: async () => {
-                        setProcessingId(pendingUser.userId);
-                        const result = await AuthController.rejectUser({
-                            userId: pendingUser.userId,
-                        });
-                        setProcessingId(null);
+    const handleApprove = (pendingUser: User) => handleDecision(pendingUser, "approve");
 
-                        if (result.success) {
-                            setPendingUsers((prev) =>
-                                prev.filter((u) => u.userId !== pendingUser.userId)
-                            );
-                        } else {
-                            Alert.alert("Error", result.error ?? "Failed to reject user.");
-                        }
-                    },
-                },
-            ]
-        );
-    };
+    const handleReject = (pendingUser: User) => handleDecision(pendingUser, "reject");
 
     if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
         return (

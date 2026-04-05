@@ -1,6 +1,7 @@
-import React from "react";
 import EmailInput from "@/components/auth/EmailInput";
 import PasswordInput from "@/components/auth/PasswordInput";
+import PhoneNumberInput from "@components/auth/PhoneNumberInput";
+import React from "react";
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 type RegisterFormProps = {
@@ -149,15 +150,10 @@ export default function RegisterForm({
           onChangeText={onEmailChange}
           error={emailError}
         />
-        <Field
-          label="Phone Number"
+        <PhoneNumberInput
           value={phoneNumber}
           onChangeText={onPhoneNumberChange}
-          placeholder="+44 7700 900123"
           error={phoneNumberError}
-          keyboardType="phone-pad"
-          autoComplete="tel"
-          textContentType="telephoneNumber"
         />
         <PasswordInput
           label="Password"

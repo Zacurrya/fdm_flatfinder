@@ -15,6 +15,9 @@ import * as AuthService from "./authService";
 export const register = async (
     request: RegistrationDTO
 ): Promise<AuthResponse> => {
+    const trimmedPhoneNumber = request.phoneNumber?.trim() ?? "";
+    const internationalPhonePattern = /^\+[1-9]\d{0,3}(?:[\s().-]*\d)+$/;
+
     if (!request.email || !request.password) {
         return { success: false, error: "Email and password are required." };
     }
@@ -24,8 +27,14 @@ export const register = async (
     if (!request.firstName || !request.lastName) {
         return { success: false, error: "First and last name are required." };
     }
-    if (!request.phoneNumber) {
+    if (!trimmedPhoneNumber) {
         return { success: false, error: "Phone number is required." };
+    }
+    if (!internationalPhonePattern.test(trimmedPhoneNumber)) {
+        return {
+            success: false,
+            error: "Phone number must include a country code, e.g. +44 7700 900123.",
+        };
     }
     if (!request.officeLocation) {
         return { success: false, error: "Office location is required." };

@@ -1,5 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
 import { User } from "@/services/auth/auth.types";
+import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 type ApprovalRequestCardProps = {

@@ -90,6 +90,7 @@ export default function Register() {
     const trimmedEmail = email.trim();
     const trimmedPhoneNumber = phoneNumber.trim();
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const internationalPhonePattern = /^\+[1-9]\d{0,3}(?:[\s().-]*\d)+$/;
     const isFdmEmail = trimmedEmail.toLowerCase().endsWith("@fdmgroup.com");
     const hasUppercaseLetter = /[A-Z]/.test(password);
     const hasSymbol = /[^A-Za-z0-9\s]/.test(password);
@@ -126,6 +127,9 @@ export default function Register() {
 
     if (!trimmedPhoneNumber) {
       setPhoneNumberError("Phone number is required.");
+      isValid = false;
+    } else if (!internationalPhonePattern.test(trimmedPhoneNumber)) {
+      setPhoneNumberError("Include a country code, e.g. +44 7700 900123.");
       isValid = false;
     } else {
       setPhoneNumberError("");

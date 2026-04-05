@@ -17,8 +17,8 @@ export default function HomeHeader({
   onPressNotifications = () => {},
 }: HomeHeaderProps) {
   return (
-      <View className="flex-row items-center px-8 pb-4 mt-12">
-        <View className="flex-row items-center gap-20 mt-10">
+      <View className="pt-16 pb-4 px-6 z-10 flex-row items-center justify-between">
+        <View className="flex-row items-center gap-20">
         {/* Logo + Greeting */}
         <View>
           <Image
@@ -40,13 +40,10 @@ export default function HomeHeader({
           <CityImage officeLocation={officeLocation} />
         </View>
         </View>
-        
-        {/* Notifications Button */}
-        <View className="absolute top-7 right-9">
+
         <NotificationButton 
           onPressNotifications={onPressNotifications}
         />
-        </View>
       </View>
   );
 }
