@@ -10,21 +10,27 @@ export default function TabsLayout() {
   const tabBarTopPadding = 10;
   const tabBarBottomPadding = Math.max(insets.bottom, 12);
   const tabBarContentHeight = 50;
+  const iconSizeOffset = 2;
+  const tabIconSize = (size?: number) => (size ?? 24) + iconSizeOffset;
+  const tabBackgroundColor = "#222222";
+  const tabBorderColor = "#ffffff15";
+  const tabActiveColor = "#ccff00";
+  const tabInactiveColor = "#ffffff50";
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#222222",
-          borderTopColor: "#ffffff15",
+          backgroundColor: tabBackgroundColor,
+          borderTopColor: tabBorderColor,
           borderTopWidth: 1,
           height: tabBarContentHeight + tabBarTopPadding + tabBarBottomPadding,
           paddingBottom: tabBarBottomPadding * 2.5,
           paddingTop: tabBarTopPadding,
         },
-        tabBarActiveTintColor: "#ccff00",
-        tabBarInactiveTintColor: "#ffffff50",
+        tabBarActiveTintColor: tabActiveColor,
+        tabBarInactiveTintColor: tabInactiveColor,
         tabBarLabelStyle: {
           fontWeight: "600",
           letterSpacing: 0.5,
@@ -36,7 +42,7 @@ export default function TabsLayout() {
         options={{
           tabBarLabel: "Home",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <Ionicons name="home-outline" size={tabIconSize(size)} color={color} />
           ),
         }}
       />
@@ -45,7 +51,7 @@ export default function TabsLayout() {
         options={{
           tabBarLabel: "Search",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
+            <Ionicons name="search-outline" size={tabIconSize(size)} color={color} />
           ),
         }}
       />
@@ -60,7 +66,7 @@ export default function TabsLayout() {
         options={{
           tabBarLabel: "Messages",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-outline" size={size} color={color} />
+            <Ionicons name="chatbubble-outline" size={tabIconSize(size)} color={color} />
           ),
         }}
       />
@@ -69,7 +75,7 @@ export default function TabsLayout() {
         options={{
           tabBarLabel: "Admin",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="shield-checkmark-outline" size={size} color={color} />
+            <Ionicons name="shield-checkmark-outline" size={tabIconSize(size)} color={color} />
           ),
           // Hide the admin tab for non-admin users
           href: isAdmin ? ("/(tabs)/admin" as any) : null,
@@ -80,7 +86,7 @@ export default function TabsLayout() {
         options={{
           tabBarLabel: "Profile",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <Ionicons name="person-outline" size={tabIconSize(size)} color={color} />
           ),
         }}
       />
