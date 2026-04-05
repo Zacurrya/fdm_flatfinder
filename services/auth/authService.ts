@@ -254,7 +254,7 @@ export const getUserProfile = async (
  * Used by the admin approval screen.
  */
 export const getPendingUsers = async (): Promise<
-    AuthResponse<Omit<User, "email">[]>
+    AuthResponse<User[]>
 > => {
     const { data, error } = await supabase
         .from("Users")
@@ -270,6 +270,7 @@ export const getPendingUsers = async (): Promise<
         userId: row.userId,
         firstName: row.firstName ?? "",
         lastName: row.lastName ?? "",
+        email: row.email ?? "",
         phoneNumber: row.phoneNumber ?? "",
         officeLocation: row.officeLocation ?? "",
         role: row.role as User["role"],

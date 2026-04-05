@@ -1,4 +1,6 @@
 import React from "react";
+import EmailInput from "@/components/auth/EmailInput";
+import PasswordInput from "@/components/auth/PasswordInput";
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 type RegisterFormProps = {
@@ -31,7 +33,6 @@ type FieldProps = {
   onChangeText: (value: string) => void;
   placeholder: string;
   error?: string;
-  secureTextEntry?: boolean;
   keyboardType?: "default" | "email-address" | "phone-pad";
   autoComplete?:
     | "name"
@@ -57,7 +58,6 @@ function Field({
   onChangeText,
   placeholder,
   error,
-  secureTextEntry,
   keyboardType = "default",
   autoComplete,
   textContentType,
@@ -77,7 +77,6 @@ function Field({
         keyboardType={keyboardType}
         autoComplete={autoComplete}
         textContentType={textContentType}
-        secureTextEntry={secureTextEntry}
       />
       {error ? <Text className="text-red-400 text-sm mt-1">{error}</Text> : null}
     </View>
@@ -145,15 +144,10 @@ export default function RegisterForm({
           autoComplete="family-name"
           textContentType="familyName"
         />
-        <Field
-          label="Email"
+        <EmailInput
           value={email}
           onChangeText={onEmailChange}
-          placeholder="you@company.com"
           error={emailError}
-          keyboardType="email-address"
-          autoComplete="email"
-          textContentType="emailAddress"
         />
         <Field
           label="Phone Number"
@@ -165,23 +159,21 @@ export default function RegisterForm({
           autoComplete="tel"
           textContentType="telephoneNumber"
         />
-        <Field
+        <PasswordInput
           label="Password"
           value={password}
           onChangeText={onPasswordChange}
           placeholder="Minimum 8 characters"
           error={passwordError}
-          secureTextEntry
           autoComplete="new-password"
           textContentType="newPassword"
         />
-        <Field
+        <PasswordInput
           label="Confirm Password"
           value={confirmPassword}
           onChangeText={onConfirmPasswordChange}
           placeholder="Re-enter your password"
           error={confirmPasswordError}
-          secureTextEntry
           autoComplete="new-password"
           textContentType="newPassword"
         />

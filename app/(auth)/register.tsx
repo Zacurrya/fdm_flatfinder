@@ -90,6 +90,9 @@ export default function Register() {
     const trimmedEmail = email.trim();
     const trimmedPhoneNumber = phoneNumber.trim();
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isFdmEmail = trimmedEmail.toLowerCase().endsWith("@fdmgroup.com");
+    const hasUppercaseLetter = /[A-Z]/.test(password);
+    const hasSymbol = /[^A-Za-z0-9\s]/.test(password);
     let isValid = true;
 
     setFormError("");
@@ -114,6 +117,9 @@ export default function Register() {
     } else if (!emailPattern.test(trimmedEmail)) {
       setEmailError("Enter a valid email address.");
       isValid = false;
+    } else if (!isFdmEmail) {
+      setEmailError("Use your @fdmgroup.com email address.");
+      isValid = false;
     } else {
       setEmailError("");
     }
@@ -128,8 +134,10 @@ export default function Register() {
     if (!password) {
       setPasswordError("Password is required.");
       isValid = false;
-    } else if (password.length < 8) {
-      setPasswordError("Password must be at least 8 characters.");
+    } else if (password.length < 8 || !hasUppercaseLetter || !hasSymbol) {
+      setPasswordError(
+        "Password must be at least 8 characters and include an uppercase letter and a symbol."
+      );
       isValid = false;
     } else {
       setPasswordError("");

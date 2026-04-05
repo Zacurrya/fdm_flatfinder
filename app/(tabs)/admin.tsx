@@ -1,4 +1,5 @@
 import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
+import ApprovalRequestCard from "@/components/admin/ApprovalRequestCard";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
@@ -7,18 +8,15 @@ import {
     Alert,
     FlatList,
     Text,
-    TouchableOpacity,
     View,
 } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import { User } from "../../services/auth/auth.types";
 import * as AuthController from "../../services/auth/authController";
 
-type PendingUser = Omit<User, "email">;
-
 export default function AdminScreen() {
     const { user } = useAuth();
-    const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+    const [pendingUsers, setPendingUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -33,7 +31,7 @@ export default function AdminScreen() {
         fetchPendingUsers().finally(() => setIsLoading(false));
     }, [fetchPendingUsers]);
 
-    const handleApprove = (pendingUser: PendingUser) => {
+    const handleApprove = (pendingUser: User) => {
         Alert.alert(
             "Approve User",
             `Are you sure you want to approve ${pendingUser.firstName} ${pendingUser.lastName}?`,
@@ -61,7 +59,7 @@ export default function AdminScreen() {
         );
     };
 
-    const handleReject = (pendingUser: PendingUser) => {
+    const handleReject = (pendingUser: User) => {
         Alert.alert(
             "Reject User",
             `Are you sure you want to reject ${pendingUser.firstName} ${pendingUser.lastName}?`,
@@ -116,73 +114,16 @@ export default function AdminScreen() {
         );
     }
 
-    const renderUserCard = ({ item }: { item: PendingUser }) => {
+    const renderUserCard = ({ item }: { item: User }) => {
         const isProcessing = processingId === item.userId;
 
         return (
-            <View className="bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl p-5 mb-4">
-                {/* Name & Badge */}
-                <View className="flex-row items-center justify-between mb-4">
-                    <View className="flex-row items-center gap-3 flex-1">
-                        <View className="w-12 h-12 rounded-full bg-fdm-accent/15 border border-fdm-accent/20 items-center justify-center">
-                            <Text className="text-fdm-accent font-bold text-lg">
-                                {item.firstName.charAt(0)}{item.lastName.charAt(0)}
-                            </Text>
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-fdm-fg font-bold text-base">
-                                {item.firstName} {item.lastName}
-                            </Text>
-                            <Text className="text-fdm-fg/40 text-xs mt-0.5">
-                                Registered {new Date(item.createdAt).toLocaleDateString()}
-                            </Text>
-                        </View>
-                    </View>
-                    <View className="bg-yellow-500/15 border border-yellow-500/25 px-3 py-1 rounded-xl">
-                        <Text className="text-yellow-400 text-xs font-semibold uppercase">Pending</Text>
-                    </View>
-                </View>
-
-                {/* Details */}
-                <View className="gap-2.5 mb-5 pl-1">
-                    <View className="flex-row items-center gap-2.5">
-                        <Ionicons name="call-outline" size={15} color="#ffffff60" />
-                        <Text className="text-fdm-fg/70 text-sm">{item.phoneNumber || "Not provided"}</Text>
-                    </View>
-                    <View className="flex-row items-center gap-2.5">
-                        <Ionicons name="location-outline" size={15} color="#ffffff60" />
-                        <Text className="text-fdm-fg/70 text-sm">{item.officeLocation || "Not set"}</Text>
-                    </View>
-                </View>
-
-                {/* Actions */}
-                <View className="flex-row gap-3">
-                    <TouchableOpacity
-                        className="flex-1 bg-fdm-accent py-3 rounded-2xl items-center active:opacity-80"
-                        onPress={() => handleApprove(item)}
-                        disabled={isProcessing}
-                    >
-                        {isProcessing ? (
-                            <ActivityIndicator color="#1b1b1b" size="small" />
-                        ) : (
-                            <View className="flex-row items-center gap-2">
-                                <Ionicons name="checkmark-circle-outline" size={18} color="#1b1b1b" />
-                                <Text className="text-fdm-bg font-bold text-sm">Approve</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        className="flex-1 bg-red-500/15 border border-red-500/25 py-3 rounded-2xl items-center active:opacity-80"
-                        onPress={() => handleReject(item)}
-                        disabled={isProcessing}
-                    >
-                        <View className="flex-row items-center gap-2">
-                            <Ionicons name="close-circle-outline" size={18} color="#ef4444" />
-                            <Text className="text-red-400 font-bold text-sm">Reject</Text>
-                        </View>
-                    </TouchableOpacity>
-                </View>
-            </View>
+            <ApprovalRequestCard
+                user={item}
+                isProcessing={isProcessing}
+                onApprove={handleApprove}
+                onReject={handleReject}
+            />
         );
     };
 

@@ -18,6 +18,9 @@ export const register = async (
     if (!request.email || !request.password) {
         return { success: false, error: "Email and password are required." };
     }
+    if (!request.email.toLowerCase().endsWith("@fdmgroup.com")) {
+        return { success: false, error: "Only @fdmgroup.com email addresses can sign up." };
+    }
     if (!request.firstName || !request.lastName) {
         return { success: false, error: "First and last name are required." };
     }
@@ -112,7 +115,7 @@ export const getUserProfile = async (
 // Get Pending Users (Admin)
 
 export const getPendingUsers = async (): Promise<
-    AuthResponse<Omit<User, "email">[]>
+    AuthResponse<User[]>
 > => {
     return AuthService.getPendingUsers();
 };

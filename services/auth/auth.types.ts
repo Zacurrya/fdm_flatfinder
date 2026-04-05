@@ -1,11 +1,11 @@
-import { Enums } from "../../types/database.types";
+import { Enums } from "@/types/database.types";
 
-// ─── Enums (re-exported for convenience) ─────────────────────────────────────
+// Enums
 
 export type Role = Enums<"Role">;                     // "ADMIN" | "CONSULTANT"
 export type ApprovalStatus = Enums<"ApprovalStatus">; // "PENDING" | "APPROVED" | "REJECTED"
 
-// ─── DTOs ────────────────────────────────────────────────────────────────────
+// DTOs
 
 export interface RegistrationDTO {
     firstName: string;
@@ -37,7 +37,7 @@ export interface PasswordResetDTO {
     email: string;
 }
 
-// ─── User Entity ─────────────────────────────────────────────────────────────
+// User Entity
 
 export interface User {
     userId: string;           // UUID from auth.users
@@ -51,7 +51,7 @@ export interface User {
     createdAt: string;
 }
 
-// ─── Responses ───────────────────────────────────────────────────────────────
+// Responses
 
 export interface AuthResponse<T = undefined> {
     success: boolean;

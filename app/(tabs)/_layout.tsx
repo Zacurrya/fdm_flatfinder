@@ -47,7 +47,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="search"
+        name="search/index"
         options={{
           tabBarLabel: "Search",
           tabBarIcon: ({ color, size }) => (
@@ -62,12 +62,18 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
+        name="messages/index"
         options={{
           tabBarLabel: "Messages",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubble-outline" size={tabIconSize(size)} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="search/listing"
+        options={{
+          href: null,
         }}
       />
       <Tabs.Screen

@@ -1,8 +1,9 @@
 import React from "react";
+import EmailInput from "@components/auth/EmailInput";
+import PasswordInput from "@/components/auth/PasswordInput";
 import {
     ActivityIndicator,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
@@ -47,45 +48,23 @@ export default function LoginForm({
       </View>
 
       <View className="w-full gap-4">
-        <View>
-          <Text className="text-fdm-fg/80 font-medium mb-2 ml-1 text-sm uppercase tracking-wider">
-            Email
-          </Text>
-          <TextInput
-            className="h-14 bg-fdm-fg/5 border-[1.5px] border-fdm-fg/10 rounded-2xl px-4 text-fdm-fg"
-            value={email}
-            onChangeText={onEmailChange}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-            textContentType="emailAddress"
-            placeholder="you@company.com"
-            placeholderTextColor="#ffffff66"
-            editable={!isSubmitting}
-          />
-          {emailError ? <Text className="text-red-400 text-sm mt-1">{emailError}</Text> : null}
-        </View>
+        <EmailInput
+          value={email}
+          onChangeText={onEmailChange}
+          error={emailError}
+          editable={!isSubmitting}
+        />
 
-        <View>
-          <Text className="text-fdm-fg/80 font-medium mb-2 ml-1 text-sm uppercase tracking-wider">
-            Password
-          </Text>
-          <TextInput
-            className="h-14 bg-fdm-fg/5 border-[1.5px] border-fdm-fg/10 rounded-2xl px-4 text-fdm-fg"
-            value={password}
-            onChangeText={onPasswordChange}
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="password"
-            textContentType="password"
-            placeholder="Minimum 8 characters"
-            placeholderTextColor="#ffffff66"
-            editable={!isSubmitting}
-          />
-          {passwordError ? (
-            <Text className="text-red-400 text-sm mt-1">{passwordError}</Text>
-          ) : null}
-        </View>
+        <PasswordInput
+          label="Password"
+          value={password}
+          onChangeText={onPasswordChange}
+          placeholder="Minimum 8 characters"
+          error={passwordError}
+          autoComplete="password"
+          textContentType="password"
+          editable={!isSubmitting}
+        />
       </View>
 
       {errorMessage ? <Text className="text-red-400 text-sm mt-4">{errorMessage}</Text> : null}
