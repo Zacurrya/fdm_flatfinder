@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { RegionCities } from "@lib/office-cities";
+import { OfficeCity, RegionCities } from "@lib/office-cities";
 import { Image } from "expo-image";
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -7,8 +7,8 @@ import { Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from "reac
 type CityModalProps = {
   visible: boolean;
   citiesByRegion: RegionCities[];
-  selectedCity: string;
-  onSelectCity: (region: string, city: string) => void;
+  selectedCityName: string;
+  onSelectCity: (region: string, city: OfficeCity) => void;
   onClose: () => void;
 };
 
@@ -23,7 +23,7 @@ const regionIconMap: Record<string, number> = {
 export default function CityModal({
   visible,
   citiesByRegion,
-  selectedCity,
+  selectedCityName,
   onSelectCity,
   onClose,
 }: CityModalProps) {
@@ -60,14 +60,18 @@ export default function CityModal({
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="gap-2">
                   {(selectedRegionGroup?.cities ?? []).map((city) => {
-                    const isSelected = selectedCity === city;
+                    const isSelected = selectedCityName === city.name;
+                    const flagUrl = `https://flagsapi.com/${city.countryCode.toUpperCase()}/flat/32.png`;
                     return (
                       <TouchableOpacity
-                        key={`${activeRegion}-${city}`}
+                        key={`${activeRegion}-${city.name}`}
                         className={`px-3 py-3 rounded-xl border ${isSelected ? "bg-fdm-accent/20 border-fdm-accent" : "bg-fdm-fg/5 border-fdm-fg/10"}`}
                         onPress={() => onSelectCity(activeRegion, city)}
                       >
-                        <Text className={`text-sm ${isSelected ? "text-fdm-accent" : "text-fdm-fg"}`}>{city}</Text>
+                        <View className="flex-row items-center gap-2.5">
+                          <Image source={{ uri: flagUrl }} style={{ width: 24, height: 24 }} contentFit="contain" />
+                          <Text className={`text-sm ${isSelected ? "text-fdm-accent" : "text-fdm-fg"}`}>{city.name}</Text>
+                        </View>
                       </TouchableOpacity>
                     );
                   })}
@@ -82,15 +86,15 @@ export default function CityModal({
                   {citiesByRegion.map((group) => (
                     <TouchableOpacity
                       key={group.region}
-                      className="px-3 py-3 rounded-xl border bg-fdm-fg/5 border-fdm-fg/10"
+                      className="py-2 px-3 rounded-xl border bg-fdm-fg/5 border-fdm-fg/10"
                       onPress={() => setActiveRegion(group.region)}
                     >
                       <View className="flex-row items-center justify-between">
                         <View className="flex-row items-center gap-3">
-                          <View className="w-8 h-8 rounded-lg bg-fdm-fg/10 border border-fdm-fg/10 items-center justify-center overflow-hidden">
+                          <View className="w-16 h-14 rounded-lg bg-fdm-fg/10 border border-fdm-fg/10 items-center justify-center overflow-hidden">
                             <Image
                               source={regionIconMap[group.region]}
-                              style={{ width: 20, height: 20 }}
+                              style={{ width: 44, height: 44 }}
                               contentFit="contain"
                             />
                           </View>

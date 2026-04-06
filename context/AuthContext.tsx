@@ -1,13 +1,14 @@
-import { Session } from "@supabase/supabase-js";
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@lib/supabase";
 import {
     AuthResponse,
     LoginDTO,
+    PasswordResetDTO,
     RegistrationDTO,
     User,
-} from "../services/auth/auth.types";
-import * as AuthController from "../services/auth/authController";
+} from "@services/auth/auth.types";
+import * as AuthController from "@services/auth/authController";
+import { Session } from "@supabase/supabase-js";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 // Context Definition 
 
@@ -27,6 +28,8 @@ interface AuthContextType {
     register: (dto: RegistrationDTO) => Promise<AuthResponse>;
     // Sign out and clear the session
     logout: () => Promise<AuthResponse>;
+    // Send a password reset email
+    resetPassword: (dto: PasswordResetDTO) => Promise<AuthResponse>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -115,9 +118,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return result;
     };
 
+    const resetPassword = async (dto: PasswordResetDTO) => {
+        return AuthController.resetPassword(dto);
+    };
+
     return (
         <AuthContext.Provider
-            value={{ session, user, isLoading, refreshUser, login, register, logout }}
+            value={{ session, user, isLoading, refreshUser, login, register, logout, resetPassword }}
         >
             {children}
         </AuthContext.Provider>

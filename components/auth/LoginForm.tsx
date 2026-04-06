@@ -18,6 +18,7 @@ type LoginFormProps = {
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onSubmit: () => void;
+  onPressResetPassword: () => void;
   onPressRegister: () => void;
 };
 
@@ -31,6 +32,7 @@ export default function LoginForm({
   onEmailChange,
   onPasswordChange,
   onSubmit,
+  onPressResetPassword,
   onPressRegister,
 }: LoginFormProps) {
   return (
@@ -59,13 +61,21 @@ export default function LoginForm({
           label="Password"
           value={password}
           onChangeText={onPasswordChange}
-          placeholder="Minimum 8 characters"
+          placeholder="*********"
           error={passwordError}
           autoComplete="password"
           textContentType="password"
           editable={!isSubmitting}
         />
       </View>
+
+      <TouchableOpacity
+        className="self-end mt-3"
+        onPress={onPressResetPassword}
+        disabled={isSubmitting}
+      >
+        <Text className="text-fdm-accent font-semibold text-sm">Forgot password?</Text>
+      </TouchableOpacity>
 
       {errorMessage ? <Text className="text-red-400 text-sm mt-4">{errorMessage}</Text> : null}
 

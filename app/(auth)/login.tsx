@@ -4,17 +4,20 @@ import LoginForm from "@components/auth/LoginForm";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, View } from "react-native";
 
 export default function Login() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, resetPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  const isBusy = isSubmitting || isResettingPassword;
 
   const validateInputs = (trimmedEmail: string, currentPassword: string) => {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -45,22 +48,14 @@ export default function Login() {
 
   const handleEmailChange = (value: string) => {
     setEmail(value);
-    if (emailError) {
-      setEmailError("");
-    }
-    if (errorMessage) {
-      setErrorMessage("");
-    }
+    if (emailError) { setEmailError(""); }
+    if (errorMessage) { setErrorMessage(""); }
   };
 
   const handlePasswordChange = (value: string) => {
     setPassword(value);
-    if (passwordError) {
-      setPasswordError("");
-    }
-    if (errorMessage) {
-      setErrorMessage("");
-    }
+    if (passwordError) { setPasswordError(""); }
+    if (errorMessage) { setErrorMessage(""); }
   };
 
   const handleLogin = async () => {
@@ -85,6 +80,35 @@ export default function Login() {
     // Navigation is handled by RootNavigator in _layout.tsx
   };
 
+  const handleResetPassword = async () => {
+    const trimmedEmail = email.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!trimmedEmail) {
+      setEmailError("Enter your email to reset your password.");
+      return;
+    }
+
+    if (!emailPattern.test(trimmedEmail)) {
+      setEmailError("Enter a valid email address.");
+      return;
+    }
+
+    setIsResettingPassword(true);
+    setErrorMessage("");
+
+    const result = await resetPassword({ email: trimmedEmail });
+
+    setIsResettingPassword(false);
+
+    if (!result.success) {
+      setErrorMessage(result.error ?? "Unable to send password reset email.");
+      return;
+    }
+
+    Alert.alert("Reset Email Sent", "Check your inbox for password reset instructions.");
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -107,10 +131,11 @@ export default function Login() {
         emailError={emailError}
         passwordError={passwordError}
         errorMessage={errorMessage}
-        isSubmitting={isSubmitting}
+        isSubmitting={isBusy}
         onEmailChange={handleEmailChange}
         onPasswordChange={handlePasswordChange}
         onSubmit={handleLogin}
+        onPressResetPassword={handleResetPassword}
         onPressRegister={() => router.push("/(auth)/register")}
       />
     </KeyboardAvoidingView>

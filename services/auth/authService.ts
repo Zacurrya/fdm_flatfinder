@@ -9,12 +9,10 @@ import {
 } from "@services/auth/auth.types";
 import { Session } from "@supabase/supabase-js";
 
-// ─── Register ────────────────────────────────────────────────────────────────
+// Register 
 
-/**
- * Creates a Supabase auth account, then inserts a profile row into the Users
- * table with approvalStatus = 'PENDING' and role = 'CONSULTANT'.
- */
+// Creates a Supabase auth account, then inserts a profile row into the Users
+// table with approvalStatus = 'PENDING' and role = 'CONSULTANT'.
 export const register = async (
     dto: RegistrationDTO
 ): Promise<AuthResponse> => {
@@ -54,18 +52,13 @@ export const register = async (
         return { success: false, error: `Failed to create user profile: ${insertError.message}` };
     }
 
-    // Sign out after registration — user must wait for admin approval
-    await supabase.auth.signOut();
-
     return { success: true };
 };
 
-// ─── Login ───────────────────────────────────────────────────────────────────
+// Login 
 
-/**
- * Authenticates via Supabase, then checks the Users table for approval status.
- * Pending and rejected users are allowed to sign in so UI can reflect status.
- */
+// Authenticates via Supabase, then checks the Users table for approval status.
+// Pending and rejected users are allowed to sign in so UI can reflect status.
 export const login = async (
     email: string,
     password: string
@@ -115,11 +108,9 @@ export const login = async (
     };
 };
 
-// ─── Logout ──────────────────────────────────────────────────────────────────
+// Logout 
 
-/**
- * Signs out the current Supabase session and clears persisted auth state.
- */
+// Signs out the current Supabase session and clears persisted auth state.
 export const logout = async (): Promise<AuthResponse> => {
     const { error } = await supabase.auth.signOut();
 
@@ -130,11 +121,9 @@ export const logout = async (): Promise<AuthResponse> => {
     return { success: true };
 };
 
-// ─── Password Reset ──────────────────────────────────────────────────────────
+// Password Reset 
 
-/**
- * Sends a password reset email via Supabase Auth.
- */
+// Sends a password reset email via Supabase Auth.
 export const resetPassword = async (
     dto: PasswordResetDTO
 ): Promise<AuthResponse> => {
@@ -147,12 +136,9 @@ export const resetPassword = async (
     return { success: true };
 };
 
-// ─── Approve User (Admin) ────────────────────────────────────────────────────
+// Approve User (Admin) 
 
-/**
- * Updates a user's approvalStatus to 'APPROVED'.
- * Should only be called by ADMIN role users.
- */
+// Updates a user's approvalStatus to 'APPROVED'.
 export const approveUser = async (
     dto: ApprovalDTO
 ): Promise<AuthResponse> => {
@@ -168,12 +154,9 @@ export const approveUser = async (
     return { success: true };
 };
 
-// ─── Reject User (Admin) ────────────────────────────────────────────────────
+// Reject User (Admin) 
 
-/**
- * Updates a user's approvalStatus to 'REJECTED'.
- * Should only be called by ADMIN role users.
- */
+// Updates a user's approvalStatus to 'REJECTED'.
 export const rejectUser = async (
     dto: ApprovalDTO
 ): Promise<AuthResponse> => {
@@ -189,12 +172,9 @@ export const rejectUser = async (
     return { success: true };
 };
 
-// ─── Delete User (Admin) ─────────────────────────────────────────────────────
+// Delete User (Admin)
 
-/**
- * Deletes a user's profile from the Users table.
- * The CASCADE on auth_id FK will handle Supabase auth cleanup if configured.
- */
+// Deletes a user's profile from the Users table.
 export const deleteUser = async (
     dto: DeletionDTO
 ): Promise<AuthResponse> => {
@@ -210,11 +190,9 @@ export const deleteUser = async (
     return { success: true };
 };
 
-// ─── Get User Profile ────────────────────────────────────────────────────────
+// Get User Profile 
 
-/**
- * Fetches a user's profile from the Users table by their auth UUID.
- */
+// Fetches a user's profile from the Users table by their auth UUID.
 export const getUserProfile = async (
     authUserId: string
 ): Promise<AuthResponse<User>> => {
@@ -247,12 +225,10 @@ export const getUserProfile = async (
     return { success: true, data: user };
 };
 
-// ─── Get Pending Users (Admin) ───────────────────────────────────────────────
+// Get Pending Users (Admin) 
 
-/**
- * Fetches all users with approvalStatus = 'PENDING'.
- * Used by the admin approval screen.
- */
+// Fetches all users with approvalStatus = 'PENDING'.
+// Used by the admin approval screen.
 export const getPendingUsers = async (): Promise<
     AuthResponse<User[]>
 > => {

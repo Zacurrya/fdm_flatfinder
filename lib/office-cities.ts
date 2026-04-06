@@ -1,39 +1,60 @@
+export type OfficeCity = {
+  name: string;
+  countryCode: string;
+};
+
 export type RegionCities = {
   region: string;
-  cities: string[];
+  cities: OfficeCity[];
 };
 
 export const fdmOfficeCitiesByRegion: RegionCities[] = [
   {
     region: "Europe",
     cities: [
-      "London",
-      "Leeds",
-      "Glasgow",
-      "Brighton",
-      "Frankfurt",
-      "Luxembourg",
-      "Watermael-Boitsfort",
-      "Dublin",
-      "Limerick",
-      "Zurich",
-      "Krakow",
+      { name: "London", countryCode: "GB" },
+      { name: "Leeds", countryCode: "GB" },
+      { name: "Glasgow", countryCode: "GB" },
+      { name: "Brighton", countryCode: "GB" },
+      { name: "Frankfurt", countryCode: "DE" },
+      { name: "Luxembourg", countryCode: "LU" },
+      { name: "Watermael-Boitsfort", countryCode: "BE" },
+      { name: "Dublin", countryCode: "IE" },
+      { name: "Limerick", countryCode: "IE" },
+      { name: "Zurich", countryCode: "CH" },
+      { name: "Krakow", countryCode: "PL" },
     ],
   },
   {
     region: "North America",
-    cities: ["Austin", "Charlotte", "New York", "St Petersburg", "Toronto", "Montreal"],
+    cities: [
+      { name: "Austin", countryCode: "US" },
+      { name: "Charlotte", countryCode: "US" },
+      { name: "New York", countryCode: "US" },
+      { name: "St Petersburg", countryCode: "US" },
+      { name: "Toronto", countryCode: "CA" },
+      { name: "Montreal", countryCode: "CA" },
+    ],
   },
   {
     region: "Asia",
-    cities: ["Shanghai", "Hong Kong", "Singapore", "Kuala Lumpur"],
+    cities: [
+      { name: "Shanghai", countryCode: "CN" },
+      { name: "Hong Kong", countryCode: "HK" },
+      { name: "Singapore", countryCode: "SG" },
+      { name: "Kuala Lumpur", countryCode: "MY" },
+    ],
   },
   {
     region: "Oceania",
-    cities: ["Sydney", "Melbourne", "Auckland"],
+    cities: [
+      { name: "Sydney", countryCode: "AU" },
+      { name: "Melbourne", countryCode: "AU" },
+      { name: "Auckland", countryCode: "NZ" },
+    ],
   },
   {
     region: "Africa",
-    cities: ["Germiston"],
+    cities: [{ name: "Germiston", countryCode: "ZA" }],
   },
 ];

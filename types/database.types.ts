@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      AuditLogs: {
+        Row: {
+          actionType: Database["public"]["Enums"]["ActionType"] | null
+          id: number
+          targetId: string | null
+          timestamp: string
+          userId: string | null
+        }
+        Insert: {
+          actionType?: Database["public"]["Enums"]["ActionType"] | null
+          id?: number
+          targetId?: string | null
+          timestamp?: string
+          userId?: string | null
+        }
+        Update: {
+          actionType?: Database["public"]["Enums"]["ActionType"] | null
+          id?: number
+          targetId?: string | null
+          timestamp?: string
+          userId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "AuditLogs_targetId_fkey"
+            columns: ["targetId"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "AuditLogs_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       Users: {
         Row: {
           approvalStatus: Database["public"]["Enums"]["ApprovalStatus"] | null
@@ -70,9 +109,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
+      ActionType:
+        | "USER_APPROVED"
+        | "USER_DENIED"
+        | "USER_BANNED"
+        | "MESSAGE_DELETED"
       ApprovalStatus: "PENDING" | "APPROVED" | "REJECTED"
       PropertyType:
         | "FLAT"
@@ -208,6 +252,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ActionType: [
+        "USER_APPROVED",
+        "USER_DENIED",
+        "USER_BANNED",
+        "MESSAGE_DELETED",
+      ],
       ApprovalStatus: ["PENDING", "APPROVED", "REJECTED"],
       PropertyType: [
         "FLAT",

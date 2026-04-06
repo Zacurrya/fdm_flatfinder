@@ -1,20 +1,20 @@
 import CityModal from "@components/auth/CityModal";
+import BackButton from "@components/ui/BackButton";
+import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { fdmOfficeCitiesByRegion, OfficeCity } from "@lib/office-cities";
+import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import BackButton from "../../components/ui/BackButton";
-import { useAuth } from "../../context/AuthContext";
-import { fdmOfficeCitiesByRegion } from "../../lib/office-cities";
 
 export default function OfficeLocation() {
   const router = useRouter();
@@ -29,21 +29,25 @@ export default function OfficeLocation() {
     password: string;
   }>();
 
-  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedCity, setSelectedCity] = useState<OfficeCity | null>(null);
   const [selectedRegion, setSelectedRegion] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const selectedCityFlagUrl = selectedCity
+    ? `https://flagsapi.com/${selectedCity.countryCode.toUpperCase()}/flat/32.png`
+    : null;
 
   const selectedLabel = useMemo(() => {
     if (!selectedCity) {
       return "Choose your city";
     }
 
-    return `${selectedCity} (${selectedRegion})`;
+    return `${selectedCity.name} (${selectedRegion})`;
   }, [selectedCity, selectedRegion]);
 
-  const handleSelectCity = (region: string, city: string) => {
+  const handleSelectCity = (region: string, city: OfficeCity) => {
     setSelectedRegion(region);
     setSelectedCity(city);
     setErrorMessage("");
@@ -60,12 +64,12 @@ export default function OfficeLocation() {
     setErrorMessage("");
 
     const result = await register({
-      firstName: params.firstName ?? "",
-      lastName: params.lastName ?? "",
-      email: params.email ?? "",
-      password: params.password ?? "",
-      phoneNumber: params.phoneNumber ?? "",
-      officeLocation: selectedCity,
+      firstName: params.firstName,
+      lastName: params.lastName,
+      email: params.email,
+      password: params.password,
+      phoneNumber: params.phoneNumber,
+      officeLocation: selectedCity.name,
     });
 
     setIsSubmitting(false);
@@ -75,12 +79,8 @@ export default function OfficeLocation() {
       return;
     }
 
-    // Registration successful — show confirmation and redirect to login
-    Alert.alert(
-      "Account Created",
-      "Your account has been created and is pending admin approval. You'll be able to sign in once approved.",
-      [{ text: "OK", onPress: () => router.replace("/(auth)/login") }]
-    );
+    // Registration successful - continue to app (all screens say "awaiting approval")
+    router.replace("/(tabs)/home");
   };
 
   return (
@@ -105,7 +105,7 @@ export default function OfficeLocation() {
             Where <Text className="text-fdm-accent">To?</Text>
           </Text>
           <Text className="text-fdm-fg/50 text-sm text-center">
-            Step 2 of 2: Select the city for your nearest FDM office.
+            Select the city situating your FDM home office.
           </Text>
         </View>
 
@@ -119,9 +119,14 @@ export default function OfficeLocation() {
             activeOpacity={0.8}
             disabled={isSubmitting}
           >
-            <Text className={`${selectedCity ? "text-fdm-fg" : "text-fdm-fg/50"} text-base`}>
-              {selectedLabel}
-            </Text>
+            <View className="flex-row items-center gap-2.5 flex-1 pr-3">
+              {selectedCityFlagUrl ? (
+                <Image source={{ uri: selectedCityFlagUrl }} style={{ width: 22, height: 22 }} contentFit="contain" />
+              ) : null}
+              <Text className={`${selectedCity ? "text-fdm-fg" : "text-fdm-fg/50"} text-base flex-1`} numberOfLines={1}>
+                {selectedLabel}
+              </Text>
+            </View>
             <Ionicons name="chevron-down" size={20} color="#ffffff80" />
           </TouchableOpacity>
           {errorMessage ? <Text className="text-red-400 text-sm mt-1">{errorMessage}</Text> : null}
@@ -143,7 +148,7 @@ export default function OfficeLocation() {
       <CityModal
         visible={isDropdownOpen}
         citiesByRegion={fdmOfficeCitiesByRegion}
-        selectedCity={selectedCity}
+        selectedCityName={selectedCity?.name ?? ""}
         onSelectCity={handleSelectCity}
         onClose={() => setIsDropdownOpen(false)}
       />

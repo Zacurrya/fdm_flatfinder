@@ -1,7 +1,7 @@
-import HomeHeader from "@/components/home/HomeHeader";
-import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
-import ListingCard, { ListingCardData } from "@/components/ui/ListingCard";
-import { useAuth } from "@/context/AuthContext";
+import HomeHeader from "@components/home/HomeHeader";
+import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
+import ListingCard, { ListingCardData } from "@components/ui/ListingCard";
+import { useAuth } from "@context/AuthContext";
 import { StatusBar } from "expo-status-bar";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
@@ -45,7 +45,7 @@ export default function HomeScreen() {
           officeLocation={user?.officeLocation}
         />
 
-        {/* ── Featured Listings ───────────────────────────────────── */}
+        {/* Featured Listings */}
         <View className="px-6 mb-2">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-fdm-fg text-lg font-bold tracking-tight">Featured/Favourited Listings (Undecided)</Text>

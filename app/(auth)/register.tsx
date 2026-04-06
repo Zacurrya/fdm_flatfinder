@@ -211,6 +211,7 @@ export default function Register() {
         onPhoneNumberChange={handlePhoneNumberChange}
         onPasswordChange={handlePasswordChange}
         onConfirmPasswordChange={handleConfirmPasswordChange}
+        clearErrorMessage={() => setFormError("")}
         onSubmit={handleSubmitStepOne}
         onPressLogin={() => router.push("/(auth)/login")}
       />

@@ -26,6 +26,7 @@ type RegisterFormProps = {
   onConfirmPasswordChange: (value: string) => void;
   onSubmit: () => void;
   onPressLogin: () => void;
+  clearErrorMessage?: () => void;
 };
 
 type FieldProps = {
@@ -106,7 +107,15 @@ export default function RegisterForm({
   onConfirmPasswordChange,
   onSubmit,
   onPressLogin,
+  clearErrorMessage,
 }: RegisterFormProps) {
+  const handleChangeWithClear =
+    (onChange: (value: string) => void) =>
+    (value: string) => {
+      onChange(value);
+      clearErrorMessage?.();
+    };
+
   return (
     <ScrollView
       className="flex-1 w-full max-w-sm self-center z-10"
@@ -130,7 +139,7 @@ export default function RegisterForm({
         <Field
           label="First Name"
           value={firstName}
-          onChangeText={onFirstNameChange}
+          onChangeText={handleChangeWithClear(onFirstNameChange)}
           placeholder="Jane"
           error={firstNameError}
           autoComplete="given-name"
@@ -139,7 +148,7 @@ export default function RegisterForm({
         <Field
           label="Last Name"
           value={lastName}
-          onChangeText={onLastNameChange}
+          onChangeText={handleChangeWithClear(onLastNameChange)}
           placeholder="Doe"
           error={lastNameError}
           autoComplete="family-name"
@@ -147,18 +156,18 @@ export default function RegisterForm({
         />
         <EmailInput
           value={email}
-          onChangeText={onEmailChange}
+          onChangeText={handleChangeWithClear(onEmailChange)}
           error={emailError}
         />
         <PhoneNumberInput
           value={phoneNumber}
-          onChangeText={onPhoneNumberChange}
+          onChangeText={handleChangeWithClear(onPhoneNumberChange)}
           error={phoneNumberError}
         />
         <PasswordInput
           label="Password"
           value={password}
-          onChangeText={onPasswordChange}
+          onChangeText={handleChangeWithClear(onPasswordChange)}
           placeholder="Minimum 8 characters"
           error={passwordError}
           autoComplete="new-password"
@@ -167,7 +176,7 @@ export default function RegisterForm({
         <PasswordInput
           label="Confirm Password"
           value={confirmPassword}
-          onChangeText={onConfirmPasswordChange}
+          onChangeText={handleChangeWithClear(onConfirmPasswordChange)}
           placeholder="Re-enter your password"
           error={confirmPasswordError}
           autoComplete="new-password"

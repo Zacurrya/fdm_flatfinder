@@ -1,4 +1,4 @@
-import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
+import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import { useAuth } from "@context/AuthContext";
 import { ScrollView, Text, View } from "react-native";
 
