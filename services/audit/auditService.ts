@@ -1,24 +1,6 @@
 import { supabase } from "@lib/supabase";
-
-type ActionType =
-	| "USER_APPROVED"
-	| "USER_DENIED"
-	| "USER_BANNED"
-	| "MESSAGE_DELETED";
-
-type AuditLog = {
-	auditId: number | string;
-	userId: string;
-	targetId: string;
-	actionType: ActionType;
-	timeStamp: string;
-};
-
-type AuditResponse<T = undefined> = {
-	success: boolean;
-	data?: T;
-	error?: string;
-};
+import { getUserEmailMapByIds } from "../db/userLookup";
+import { ActionType, AuditLog, AuditResponse } from "./auditTypes";
 
 const AUDIT_TABLE = "AuditLogs";
 
@@ -29,6 +11,8 @@ function mapAuditRow(row: Record<string, any>): AuditLog {
 		auditId: row.auditId ?? row.audit_id ?? row.id,
 		userId: row.userId ?? row.user_id ?? "",
 		targetId: row.targetId ?? row.target_id ?? "",
+		userEmail: row.userEmail ?? row.user_email ?? undefined,
+		targetEmail: row.targetEmail ?? row.target_email ?? undefined,
 		actionType: (row.actionType ?? row.action_type) as ActionType,
 		timeStamp: row.timeStamp ?? row.timestamp ?? row.created_at ?? new Date().toISOString(),
 	};
@@ -123,5 +107,23 @@ export const getHistory = async (
 				new Date(a.timeStamp).getTime()
 		);
 
-	return { success: true, data: history };
+	const uniqueUserIds = history
+		.flatMap((item) => [item.userId, item.targetId])
+		.filter((id): id is string => Boolean(id));
+
+	const userEmailResult = await getUserEmailMapByIds(uniqueUserIds);
+	if (!userEmailResult.success) {
+		console.warn("Failed to resolve audit emails:", userEmailResult.error);
+		return { success: true, data: history };
+	}
+
+	const emailByUserId = userEmailResult.data ?? {};
+
+	const historyWithEmails = history.map((item) => ({
+		...item,
+		userEmail: emailByUserId[item.userId] ?? "",
+		targetEmail: emailByUserId[item.targetId] ?? "",
+	}));
+
+	return { success: true, data: historyWithEmails };
 };

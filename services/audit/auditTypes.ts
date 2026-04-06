@@ -14,6 +14,8 @@ export interface AuditLog {
   auditId: number | string;
   userId: string;
   targetId: string;
+  userEmail?: string;
+  targetEmail?: string;
   actionType: ActionType;
   timeStamp: string;
 }

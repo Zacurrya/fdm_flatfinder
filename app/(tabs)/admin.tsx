@@ -1,4 +1,4 @@
-import AdminAuditHistory from "@components/admin/AdminAuditHistory";
+import AuditHistoryTable from "@/components/admin/AuditHistoryTable";
 import AdminTabs from "@components/admin/AdminTabs";
 import AdminValidationRequests from "@components/admin/AdminValidationRequests";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
@@ -143,7 +143,7 @@ export default function AdminScreen() {
           onReject={handleReject}
         />
       ) : (
-        <AdminAuditHistory
+        <AuditHistoryTable
           auditLogs={auditLogs}
           isLoading={isLoadingAudits}
           auditError={auditError}
