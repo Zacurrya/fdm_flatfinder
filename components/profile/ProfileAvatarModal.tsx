@@ -20,7 +20,7 @@ export default function ProfileAvatarModal({
 }: ProfileAvatarModalProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable className="flex-1 bg-black/70 items-center justify-center px-6" onPress={onClose}>
+      <Pressable className="flex-1 bg-black/70 items-center justify-center" onPress={onClose}>
         <Pressable
           className="w-full max-w-sm bg-[#141414] border border-fdm-fg/10 rounded-3xl p-6 items-center"
           onPress={(event) => event.stopPropagation()}
@@ -37,7 +37,7 @@ export default function ProfileAvatarModal({
           <ProfileAvatar user={user} isUploadingProfilePicture={isUploadingProfilePicture} size={176} />
 
           <TouchableOpacity
-            className="mt-6 w-full rounded-xl bg-fdm-accent py-3 items-center"
+            className="w-[80%] mt-6 rounded-xl bg-fdm-accent py-3 items-center"
             onPress={onChangeProfilePicture}
             disabled={isUploadingProfilePicture}
           >

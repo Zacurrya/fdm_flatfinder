@@ -15,21 +15,22 @@ export default function ProfileCard({
   isUploadingProfilePicture = false,
 }: ProfileCardProps) {
   return (
-      <View className="p-6 mt-4 bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl">
-        <View className="flex-row items-center gap-4 mb-6">
+      <View className="pt-3 pb-5 pl-5 mt-4 bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl">
+        <View className="flex-row items-center gap-5 mb-7">
 
           {/* Profile picture */}
           <ProfileAvatar
             user={user}
             onPress={onPressProfilePicture}
             isUploadingProfilePicture={isUploadingProfilePicture}
+            size={100}
           />
           {/* Name and Role */}
-          <View>
-            <Text className="text-fdm-fg font-bold text-lg">
+          <View className="flex-1">
+            <Text className="text-fdm-fg font-bold text-xl">
               {user?.firstName} {user?.lastName}
             </Text>
-            <Text className="text-fdm-fg/50 text-sm mt-0.5">
+            <Text className="text-fdm-fg/50 text-base mt-1">
               {user?.role === "ADMIN" ? "Administrator" : "Consultant"}
             </Text>
           </View>

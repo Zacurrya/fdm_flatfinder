@@ -68,7 +68,7 @@ export default function ProfileAvatar({
         source={{ uri: profilePictureUrl }}
         style={{ width: size, height: size, borderRadius: radius }}
         contentFit="cover"
-        cachePolicy="none"
+        cachePolicy="memory-disk"
         onError={() => setHasProfilePictureLoadError(true)}
       />
 

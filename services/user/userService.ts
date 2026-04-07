@@ -8,6 +8,34 @@ import { File } from "expo-file-system";
 
 const PROFILE_PICTURE_BUCKET = "profile-pictures";
 
+type CachedProfilePictureUrl = {
+    url: string;
+    expiresAtMs: number;
+};
+
+const profilePictureUrlCache = new Map<string, CachedProfilePictureUrl>();
+
+function getCachedProfilePictureUrl(path: string): string | null {
+    const cached = profilePictureUrlCache.get(path);
+    if (!cached) {
+        return null;
+    }
+
+    if (Date.now() >= cached.expiresAtMs) {
+        profilePictureUrlCache.delete(path);
+        return null;
+    }
+
+    return cached.url;
+}
+
+function setCachedProfilePictureUrl(path: string, url: string, expiresInSeconds: number): void {
+    profilePictureUrlCache.set(path, {
+        url,
+        expiresAtMs: Date.now() + expiresInSeconds * 1000,
+    });
+}
+
 export type ResolvedProfilePictureSource = {
     path: string | null;
     directUrl: string | null;
@@ -62,6 +90,11 @@ export const getProfilePictureUrl = async (
         return null;
     }
 
+    const cachedUrl = getCachedProfilePictureUrl(source.path);
+    if (cachedUrl) {
+        return cachedUrl;
+    }
+
     const { data, error } = await supabase.storage
         .from(PROFILE_PICTURE_BUCKET)
         .createSignedUrl(source.path, expiresInSeconds);
@@ -69,6 +102,8 @@ export const getProfilePictureUrl = async (
     if (error || !data?.signedUrl) {
         return null;
     }
+
+    setCachedProfilePictureUrl(source.path, data.signedUrl, expiresInSeconds);
 
     return data.signedUrl;
 }
@@ -143,6 +178,8 @@ export const uploadProfilePicture = async (
             if (removeOldImageError && !/not found/i.test(removeOldImageError.message)) {
                 return { success: false, error: removeOldImageError.message };
             }
+
+            profilePictureUrlCache.delete(oldPath);
         }
 
         const { error: uploadError } = await supabase.storage
@@ -165,6 +202,8 @@ export const uploadProfilePicture = async (
         if (updateError) {
             return { success: false, error: updateError.message };
         }
+
+        profilePictureUrlCache.delete(filePath);
 
         return { success: true, data: filePath };
     } catch (error) {
