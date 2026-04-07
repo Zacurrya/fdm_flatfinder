@@ -1,17 +1,17 @@
 import AuditHistoryTable from "@/components/admin/AuditHistoryTable";
 import AdminTabs from "@components/admin/AdminTabs";
 import AdminValidationRequests from "@components/admin/AdminValidationRequests";
+import useAdminUserDecision from "@components/admin/useAdminUserDecision";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as AuditController from "@services/audit/auditController";
+import { AuditLog } from "@services/audit/auditTypes";
 import { User } from "@services/auth/auth.types";
-import * as AuthController from "@services/auth/authController";
+import * as UserController from "@services/user/userController";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
 import { Text, View } from "react-native";
-import useAdminUserDecision from "../../components/admin/useAdminUserDecision";
-import { AuditLog } from "../../services/audit/auditTypes";
 
 export default function AdminScreen() {
   const { user } = useAuth();
@@ -27,7 +27,7 @@ export default function AdminScreen() {
   const [hasLoadedAudits, setHasLoadedAudits] = useState(false);
 
   const fetchPendingUsers = useCallback(async () => {
-    const result = await AuthController.getPendingUsers();
+    const result = await UserController.getPendingUsers();
     if (result.success && result.data) {
       setPendingUsers(result.data);
     }

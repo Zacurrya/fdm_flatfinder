@@ -1,6 +1,6 @@
+import { AuditLog } from "@services/audit/auditTypes";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from "react-native";
-import { AuditLog } from "../../services/audit/auditTypes";
 
 type AuditHistoryTableProps = {
   auditLogs: AuditLog[];

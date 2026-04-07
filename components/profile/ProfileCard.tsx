@@ -1,22 +1,30 @@
-import { User } from "@/services/auth/auth.types";
+import ProfileAvatar from "@components/profile/ProfileAvatar";
 import { Ionicons } from "@expo/vector-icons";
+import { User } from "@services/auth/auth.types";
 import { Text, View } from "react-native";
 
 interface ProfileCardProps {
   user: User | null;
+  onPressProfilePicture?: () => void;
+  isUploadingProfilePicture?: boolean;
 }
 
-export default function ProfileCard({ user }: ProfileCardProps) {
+export default function ProfileCard({
+  user,
+  onPressProfilePicture,
+  isUploadingProfilePicture = false,
+}: ProfileCardProps) {
   return (
-    <View className="px-6 mt-4">
-      <View className="bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl p-6">
-        {/* Avatar + Name */}
+      <View className="p-6 mt-4 bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl">
         <View className="flex-row items-center gap-4 mb-6">
-          <View className="w-16 h-16 rounded-full bg-fdm-accent/15 border border-fdm-accent/20 items-center justify-center">
-            <Text className="text-fdm-accent font-bold text-xl">
-              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-            </Text>
-          </View>
+
+          {/* Profile picture */}
+          <ProfileAvatar
+            user={user}
+            onPress={onPressProfilePicture}
+            isUploadingProfilePicture={isUploadingProfilePicture}
+          />
+          {/* Name and Role */}
           <View>
             <Text className="text-fdm-fg font-bold text-lg">
               {user?.firstName} {user?.lastName}
@@ -43,6 +51,5 @@ export default function ProfileCard({ user }: ProfileCardProps) {
           </View>
         </View>
       </View>
-    </View>
   );
 }

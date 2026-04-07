@@ -94,6 +94,7 @@ export const login = async (
         userId: profile.userId,
         firstName: profile.firstName ?? "",
         lastName: profile.lastName ?? "",
+        profilePicture: profile.profilePicture ?? null,
         email: authData.user.email ?? email,
         phoneNumber: profile.phoneNumber ?? "",
         officeLocation: profile.officeLocation ?? "",
@@ -214,6 +215,7 @@ export const getUserProfile = async (
         userId: profile.userId,
         firstName: profile.firstName ?? "",
         lastName: profile.lastName ?? "",
+        profilePicture: profile.profilePicture ?? null,
         email,
         phoneNumber: profile.phoneNumber ?? "",
         officeLocation: profile.officeLocation ?? "",
@@ -225,34 +227,3 @@ export const getUserProfile = async (
     return { success: true, data: user };
 };
 
-// Get Pending Users (Admin) 
-
-// Fetches all users with approvalStatus = 'PENDING'.
-// Used by the admin approval screen.
-export const getPendingUsers = async (): Promise<
-    AuthResponse<User[]>
-> => {
-    const { data, error } = await supabase
-        .from("Users")
-        .select("*")
-        .eq("approvalStatus", "PENDING")
-        .order("created_at", { ascending: true });
-
-    if (error) {
-        return { success: false, error: error.message };
-    }
-
-    const users = (data ?? []).map((row) => ({
-        userId: row.userId,
-        firstName: row.firstName ?? "",
-        lastName: row.lastName ?? "",
-        email: row.email ?? "",
-        phoneNumber: row.phoneNumber ?? "",
-        officeLocation: row.officeLocation ?? "",
-        role: row.role as User["role"],
-        approvalStatus: row.approvalStatus as User["approvalStatus"],
-        createdAt: row.created_at,
-    }));
-
-    return { success: true, data: users };
-};

@@ -1,15 +1,67 @@
-import ProfileCard from "@/components/profile/ProfileCard";
-import SettingsModal from "@/components/profile/SettingsModal";
-import SignOutButton from "@/components/profile/SignOutButton";
+import ProfileAvatarModal from "@components/profile/ProfileAvatarModal";
+import ProfileCard from "@components/profile/ProfileCard";
+import SettingsModal from "@components/profile/SettingsModal";
+import SignOutButton from "@components/profile/SignOutButton";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { File } from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function ProfileScreen() {
-  const { user } = useAuth();
+  const { user, updateProfilePicture } = useAuth();
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+  const [isUploadingProfilePicture, setIsUploadingProfilePicture] = useState(false);
+  const [isProfilePictureModalVisible, setIsProfilePictureModalVisible] = useState(false);
+
+  const handleChangeProfilePicture = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permission required", "Please allow photo library access to upload a profile picture.");
+      return;
+    }
+
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+
+    if (pickerResult.canceled || !pickerResult.assets?.length) {
+      return;
+    }
+
+    const imageUri = pickerResult.assets[0].uri;
+    if (!imageUri) {
+      Alert.alert("Upload failed", "No image was selected.");
+      return;
+    }
+
+    // Ensure the selected image can be read before triggering upload.
+    try {
+      await new File(imageUri).arrayBuffer();
+    } catch {
+      Alert.alert("Upload failed", "Selected profile picture could not be read.");
+      return;
+    }
+
+    setIsUploadingProfilePicture(true);
+    try {
+      const uploadResult = await updateProfilePicture({
+        imageUri,
+        mimeType: pickerResult.assets[0].mimeType,
+        fileName: pickerResult.assets[0].fileName,
+      });
+      if (!uploadResult.success) {
+        Alert.alert("Upload failed", uploadResult.error || "Please try again.");
+      }
+    } finally {
+      setIsUploadingProfilePicture(false);
+    }
+  };
 
   return (
     <View className="flex-1 bg-fdm-bg">
@@ -41,7 +93,13 @@ export default function ProfileScreen() {
         </View>
 
         {/* Profile Card */}
-        <ProfileCard user={user} />
+        <View className="px-6">
+          <ProfileCard
+            user={user}
+            onPressProfilePicture={() => setIsProfilePictureModalVisible(true)}
+            isUploadingProfilePicture={isUploadingProfilePicture}
+          />
+        </View>
 
         {/* Sign Out Button */}
         <View className="items-center mt-8">
@@ -52,6 +110,14 @@ export default function ProfileScreen() {
       <SettingsModal
         visible={isSettingsVisible}
         onClose={() => setIsSettingsVisible(false)}
+      />
+
+      <ProfileAvatarModal
+        visible={isProfilePictureModalVisible}
+        user={user}
+        isUploadingProfilePicture={isUploadingProfilePicture}
+        onClose={() => setIsProfilePictureModalVisible(false)}
+        onChangeProfilePicture={handleChangeProfilePicture}
       />
     </View>
   );

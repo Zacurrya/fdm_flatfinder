@@ -62,6 +62,7 @@ export type Database = {
           lastName: string | null
           officeLocation: string | null
           phoneNumber: string | null
+          profilePicture: string | null
           role: Database["public"]["Enums"]["Role"]
           userId: string
         }
@@ -73,6 +74,7 @@ export type Database = {
           lastName?: string | null
           officeLocation?: string | null
           phoneNumber?: string | null
+          profilePicture?: string | null
           role?: Database["public"]["Enums"]["Role"]
           userId?: string
         }
@@ -84,6 +86,7 @@ export type Database = {
           lastName?: string | null
           officeLocation?: string | null
           phoneNumber?: string | null
+          profilePicture?: string | null
           role?: Database["public"]["Enums"]["Role"]
           userId?: string
         }

@@ -121,10 +121,3 @@ export const getUserProfile = async (
     return AuthService.getUserProfile(authUserId);
 };
 
-// Get Pending Users (Admin)
-
-export const getPendingUsers = async (): Promise<
-    AuthResponse<User[]>
-> => {
-    return AuthService.getPendingUsers();
-};

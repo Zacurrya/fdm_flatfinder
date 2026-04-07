@@ -3,10 +3,12 @@ import {
     AuthResponse,
     LoginDTO,
     PasswordResetDTO,
+    ProfilePictureUploadDTO,
     RegistrationDTO,
     User,
 } from "@services/auth/auth.types";
 import * as AuthController from "@services/auth/authController";
+import * as UserController from "@services/user/userController";
 import { Session } from "@supabase/supabase-js";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
@@ -30,6 +32,8 @@ interface AuthContextType {
     logout: () => Promise<AuthResponse>;
     // Send a password reset email
     resetPassword: (dto: PasswordResetDTO) => Promise<AuthResponse>;
+    // Upload and persist a new profile picture for the current user
+    updateProfilePicture: (upload: ProfilePictureUploadDTO) => Promise<AuthResponse<string>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -122,9 +126,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return AuthController.resetPassword(dto);
     };
 
+    const updateProfilePicture = async (
+        upload: ProfilePictureUploadDTO
+    ): Promise<AuthResponse<string>> => {
+        if (!session?.user?.id) {
+            return { success: false, error: "No active session." };
+        }
+
+        const result = await UserController.uploadProfilePicture(session.user.id, upload);
+        if (result.success && result.data) {
+            setUser((prev) => {
+                if (!prev) {
+                    return prev;
+                }
+                return { ...prev, profilePicture: result.data };
+            });
+        }
+
+        return result;
+    };
+
     return (
         <AuthContext.Provider
-            value={{ session, user, isLoading, refreshUser, login, register, logout, resetPassword }}
+            value={{
+                session,
+                user,
+                isLoading,
+                refreshUser,
+                login,
+                register,
+                logout,
+                resetPassword,
+                updateProfilePicture,
+            }}
         >
             {children}
         </AuthContext.Provider>

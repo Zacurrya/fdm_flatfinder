@@ -1,0 +1,31 @@
+import {
+    AuthResponse,
+    ProfilePictureUploadDTO,
+    User,
+} from "@services/auth/auth.types";
+import * as UserService from "./userService";
+
+// Get Pending Users (Admin)
+
+export const getPendingUsers = async (): Promise<
+    AuthResponse<User[]>
+> => {
+    return UserService.getPendingUsers();
+};
+
+// Upload Profile Picture
+
+export const uploadProfilePicture = async (
+    authUserId: string,
+    upload: ProfilePictureUploadDTO
+): Promise<AuthResponse<string>> => {
+    if (!authUserId) {
+        return { success: false, error: "User ID is required." };
+    }
+
+    if (!upload.imageUri) {
+        return { success: false, error: "Image URI is required." };
+    }
+
+    return UserService.uploadProfilePicture(authUserId, upload);
+};

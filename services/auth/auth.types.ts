@@ -37,12 +37,19 @@ export interface PasswordResetDTO {
     email: string;
 }
 
+export interface ProfilePictureUploadDTO {
+    imageUri: string;
+    mimeType?: string | null;
+    fileName?: string | null;
+}
+
 // User Entity
 
 export interface User {
     userId: string;           // UUID from auth.users
     firstName: string;
     lastName: string;
+    profilePicture?: string | null;
     email: string;
     phoneNumber: string;
     officeLocation: string;
