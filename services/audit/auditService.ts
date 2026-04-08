@@ -19,19 +19,18 @@ function mapAuditRow(row: Record<string, any>): AuditLog {
 }
 
 export const logAudit = async (
+	userId: string, 
 	action: ActionType,
 	targetId: string
 ): Promise<AuditResponse<AuditLog>> => {
-	const { data: sessionData } = await supabase.auth.getSession();
-	const userId = sessionData?.session?.user?.id;
-
-	if (!userId) {
-		return { success: false, error: "No authenticated user available for audit logging." };
-	}
-
+  
 	const { data, error } = await supabase
 		.from(AUDIT_TABLE)
-		.insert({ actionType: action, userId, targetId })
+		.insert({ 
+            actionType: action, 
+            userId: userId, 
+            targetId: targetId 
+        })
 		.select("*")
 		.single();
 
@@ -53,7 +52,7 @@ export const getHistory = async (
 	const sessionUserId = sessionData?.session?.user?.id;
 
 	if (!sessionUserId) {
-		return { success: false, error: "No authenticated user available for audit history." };
+		return { success: false, error: "No authenticated user available." };
 	}
 
 	const { data: requesterProfile, error: requesterError } = await supabase
@@ -63,66 +62,49 @@ export const getHistory = async (
 		.single();
 
 	if (requesterError || !requesterProfile) {
-		return { success: false, error: "Unable to resolve requester role for audit history." };
+		return { success: false, error: "Unable to resolve requester role." };
 	}
 
 	const requesterRole = requesterProfile.role as Role;
-	let query = supabase
-		.from(AUDIT_TABLE)
-		.select("*");
+	let query = supabase.from(AUDIT_TABLE).select("*");
 
 	if (requesterRole === "ADMIN") {
 		const trimmedEmail = userEmail?.trim();
-
 		if (trimmedEmail) {
-			const { data: selectedUser, error: selectedUserError } = await supabase
+			const { data: selectedUser } = await supabase
 				.from("Users")
 				.select("userId")
 				.ilike("email", trimmedEmail)
 				.maybeSingle();
 
-			if (selectedUserError) {
-				return { success: false, error: selectedUserError.message };
+			if (selectedUser?.userId) {
+				query = query.or(`userId.eq.${selectedUser.userId},targetId.eq.${selectedUser.userId}`);
+			} else if (trimmedEmail) {
+				return { success: true, data: [] }; 
 			}
-
-			if (!selectedUser?.userId) {
-				return { success: true, data: [] };
-			}
-
-			query = query.or(`userId.eq.${selectedUser.userId},targetId.eq.${selectedUser.userId}`);
 		}
 	} else {
 		query = query.or(`userId.eq.${sessionUserId},targetId.eq.${sessionUserId}`);
 	}
 
 	const { data, error } = await query;
-
-	if (error) { return { success: false, error: error.message }; }
+	if (error) return { success: false, error: error.message };
 
 	const history = (data ?? [])
 		.map((row) => mapAuditRow(row as Record<string, any>))
-		.sort(
-			(a, b) =>
-				new Date(b.timeStamp).getTime() -
-				new Date(a.timeStamp).getTime()
-		);
+		.sort((a, b) => new Date(b.timeStamp).getTime() - new Date(a.timeStamp).getTime());
 
 	const uniqueUserIds = history
 		.flatMap((item) => [item.userId, item.targetId])
 		.filter((id): id is string => Boolean(id));
 
 	const userEmailResult = await getUserEmailMapByIds(uniqueUserIds);
-	if (!userEmailResult.success) {
-		console.warn("Failed to resolve audit emails:", userEmailResult.error);
-		return { success: true, data: history };
-	}
-
-	const emailByUserId = userEmailResult.data ?? {};
+	const emailByUserId = userEmailResult.success ? (userEmailResult.data ?? {}) : {};
 
 	const historyWithEmails = history.map((item) => ({
 		...item,
-		userEmail: emailByUserId[item.userId] ?? "",
-		targetEmail: emailByUserId[item.targetId] ?? "",
+		userEmail: emailByUserId[item.userId] ?? "Unknown",
+		targetEmail: emailByUserId[item.targetId] ?? "Unknown",
 	}));
 
 	return { success: true, data: historyWithEmails };
