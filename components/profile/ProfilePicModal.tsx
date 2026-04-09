@@ -1,23 +1,27 @@
-import { User } from "@/services/auth/auth.types";
-import ProfileAvatar from "@components/profile/ProfileAvatar";
+import ProfilePic from "@components/profile/ProfilePic";
 import { Ionicons } from "@expo/vector-icons";
+import { User } from "@services/auth/auth.types";
 import { Modal, Pressable, Text, TouchableOpacity } from "react-native";
 
-type ProfileAvatarModalProps = {
+type ProfilePicModalProps = {
   visible: boolean;
   user: User | null;
   isUploadingProfilePicture: boolean;
   onClose: () => void;
   onChangeProfilePicture: () => void;
+  onRemoveProfilePicture: () => void;
 };
 
-export default function ProfileAvatarModal({
+export default function ProfilePicModal({
   visible,
   user,
   isUploadingProfilePicture,
   onClose,
   onChangeProfilePicture,
-}: ProfileAvatarModalProps) {
+  onRemoveProfilePicture,
+}: ProfilePicModalProps) {
+  const canRemoveProfilePicture = Boolean(user?.profilePicture);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable className="flex-1 bg-black/70 items-center justify-center" onPress={onClose}>
@@ -34,16 +38,25 @@ export default function ProfileAvatarModal({
             <Ionicons name="close" size={18} color="#ffffff" />
           </TouchableOpacity>
 
-          <ProfileAvatar user={user} isUploadingProfilePicture={isUploadingProfilePicture} size={176} />
+          <ProfilePic user={user} isUploadingProfilePicture={isUploadingProfilePicture} size={176} />
 
+          {/* Change Profile Picture Button */}
           <TouchableOpacity
             className="w-[80%] mt-6 rounded-xl bg-fdm-accent py-3 items-center"
             onPress={onChangeProfilePicture}
             disabled={isUploadingProfilePicture}
           >
             <Text className="text-black font-semibold">
-              {isUploadingProfilePicture ? "Uploading..." : "Change profile picture"}
+              {isUploadingProfilePicture ? "Updating..." : "Change profile picture"}
             </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="w-[80%] mt-3 rounded-xl border border-fdm-fg/20 py-3 items-center disabled:opacity-40"
+            onPress={onRemoveProfilePicture}
+            disabled={isUploadingProfilePicture || !canRemoveProfilePicture}
+          >
+            <Text className="text-fdm-fg font-semibold">Remove profile picture</Text>
           </TouchableOpacity>
 
         </Pressable>

@@ -1,5 +1,6 @@
 import CityModal from "@components/auth/CityModal";
 import BackButton from "@components/ui/BackButton";
+import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { fdmOfficeCitiesByRegion, OfficeCity } from "@lib/office-cities";
@@ -8,12 +9,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 export default function OfficeLocation() {
@@ -91,8 +92,8 @@ export default function OfficeLocation() {
       <StatusBar style="light" />
 
       {/* Decorative Background Elements */}
-      <View className="absolute top-[-100px] right-[-100px] w-72 h-72 bg-fdm-accent/10 rounded-full blur-3xl opacity-50 pointer-events-none" />
-      <View className="absolute bottom-[-100px] left-[-100px] w-96 h-96 bg-fdm-accent/5 rounded-full blur-3xl opacity-40 pointer-events-none" />
+      <BackgroundCircle top={-100} right={-100} size={288} color="#CCFF001A" opacity={0.5} />
+      <BackgroundCircle bottom={-100} left={-100} size={384} color="#CCFF000D" opacity={0.4} />
 
       {/* Header */}
       <View className="pt-10 pb-2 w-full max-w-sm self-center flex-row items-center z-10">

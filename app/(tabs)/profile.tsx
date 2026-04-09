@@ -1,7 +1,8 @@
-import ProfileAvatarModal from "@components/profile/ProfileAvatarModal";
+import ProfilePicModal from "@/components/profile/ProfilePicModal";
 import ProfileCard from "@components/profile/ProfileCard";
 import SettingsModal from "@components/profile/SettingsModal";
 import SignOutButton from "@components/profile/SignOutButton";
+import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { File } from "expo-file-system";
@@ -11,10 +12,12 @@ import { useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function ProfileScreen() {
-  const { user, updateProfilePicture } = useAuth();
+  const { user, updateProfilePicture, removeProfilePicture } = useAuth();
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isUploadingProfilePicture, setIsUploadingProfilePicture] = useState(false);
+  const [isRemovingProfilePicture, setIsRemovingProfilePicture] = useState(false);
   const [isProfilePictureModalVisible, setIsProfilePictureModalVisible] = useState(false);
+  const isProfilePictureBusy = isUploadingProfilePicture || isRemovingProfilePicture;
 
   const handleChangeProfilePicture = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -63,12 +66,41 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleRemoveProfilePicture = () => {
+    if (!user?.profilePicture) {
+      return;
+    }
+
+    Alert.alert(
+      "Remove profile picture?",
+      "This will reset your profile picture to the fallback avatar.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => {
+            setIsRemovingProfilePicture(true);
+            void removeProfilePicture()
+              .then((removeResult) => {
+                if (!removeResult.success) {
+                  Alert.alert("Remove failed", removeResult.error || "Please try again.");
+                }
+              })
+              .finally(() => {
+                setIsRemovingProfilePicture(false);
+              });
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View className="flex-1 bg-fdm-bg">
       <StatusBar style="light" />
 
-      {/* Decorative blob */}
-      <View className="absolute top-0 right-0 w-64 h-64 bg-fdm-accent/10 rounded-full blur-3xl opacity-50 pointer-events-none" />
+      <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
 
       <ScrollView
         className="flex-1"
@@ -97,7 +129,7 @@ export default function ProfileScreen() {
           <ProfileCard
             user={user}
             onPressProfilePicture={() => setIsProfilePictureModalVisible(true)}
-            isUploadingProfilePicture={isUploadingProfilePicture}
+            isUploadingProfilePicture={isProfilePictureBusy}
           />
         </View>
 
@@ -112,12 +144,13 @@ export default function ProfileScreen() {
         onClose={() => setIsSettingsVisible(false)}
       />
 
-      <ProfileAvatarModal
+      <ProfilePicModal
         visible={isProfilePictureModalVisible}
         user={user}
-        isUploadingProfilePicture={isUploadingProfilePicture}
+        isUploadingProfilePicture={isProfilePictureBusy}
         onClose={() => setIsProfilePictureModalVisible(false)}
         onChangeProfilePicture={handleChangeProfilePicture}
+        onRemoveProfilePicture={handleRemoveProfilePicture}
       />
     </View>
   );

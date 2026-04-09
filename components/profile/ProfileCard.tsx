@@ -1,4 +1,4 @@
-import ProfileAvatar from "@components/profile/ProfileAvatar";
+import ProfileAvatar from "@components/profile/ProfilePic";
 import { Ionicons } from "@expo/vector-icons";
 import { User } from "@services/auth/auth.types";
 import { Text, View } from "react-native";
@@ -16,8 +16,8 @@ export default function ProfileCard({
 }: ProfileCardProps) {
   return (
       <View className="pt-3 pb-5 pl-5 mt-4 bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl">
-        <View className="flex-row items-center gap-5 mb-7">
 
+        <View className="flex-row items-center gap-5 mb-7">
           {/* Profile picture */}
           <ProfileAvatar
             user={user}
@@ -25,6 +25,7 @@ export default function ProfileCard({
             isUploadingProfilePicture={isUploadingProfilePicture}
             size={100}
           />
+
           {/* Name and Role */}
           <View className="flex-1">
             <Text className="text-fdm-fg font-bold text-xl">
@@ -51,6 +52,7 @@ export default function ProfileCard({
             <Text className="text-fdm-fg/70 text-sm">{user?.officeLocation || "—"}</Text>
           </View>
         </View>
+
       </View>
   );
 }

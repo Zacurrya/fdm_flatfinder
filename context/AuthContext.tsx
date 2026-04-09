@@ -34,6 +34,8 @@ interface AuthContextType {
     resetPassword: (dto: PasswordResetDTO) => Promise<AuthResponse>;
     // Upload and persist a new profile picture for the current user
     updateProfilePicture: (upload: ProfilePictureUploadDTO) => Promise<AuthResponse<string>>;
+    // Remove the current profile picture and fallback to generated avatar
+    removeProfilePicture: () => Promise<AuthResponse>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -146,6 +148,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return result;
     };
 
+    const removeProfilePicture = async (): Promise<AuthResponse> => {
+        if (!session?.user?.id) {
+            return { success: false, error: "No active session." };
+        }
+
+        const result = await UserController.removeProfilePicture(session.user.id);
+        if (result.success) {
+            setUser((prev) => {
+                if (!prev) {
+                    return prev;
+                }
+                return { ...prev, profilePicture: null };
+            });
+        }
+
+        return result;
+    };
+
     return (
         <AuthContext.Provider
             value={{
@@ -158,6 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 logout,
                 resetPassword,
                 updateProfilePicture,
+                removeProfilePicture,
             }}
         >
             {children}

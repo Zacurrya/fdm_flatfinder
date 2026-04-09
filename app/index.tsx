@@ -1,3 +1,4 @@
+import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -10,8 +11,8 @@ export default function Index() {
     <View className="flex-1 bg-fdm-bg items-center justify-center p-6">
       <StatusBar style="light" />
       {/* Background decorations */}
-      <View className="absolute top-0 right-0 w-64 h-64 bg-fdm-accent/10 rounded-full dark:bg-fdm-accent/20 blur-3xl opacity-50" />
-      <View className="absolute bottom-10 left-0 w-72 h-72 bg-fdm-accent/5 rounded-full dark:bg-fdm-accent/10 blur-3xl opacity-50" />
+      <BackgroundCircle top={0} right={0} size={256} color="#CCFF001A" darkColor="#CCFF0033" opacity={0.5} />
+      <BackgroundCircle bottom={40} left={0} size={288} color="#CCFF000D" darkColor="#CCFF001A" opacity={0.5} />
 
       <View className="items-center w-full max-w-sm z-10 mt-12">
         {/* FDM Logo */}

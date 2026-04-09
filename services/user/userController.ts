@@ -29,3 +29,13 @@ export const uploadProfilePicture = async (
 
     return UserService.uploadProfilePicture(authUserId, upload);
 };
+
+export const removeProfilePicture = async (
+    authUserId: string
+): Promise<AuthResponse> => {
+    if (!authUserId) {
+        return { success: false, error: "User ID is required." };
+    }
+
+    return UserService.removeProfilePicture(authUserId);
+};

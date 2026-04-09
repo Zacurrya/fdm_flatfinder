@@ -3,6 +3,7 @@ import AdminTabs from "@components/admin/AdminTabs";
 import AdminValidationRequests from "@components/admin/AdminValidationRequests";
 import useAdminUserDecision from "@components/admin/useAdminUserDecision";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
+import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as AuditController from "@services/audit/auditController";
@@ -121,7 +122,7 @@ export default function AdminScreen() {
     <View className="flex-1 bg-fdm-bg">
       <StatusBar style="light" />
 
-      <View className="absolute top-0 right-0 w-64 h-64 bg-fdm-accent/10 rounded-full blur-3xl opacity-50 pointer-events-none" />
+      <BackgroundCircle top={0} right={0} size={256} color="#CCFF001A" opacity={0.5} />
 
       <View className="pt-16 pb-4 px-6 z-10">
         <Text className="text-fdm-fg text-2xl tracking-tighter" style={{ fontFamily: "Michroma_400Regular" }}>

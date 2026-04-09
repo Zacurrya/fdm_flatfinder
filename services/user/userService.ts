@@ -41,6 +41,52 @@ export type ResolvedProfilePictureSource = {
     directUrl: string | null;
 };
 
+export type ProfilePictureFallbackOptions = {
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    size?: number;
+};
+
+export type GetProfilePictureUrlOptions = ProfilePictureFallbackOptions & {
+    profilePicture?: string | null;
+    expiresInSeconds?: number;
+};
+
+function getFallbackProfilePictureName(options: ProfilePictureFallbackOptions = {}): string {
+    const fullName = `${options.firstName ?? ""} ${options.lastName ?? ""}`.trim();
+    if (fullName) {
+        return fullName;
+    }
+
+    const emailDisplayName = options.email?.split("@")[0]?.replace(/[._-]+/g, " ")?.trim();
+    if (emailDisplayName) {
+        return emailDisplayName;
+    }
+
+    return "User";
+}
+
+export function getFallbackProfilePictureInitials(options: ProfilePictureFallbackOptions = {}): string {
+    const fallbackName = getFallbackProfilePictureName(options);
+    const parts = fallbackName
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2);
+
+    const initials = parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
+
+    return initials || "U";
+}
+
+export function getFallbackProfilePictureUrl(options: ProfilePictureFallbackOptions = {}): string {
+    const fallbackName = getFallbackProfilePictureName(options);
+    const requestedSize = options.size ?? 64;
+    const avatarSize = Math.max(128, requestedSize * 2);
+
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&size=${avatarSize}&background=ccff00&color=1b1b1b&bold=true&format=png`;
+}
+
 export function resolveProfilePictureSource(
     profilePicture?: string | null
 ): ResolvedProfilePictureSource {
@@ -78,16 +124,22 @@ export function resolveProfilePictureSource(
 }
 
 export const getProfilePictureUrl = async (
-    profilePicture?: string | null,
-    expiresInSeconds = 60 * 60
-): Promise<string | null> => {
+    options: GetProfilePictureUrlOptions = {}
+): Promise<string> => {
+    const {
+        profilePicture,
+        expiresInSeconds = 60 * 60,
+        ...fallbackOptions
+    } = options;
+
+    const fallbackUrl = getFallbackProfilePictureUrl(fallbackOptions);
     const source = resolveProfilePictureSource(profilePicture);
     if (source.directUrl) {
         return source.directUrl;
     }
 
     if (!source.path) {
-        return null;
+        return fallbackUrl;
     }
 
     const cachedUrl = getCachedProfilePictureUrl(source.path);
@@ -100,7 +152,7 @@ export const getProfilePictureUrl = async (
         .createSignedUrl(source.path, expiresInSeconds);
 
     if (error || !data?.signedUrl) {
-        return null;
+        return fallbackUrl;
     }
 
     setCachedProfilePictureUrl(source.path, data.signedUrl, expiresInSeconds);
@@ -208,6 +260,50 @@ export const uploadProfilePicture = async (
         return { success: true, data: filePath };
     } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown upload error.";
+
+        return { success: false, error: message };
+    }
+};
+
+export const removeProfilePicture = async (
+    authUserId: string
+): Promise<AuthResponse> => {
+    try {
+        const { data: existingProfile, error: existingProfileError } = await supabase
+            .from("Users")
+            .select("profilePicture")
+            .eq("userId", authUserId)
+            .single();
+
+        if (existingProfileError) {
+            return { success: false, error: existingProfileError.message };
+        }
+
+        const oldPath = resolveProfilePictureSource(existingProfile?.profilePicture).path;
+        if (oldPath) {
+            const { error: removeOldImageError } = await supabase.storage
+                .from(PROFILE_PICTURE_BUCKET)
+                .remove([oldPath]);
+
+            if (removeOldImageError && !/not found/i.test(removeOldImageError.message)) {
+                return { success: false, error: removeOldImageError.message };
+            }
+
+            profilePictureUrlCache.delete(oldPath);
+        }
+
+        const { error: updateError } = await supabase
+            .from("Users")
+            .update({ profilePicture: null })
+            .eq("userId", authUserId);
+
+        if (updateError) {
+            return { success: false, error: updateError.message };
+        }
+
+        return { success: true };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown remove profile picture error.";
 
         return { success: false, error: message };
     }

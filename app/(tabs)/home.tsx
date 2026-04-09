@@ -1,5 +1,6 @@
 import HomeHeader from "@components/home/HomeHeader";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
+import BackgroundCircle from "@components/ui/BackgroundCircle";
 import ListingCard, { ListingCardData } from "@components/ui/ListingCard";
 import { useAuth } from "@context/AuthContext";
 import { StatusBar } from "expo-status-bar";
@@ -31,8 +32,7 @@ export default function HomeScreen() {
     <View className="flex-1 bg-fdm-bg">
       <StatusBar style="light" />
 
-      {/* Decorative blobs */}
-      <View className="absolute top-0 right-0 w-64 h-64 bg-fdm-accent/10 rounded-full blur-3xl opacity-50 pointer-events-none" />
+      <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
 
       <ScrollView
         className="flex-1"
