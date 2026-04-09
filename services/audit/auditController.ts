@@ -5,15 +5,11 @@ import {
     AuditResponse,
 } from "./auditTypes";
 
+// Logs an audit entry for a specific action and target.
 export const logAudit = async (
-	userId: string, 
 	actionType: ActionType,
 	targetId: string
 ): Promise<AuditResponse<AuditLog>> => {
-
-	if (!userId) {
-		return { success: false, error: "User ID is required." };
-	}
 	if (!targetId) {
 		return { success: false, error: "Target ID is required." };
 	}
@@ -21,9 +17,10 @@ export const logAudit = async (
 		return { success: false, error: "Action type is required." };
 	}
 
-	return AuditService.logAudit(userId, actionType, targetId);
+	return AuditService.logAudit(actionType, targetId);
 };
 
+// Gets audit history for a defined user.
 export const getHistory = async (
 	userEmail?: string
 ): Promise<AuditResponse<AuditLog[]>> => {

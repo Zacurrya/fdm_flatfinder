@@ -2,25 +2,21 @@ export type ActionType =
   | "USER_APPROVED"
   | "USER_DENIED"
   | "USER_BANNED"
-  | "MESSAGE_DELETED"
-  | "LOGIN_ATTEMPT"     
-  | "PASSWORD_RESET";    
+  | "MESSAGE_DELETED";
 
 export interface AuditLogDTO {
-  adminId: string;       
+  userId: string;
   targetId: string;
   actionType: ActionType;
-  details?: string;      
 }
 
 export interface AuditLog {
   auditId: number | string;
-  adminId: string;
+  userId: string;
   targetId: string;
-  adminEmail?: string;   
+  userEmail?: string;
   targetEmail?: string;
   actionType: ActionType;
-  details?: string;      
   timeStamp: string;
 }
 
