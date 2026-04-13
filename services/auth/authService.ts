@@ -9,6 +9,30 @@ import {
 } from "@services/auth/auth.types";
 import { Session } from "@supabase/supabase-js";
 
+const AUDIT_TABLE = "AuditLogs";
+
+const createUserDecisionAudit = async (
+    actionType: "USER_APPROVED" | "USER_DENIED",
+    targetId: string
+): Promise<AuthResponse> => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const actorUserId = sessionData?.session?.user?.id;
+
+    if (!actorUserId) {
+        return { success: false, error: "No authenticated user available for audit logging." };
+    }
+
+    const { error } = await supabase
+        .from(AUDIT_TABLE)
+        .insert({ actionType, userId: actorUserId, targetId });
+
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    return { success: true };
+};
+
 // Register 
 
 // Creates a Supabase auth account, then inserts a profile row into the Users
@@ -152,6 +176,11 @@ export const approveUser = async (
         return { success: false, error: error.message };
     }
 
+    const auditResult = await createUserDecisionAudit("USER_APPROVED", dto.userId);
+    if (!auditResult.success) {
+        return auditResult;
+    }
+
     return { success: true };
 };
 
@@ -168,6 +197,11 @@ export const rejectUser = async (
 
     if (error) {
         return { success: false, error: error.message };
+    }
+
+    const auditResult = await createUserDecisionAudit("USER_DENIED", dto.userId);
+    if (!auditResult.success) {
+        return auditResult;
     }
 
     return { success: true };

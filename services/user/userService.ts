@@ -308,3 +308,19 @@ export const removeProfilePicture = async (
         return { success: false, error: message };
     }
 };
+
+export const requestOfficeLocationChange = async (
+    authUserId: string,
+    officeLocation: string
+): Promise<AuthResponse> => {
+    const { error } = await supabase
+        .from("Users")
+        .update({ officeLocation, approvalStatus: "PENDING" })
+        .eq("userId", authUserId);
+
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    return { success: true };
+};

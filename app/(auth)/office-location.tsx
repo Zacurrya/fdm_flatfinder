@@ -1,13 +1,11 @@
-import CityModal from "@components/auth/CityModal";
 import BackButton from "@components/ui/BackButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
+import OfficeLocationSelector from "@components/ui/OfficeLocationSelector";
 import { useAuth } from "@context/AuthContext";
-import { Ionicons } from "@expo/vector-icons";
-import { fdmOfficeCitiesByRegion, OfficeCity } from "@lib/office-cities";
-import { Image } from "expo-image";
+import { OfficeCity } from "@lib/office-cities";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -32,27 +30,13 @@ export default function OfficeLocation() {
 
   const [selectedCity, setSelectedCity] = useState<OfficeCity | null>(null);
   const [selectedRegion, setSelectedRegion] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const selectedCityFlagUrl = selectedCity
-    ? `https://flagsapi.com/${selectedCity.countryCode.toUpperCase()}/flat/32.png`
-    : null;
-
-  const selectedLabel = useMemo(() => {
-    if (!selectedCity) {
-      return "Choose your city";
-    }
-
-    return `${selectedCity.name} (${selectedRegion})`;
-  }, [selectedCity, selectedRegion]);
 
   const handleSelectCity = (region: string, city: OfficeCity) => {
     setSelectedRegion(region);
     setSelectedCity(city);
     setErrorMessage("");
-    setIsDropdownOpen(false);
   };
 
   const handleCompleteSignup = async () => {
@@ -110,28 +94,13 @@ export default function OfficeLocation() {
           </Text>
         </View>
 
-        <View className="w-full gap-3">
-          <Text className="text-fdm-fg/80 font-medium mb-2 ml-1 text-sm uppercase tracking-wider">
-            City
-          </Text>
-          <TouchableOpacity
-            className="h-17 bg-fdm-fg/5 border-[1.5px] border-fdm-fg/10 rounded-2xl px-4 py-3 flex-row items-center justify-between"
-            onPress={() => setIsDropdownOpen(true)}
-            activeOpacity={0.8}
-            disabled={isSubmitting}
-          >
-            <View className="flex-row items-center gap-2.5 flex-1 pr-3">
-              {selectedCityFlagUrl ? (
-                <Image source={{ uri: selectedCityFlagUrl }} style={{ width: 22, height: 22 }} contentFit="contain" />
-              ) : null}
-              <Text className={`${selectedCity ? "text-fdm-fg" : "text-fdm-fg/50"} text-base flex-1`} numberOfLines={1}>
-                {selectedLabel}
-              </Text>
-            </View>
-            <Ionicons name="chevron-down" size={20} color="#ffffff80" />
-          </TouchableOpacity>
-          {errorMessage ? <Text className="text-red-400 text-sm mt-1">{errorMessage}</Text> : null}
-        </View>
+        <OfficeLocationSelector
+          selectedCity={selectedCity}
+          selectedRegion={selectedRegion}
+          onSelectCity={handleSelectCity}
+          disabled={isSubmitting}
+          errorMessage={errorMessage}
+        />
 
         <TouchableOpacity
           className="w-2/3 self-center bg-fdm-accent py-4 rounded-2xl items-center shadow-lg shadow-fdm-accent/20 active:opacity-80 transition-opacity mt-8"
@@ -145,14 +114,6 @@ export default function OfficeLocation() {
           )}
         </TouchableOpacity>
       </View>
-
-      <CityModal
-        visible={isDropdownOpen}
-        citiesByRegion={fdmOfficeCitiesByRegion}
-        selectedCityName={selectedCity?.name ?? ""}
-        onSelectCity={handleSelectCity}
-        onClose={() => setIsDropdownOpen(false)}
-      />
     </KeyboardAvoidingView>
   );
 }

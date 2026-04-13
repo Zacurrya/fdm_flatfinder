@@ -10,6 +10,8 @@ type AuditHistoryTableProps = {
   onChangeSearchEmail: (value: string) => void;
   onSearch: () => void;
   onShowAll: () => void;
+  onRefresh: () => void;
+  isRefreshing?: boolean;
 };
 
 export default function AuditHistoryTable({
@@ -20,6 +22,8 @@ export default function AuditHistoryTable({
   onChangeSearchEmail,
   onSearch,
   onShowAll,
+  onRefresh,
+  isRefreshing = false,
 }: AuditHistoryTableProps) {
   const [revealedIds, setRevealedIds] = useState<Record<string, boolean>>({});
   const { width } = useWindowDimensions();
@@ -53,6 +57,15 @@ export default function AuditHistoryTable({
           onPress={onShowAll}
         >
           <Text className="text-fdm-fg/80 font-semibold text-xs uppercase">All</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="h-12 px-4 rounded-xl border border-fdm-fg/20 items-center justify-center"
+          onPress={onRefresh}
+          disabled={isRefreshing || isLoading}
+        >
+          <Text className="text-fdm-fg/80 font-semibold text-xs uppercase">
+            {isRefreshing || isLoading ? "Refreshing" : "Refresh"}
+          </Text>
         </TouchableOpacity>
       </View>
 

@@ -39,3 +39,18 @@ export const removeProfilePicture = async (
 
     return UserService.removeProfilePicture(authUserId);
 };
+
+export const requestOfficeLocationChange = async (
+    authUserId: string,
+    officeLocation: string
+): Promise<AuthResponse> => {
+    if (!authUserId) {
+        return { success: false, error: "User ID is required." };
+    }
+
+    if (!officeLocation.trim()) {
+        return { success: false, error: "Office location is required." };
+    }
+
+    return UserService.requestOfficeLocationChange(authUserId, officeLocation.trim());
+};

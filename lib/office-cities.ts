@@ -8,6 +8,11 @@ export type RegionCities = {
   cities: OfficeCity[];
 };
 
+export type OfficeCitySelection = {
+  region: string;
+  city: OfficeCity;
+};
+
 export const fdmOfficeCitiesByRegion: RegionCities[] = [
   {
     region: "Europe",
@@ -58,3 +63,19 @@ export const fdmOfficeCitiesByRegion: RegionCities[] = [
     cities: [{ name: "Germiston", countryCode: "ZA" }],
   },
 ];
+
+export function findOfficeCityByName(cityName: string): OfficeCitySelection | null {
+  const normalizedCityName = cityName.trim().toLowerCase();
+  if (!normalizedCityName) {
+    return null;
+  }
+
+  for (const group of fdmOfficeCitiesByRegion) {
+    const city = group.cities.find((candidate) => candidate.name.toLowerCase() === normalizedCityName);
+    if (city) {
+      return { region: group.region, city };
+    }
+  }
+
+  return null;
+}

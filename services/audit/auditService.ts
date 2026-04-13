@@ -29,21 +29,24 @@ export const logAudit = async (
 		return { success: false, error: "No authenticated user available for audit logging." };
 	}
 
-	const { data, error } = await supabase
+	const { error } = await supabase
 		.from(AUDIT_TABLE)
-		.insert({ actionType: action, userId, targetId })
-		.select("*")
-		.single();
+		.insert({ actionType: action, userId, targetId });
 
 	if (error) {
 		return { success: false, error: error.message };
 	}
 
-	if (!data) {
-		return { success: false, error: "Failed to create audit entry." };
-	}
-
-	return { success: true, data: mapAuditRow(data as Record<string, any>) };
+	return {
+		success: true,
+		data: {
+			auditId: `local-${Date.now()}`,
+			userId,
+			targetId,
+			actionType: action,
+			timeStamp: new Date().toISOString(),
+		},
+	};
 };
 
 export const getHistory = async (
