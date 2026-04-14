@@ -2,7 +2,13 @@ export type ActionType =
   | "USER_APPROVED"
   | "USER_DENIED"
   | "USER_BANNED"
-  | "MESSAGE_DELETED";
+  | "MESSAGE_DELETED"
+  | "SIGN_UP_REQUESTED"
+  | "SIGN_UP_APPROVED"
+  | "SIGN_UP_DENIED"
+  | "CITY_CHANGE_REQUESTED"
+  | "CITY_CHANGE_APPROVED"
+  | "CITY_CHANGE_DENIED";
 
 export interface AuditLogDTO {
   userId: string;

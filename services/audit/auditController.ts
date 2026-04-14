@@ -20,13 +20,7 @@ export const logAudit = async (
 	return AuditService.logAudit(actionType, targetId);
 };
 
-// Gets audit history for a defined user.
-export const getHistory = async (
-	userEmail?: string
-): Promise<AuditResponse<AuditLog[]>> => {
-	if (userEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail.trim())) {
-		return { success: false, error: "Enter a valid email address." };
-	}
-
-	return AuditService.getHistory(userEmail?.trim());
+// Gets all audit history.
+export const getHistory = async (): Promise<AuditResponse<AuditLog[]>> => {
+	return AuditService.getHistory();
 };

@@ -9,10 +9,11 @@ import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 
 export default function ProfileScreen() {
   const { user, updateProfilePicture, removeProfilePicture } = useAuth();
+  const { width, height } = useWindowDimensions();
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isUploadingProfilePicture, setIsUploadingProfilePicture] = useState(false);
   const [isRemovingProfilePicture, setIsRemovingProfilePicture] = useState(false);
@@ -98,7 +99,7 @@ export default function ProfileScreen() {
 
   return (
     <View className="flex-1 bg-fdm-bg">
-      <StatusBar style="light" />
+      <StatusBar style="light" hidden={width > height} />
 
       <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
 
@@ -108,7 +109,7 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="pt-16 pb-4 px-6 z-10 flex-row items-center justify-between">
+        <View className={`${width > height ? "pt-6" : "pt-16"} pb-4 px-6 z-10 flex-row items-center justify-between`}>
           <Text
             className="text-fdm-fg text-2xl tracking-tighter"
             style={{ fontFamily: "Michroma_400Regular" }}

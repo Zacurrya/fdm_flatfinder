@@ -1,5 +1,6 @@
 import { User } from "@services/auth/auth.types";
 import * as AuthController from "@services/auth/authController";
+import * as AuditController from "@services/audit/auditController";
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 

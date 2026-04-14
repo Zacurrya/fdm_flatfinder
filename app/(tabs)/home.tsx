@@ -4,7 +4,7 @@ import BackgroundCircle from "@components/ui/BackgroundCircle";
 import ListingCard, { ListingCardData } from "@components/ui/ListingCard";
 import { useAuth } from "@context/AuthContext";
 import { StatusBar } from "expo-status-bar";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 
 const PLACEHOLDER_LISTINGS: ListingCardData[] = [
   { id: 1, title: "Modern Studio", location: "Canary Wharf, London", price: "£1,850/mo", beds: 1, baths: 1 },
@@ -13,6 +13,7 @@ const PLACEHOLDER_LISTINGS: ListingCardData[] = [
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { width, height } = useWindowDimensions();
   const cityName = user?.officeLocation || "home";
 
   if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
@@ -30,7 +31,7 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-fdm-bg">
-      <StatusBar style="light" />
+      <StatusBar style="light" hidden={width > height} />
 
       <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
 

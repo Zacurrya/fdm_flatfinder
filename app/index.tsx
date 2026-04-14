@@ -2,19 +2,20 @@ import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 
 export default function Index() {
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
 
   return (
     <View className="flex-1 bg-fdm-bg items-center justify-center p-6">
-      <StatusBar style="light" />
+      <StatusBar style="light" hidden={width > height} />
       {/* Background decorations */}
       <BackgroundCircle top={0} right={0} size={256} color="#CCFF001A" darkColor="#CCFF0033" opacity={0.5} />
       <BackgroundCircle bottom={40} left={0} size={288} color="#CCFF000D" darkColor="#CCFF001A" opacity={0.5} />
 
-      <View className="items-center w-full max-w-sm z-10 mt-12">
+      <View className={`items-center w-full max-w-sm z-10 ${width > height ? "mt-4" : "mt-12"}`}>
         {/* FDM Logo */}
         <Image
           source={require("../assets/images/logo.svg")}

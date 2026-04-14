@@ -76,6 +76,25 @@ export const register = async (
         return { success: false, error: `Failed to create user profile: ${insertError.message}` };
     }
 
+    // 3. Create a SIGN_UP request for admin tracking
+    const { error: requestError } = await supabase.from("Requests").insert({
+        userId: authUserId,
+        requestType: "SIGN_UP" as const,
+        status: "PENDING" as const,
+        newCity: dto.officeLocation,
+    });
+
+    if (requestError) {
+        console.warn("Failed to create sign-up request:", requestError.message);
+    }
+
+    // 4. Audit the sign-up request creation
+    await supabase.from("AuditLogs").insert({
+        actionType: "SIGN_UP_REQUESTED",
+        userId: authUserId,
+        targetId: authUserId,
+    });
+
     return { success: true };
 };
 

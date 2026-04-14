@@ -1,16 +1,19 @@
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const insets = useSafeAreaInsets();
-  const tabBarTopPadding = 10;
-  const tabBarBottomPadding = Math.max(insets.bottom, 12);
-  const tabBarContentHeight = 50;
-  const iconSizeOffset = 2;
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  const tabBarTopPadding = isLandscape ? 6 : 10;
+  const tabBarBottomPadding = Math.max(insets.bottom, isLandscape ? 8 : 12);
+  const tabBarContentHeight = isLandscape ? 40 : 50;
+  const iconSizeOffset = isLandscape ? 0 : 2;
   const tabIconSize = (size?: number) => (size ?? 24) + iconSizeOffset;
   const tabBackgroundColor = "#222222";
   const tabBorderColor = "#ffffff15";
@@ -26,13 +29,14 @@ export default function TabsLayout() {
           borderTopColor: tabBorderColor,
           borderTopWidth: 1,
           height: tabBarContentHeight + tabBarTopPadding + tabBarBottomPadding,
-          paddingBottom: tabBarBottomPadding * 2.5,
+          paddingBottom: isLandscape ? tabBarBottomPadding : tabBarBottomPadding * 2.5,
           paddingTop: tabBarTopPadding,
         },
         tabBarActiveTintColor: tabActiveColor,
         tabBarInactiveTintColor: tabInactiveColor,
         tabBarLabelStyle: {
           fontWeight: "600",
+          fontSize: isLandscape ? 10 : 12,
           letterSpacing: 0.5,
         },
       }}

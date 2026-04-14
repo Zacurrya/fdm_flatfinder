@@ -53,6 +53,57 @@ export type Database = {
           },
         ]
       }
+      Requests: {
+        Row: {
+          id: number
+          userId: string | null
+          requestType: Database["public"]["Enums"]["RequestType"]
+          status: Database["public"]["Enums"]["RequestStatus"]
+          oldCity: string | null
+          newCity: string | null
+          reviewedBy: string | null
+          reviewedAt: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          userId?: string | null
+          requestType: Database["public"]["Enums"]["RequestType"]
+          status?: Database["public"]["Enums"]["RequestStatus"]
+          oldCity?: string | null
+          newCity?: string | null
+          reviewedBy?: string | null
+          reviewedAt?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          userId?: string | null
+          requestType?: Database["public"]["Enums"]["RequestType"]
+          status?: Database["public"]["Enums"]["RequestStatus"]
+          oldCity?: string | null
+          newCity?: string | null
+          reviewedBy?: string | null
+          reviewedAt?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Requests_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "Requests_reviewedBy_fkey"
+            columns: ["reviewedBy"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       Users: {
         Row: {
           approvalStatus: Database["public"]["Enums"]["ApprovalStatus"] | null
@@ -123,6 +174,12 @@ export type Database = {
         | "USER_DENIED"
         | "USER_BANNED"
         | "MESSAGE_DELETED"
+        | "SIGN_UP_REQUESTED"
+        | "SIGN_UP_APPROVED"
+        | "SIGN_UP_DENIED"
+        | "CITY_CHANGE_REQUESTED"
+        | "CITY_CHANGE_APPROVED"
+        | "CITY_CHANGE_DENIED"
       ApprovalStatus: "PENDING" | "APPROVED" | "REJECTED"
       PropertyType:
         | "FLAT"
@@ -130,6 +187,8 @@ export type Database = {
         | "TERRACEDHOUSE"
         | "SEMIDETACHED"
         | "DETACHED"
+      RequestType: "SIGN_UP" | "CITY_CHANGE"
+      RequestStatus: "PENDING" | "APPROVED" | "REJECTED"
       Role: "ADMIN" | "CONSULTANT"
     }
     CompositeTypes: {
@@ -263,6 +322,12 @@ export const Constants = {
         "USER_DENIED",
         "USER_BANNED",
         "MESSAGE_DELETED",
+        "SIGN_UP_REQUESTED",
+        "SIGN_UP_APPROVED",
+        "SIGN_UP_DENIED",
+        "CITY_CHANGE_REQUESTED",
+        "CITY_CHANGE_APPROVED",
+        "CITY_CHANGE_DENIED",
       ],
       ApprovalStatus: ["PENDING", "APPROVED", "REJECTED"],
       PropertyType: [
@@ -272,6 +337,8 @@ export const Constants = {
         "SEMIDETACHED",
         "DETACHED",
       ],
+      RequestType: ["SIGN_UP", "CITY_CHANGE"],
+      RequestStatus: ["PENDING", "APPROVED", "REJECTED"],
       Role: ["ADMIN", "CONSULTANT"],
     },
   },

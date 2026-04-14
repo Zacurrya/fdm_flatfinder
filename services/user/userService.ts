@@ -313,14 +313,55 @@ export const requestOfficeLocationChange = async (
     authUserId: string,
     officeLocation: string
 ): Promise<AuthResponse> => {
-    const { error } = await supabase
+    // Fetch the current office location (old city)
+    const { data: profile, error: profileError } = await supabase
         .from("Users")
-        .update({ officeLocation, approvalStatus: "PENDING" })
-        .eq("userId", authUserId);
+        .select("officeLocation")
+        .eq("userId", authUserId)
+        .single();
 
-    if (error) {
-        return { success: false, error: error.message };
+    if (profileError || !profile) {
+        return { success: false, error: "Failed to fetch current profile." };
     }
+
+    const oldCity = profile.officeLocation ?? "";
+
+    if (oldCity.toLowerCase() === officeLocation.toLowerCase()) {
+        return { success: false, error: "New city must be different from your current city." };
+    }
+
+    // Check for existing pending city change request
+    const { data: existingPending } = await supabase
+        .from("Requests")
+        .select("id")
+        .eq("userId", authUserId)
+        .eq("requestType", "CITY_CHANGE")
+        .eq("status", "PENDING")
+        .limit(1);
+
+    if (existingPending && existingPending.length > 0) {
+        return { success: false, error: "You already have a pending city change request." };
+    }
+
+    // Create the city change request
+    const { error: requestError } = await supabase.from("Requests").insert({
+        userId: authUserId,
+        requestType: "CITY_CHANGE" as const,
+        status: "PENDING" as const,
+        oldCity,
+        newCity: officeLocation,
+    });
+
+    if (requestError) {
+        return { success: false, error: requestError.message };
+    }
+
+    // Audit the city change request creation
+    await supabase.from("AuditLogs").insert({
+        actionType: "CITY_CHANGE_REQUESTED",
+        userId: authUserId,
+        targetId: authUserId,
+    });
 
     return { success: true };
 };

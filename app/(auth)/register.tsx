@@ -4,10 +4,11 @@ import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
+import { KeyboardAvoidingView, Platform, View, useWindowDimensions } from "react-native";
 
 export default function Register() {
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -181,14 +182,14 @@ export default function Register() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-fdm-bg p-6"
     >
-      <StatusBar style="light" />
+      <StatusBar style="light" hidden={width > height} />
 
       {/* Decorative Background Elements */}
       <BackgroundCircle top={-100} right={-100} size={288} color="#CCFF001A" opacity={0.5} />
       <BackgroundCircle bottom={-100} left={-100} size={384} color="#CCFF000D" opacity={0.4} />
 
       {/* Header */}
-      <View className="pt-10 pb-2 w-full max-w-sm self-center flex-row items-center z-10">
+      <View className={`${width > height ? "pt-4" : "pt-10"} pb-2 w-full max-w-sm self-center flex-row items-center z-10`}>
         <BackButton />
       </View>
 
