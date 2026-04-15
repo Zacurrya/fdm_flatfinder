@@ -1,4 +1,3 @@
-}
 import HomeHeader from "@components/home/HomeHeader";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
