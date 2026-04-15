@@ -25,9 +25,23 @@ function AppShell() {
 
   const rawSegments = segments as string[];
   const inTabsGroup = rawSegments[0] === "(tabs)";
+  const isListingDetail = rawSegments[0] === "listing";
+  
+  // We should redirect to Home if they are authenticated and on the landing page OR an auth screen (like login/register)
+  const isAtLandingOrAuth = 
+    rawSegments.length === 0 || 
+    rawSegments[0] === "" || 
+    rawSegments[0] === "index" ||
+    rawSegments[0] === "(auth)";
+
   const isAuthenticated = Boolean(session && user);
-  const shouldRedirectToHome = !isLoading && isAuthenticated && !inTabsGroup;
-  const shouldRedirectToLanding = !isLoading && !isAuthenticated && inTabsGroup;
+
+  // FIXED: Only redirect to Home if authenticated and sitting on Landing/Auth screens
+  const shouldRedirectToHome = !isLoading && isAuthenticated && isAtLandingOrAuth;
+
+  // FIXED: Redirect to Landing if trying to access TABS or LISTINGS while not logged in
+  const shouldRedirectToLanding = !isLoading && !isAuthenticated && (inTabsGroup || isListingDetail);
+  
   const isRouteReady = !shouldRedirectToHome && !shouldRedirectToLanding;
 
   useEffect(() => {
