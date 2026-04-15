@@ -51,6 +51,16 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="add_listing"
+        options={{
+          tabBarLabel: "Add",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" size={tabIconSize(size)} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="search/index"
         options={{
           tabBarLabel: "Search",
