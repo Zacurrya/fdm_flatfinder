@@ -161,6 +161,57 @@ export type Database = {
         }
         Relationships: []
       }
+            Listings: {
+        Row: {
+          baths?: number
+          beds?: number
+          created_at: string
+          id: number
+          location: string
+          photos?: string[]
+          price: number
+          propertyType: Database["public"]["Enums"]["PropertyType"]
+          rentPeriod: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          title: string
+          userId: string
+        }
+        Insert: {
+          baths?: number
+          beds?: number
+          created_at?: string
+          id?: number
+          location: string
+          photos?: string[]
+          price: number
+          propertyType: Database["public"]["Enums"]["PropertyType"]
+          rentPeriod: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          title: string
+          userId: string
+        }
+        Update: {
+          baths?: number
+          beds?: number
+          created_at?: string
+          id?: number
+          location?: string
+          photos?: string[]
+          price?: number
+          propertyType?: Database["public"]["Enums"]["PropertyType"]
+          rentPeriod?: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          title?: string
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Listings_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+
     }
     Views: {
       [_ in never]: never
