@@ -127,16 +127,20 @@ export default function HomeScreen() {
                     const isFaved = favIds.includes(lId);
 
                     if (isFaved) {
+                      // Optimistically update UI instantly
                       setFavIds(prev => prev.filter(id => id !== lId));
-                      // We don't rollback list blindly, but log error
+                      setListings(prev => prev.filter(l => Number(l.id) !== lId));
+                      
                       const { removeFavourite } = await import("../../services/user/userService");
                       const res = await removeFavourite(user.userId, lId);
+                      
                       if (!res.success) {
                          console.error("Unfavourite failed on Home:", res.error);
-                         // Note: We'd ideally rollback UI but for home screen filtering, we log it for now
-                      } else {
-                         setListings(prev => prev.filter(l => l.id !== lId));
                       }
+                      
+                      // Explicitly refresh the entire home page as requested
+                      setLoading(true);
+                      loadListings(true);
                     }
                   }}
                   onPress={() => router.push(`/listing/${listing.id}`)}
