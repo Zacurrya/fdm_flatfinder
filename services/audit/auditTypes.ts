@@ -8,7 +8,11 @@ export type ActionType =
   | "SIGN_UP_DENIED"
   | "CITY_CHANGE_REQUESTED"
   | "CITY_CHANGE_APPROVED"
-  | "CITY_CHANGE_DENIED";
+  | "CITY_CHANGE_DENIED"
+  | "CITY_CHANGED"
+  | "LISTING_UPLOAD_REQUESTED"
+  | "LISTING_UPLOAD_APPROVED"
+  | "LISTING_UPLOAD_DENIED";
 
 export interface AuditLogDTO {
   userId: string;

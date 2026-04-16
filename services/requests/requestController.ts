@@ -25,14 +25,27 @@ export const createRequest = async (
         }
     }
 
-    // Check for existing pending request of same type
-    const pendingCheck = await RequestService.hasPendingRequest(dto.userId, dto.requestType);
+    if (dto.requestType === "LISTING_UPLOAD") {
+        if (!dto.listingId || Number(dto.listingId) <= 0) {
+            return { success: false, error: "Listing ID is required for a listing upload request." };
+        }
+    }
+
+    // Check for existing pending request.
+    const pendingCheck = await RequestService.hasPendingRequest(
+        dto.userId,
+        dto.requestType,
+        dto.requestType === "LISTING_UPLOAD" ? Number(dto.listingId) : undefined
+    );
     if (pendingCheck.success && pendingCheck.data) {
         return {
             success: false,
-            error: dto.requestType === "CITY_CHANGE"
-                ? "You already have a pending city change request."
-                : "You already have a pending sign-up request.",
+            error:
+                dto.requestType === "CITY_CHANGE"
+                    ? "You already have a pending city change request."
+                    : dto.requestType === "LISTING_UPLOAD"
+                        ? "This listing already has a pending upload request."
+                        : "You already have a pending sign-up request.",
         };
     }
 

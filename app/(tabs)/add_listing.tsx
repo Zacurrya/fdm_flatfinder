@@ -86,7 +86,10 @@ export default function AddListingScreen() {
       };
 
       await createListing(newListing, city, address);
-      Alert.alert("Success", "Your property listing has been uploaded!");
+      Alert.alert(
+        "Request Submitted",
+        "Your listing was submitted for admin approval and will only appear after approval."
+      );
       
       // reset the form fields after successful upload
       setTitle("");

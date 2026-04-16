@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { RequestRecord } from "@services/requests/requestTypes";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";
 
 type RequestCardProps = {
     request: RequestRecord;
@@ -58,6 +58,17 @@ function ActionButtons({
             </TouchableOpacity>
         </View>
     );
+}
+
+function formatPropertyType(value?: string) {
+    if (!value) return "Property";
+    return `${value.charAt(0)}${value.slice(1).toLowerCase()}`;
+}
+
+function formatRentPeriod(period?: "WEEKLY" | "BIWEEKLY" | "MONTHLY") {
+    if (period === "WEEKLY") return "pw";
+    if (period === "BIWEEKLY") return "biwk";
+    return "pcm";
 }
 
 // Sign Up Card
@@ -214,11 +225,116 @@ function CityChangeCard({ request, isProcessing, onApprove, onReject }: RequestC
     );
 }
 
+// Listing Upload Card
+
+function ListingUploadCard({ request, isProcessing, onApprove, onReject }: RequestCardProps) {
+    const displayName =
+        request.userFirstName && request.userLastName
+            ? `${request.userFirstName} ${request.userLastName}`
+            : request.userEmail ?? "Unknown User";
+
+    const coverPhoto = request.listingPhotos?.[0];
+
+    return (
+        <View className="bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl p-5 mb-4">
+            <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center gap-2">
+                    <Ionicons name="home-outline" size={13} color="#ffffff50" />
+                    <Text className="text-fdm-fg/40 text-xs font-semibold uppercase tracking-wider">
+                        Listing Upload
+                    </Text>
+                </View>
+                <StatusBadge status={request.status} />
+            </View>
+
+            <View className="flex-row gap-3">
+                <View className="w-24 h-24 rounded-2xl overflow-hidden bg-fdm-fg/5 border border-fdm-fg/10 items-center justify-center">
+                    {coverPhoto ? (
+                        <Image source={{ uri: coverPhoto }} className="w-full h-full" resizeMode="cover" />
+                    ) : (
+                        <Ionicons name="image-outline" size={24} color="#ffffff40" />
+                    )}
+                </View>
+
+                <View className="flex-1">
+                    <Text className="text-fdm-fg font-bold text-base" numberOfLines={2}>
+                        {request.listingTitle || "Untitled listing"}
+                    </Text>
+
+                    <View className="flex-row items-center gap-2 mt-1">
+                        <Ionicons name="person-outline" size={13} color="#ffffff60" />
+                        <Text className="text-fdm-fg/70 text-xs" numberOfLines={1}>{displayName}</Text>
+                    </View>
+
+                    <View className="flex-row items-center gap-2 mt-1">
+                        <Ionicons name="location-outline" size={13} color="#ffffff60" />
+                        <Text className="text-fdm-fg/70 text-xs" numberOfLines={1}>
+                            {request.listingAddress || request.listingCity || "Address unavailable"}
+                        </Text>
+                    </View>
+
+                    <View className="flex-row items-center gap-3 mt-2">
+                        <Text className="text-fdm-accent font-bold text-sm">
+                            {typeof request.listingPrice === "number"
+                                ? `£${request.listingPrice}/${formatRentPeriod(request.listingRentPeriod)}`
+                                : "Price unavailable"}
+                        </Text>
+                        <Text className="text-fdm-fg/40 text-xs">
+                            {formatPropertyType(request.listingPropertyType)}
+                        </Text>
+                    </View>
+                </View>
+            </View>
+
+            <View className="flex-row items-center gap-4 mt-4 pl-1">
+                <View className="flex-row items-center gap-1.5">
+                    <Ionicons name="bed-outline" size={13} color="#ffffff60" />
+                    <Text className="text-fdm-fg/60 text-xs">{request.listingBeds ?? "-"} beds</Text>
+                </View>
+                <View className="flex-row items-center gap-1.5">
+                    <Ionicons name="water-outline" size={13} color="#ffffff60" />
+                    <Text className="text-fdm-fg/60 text-xs">{request.listingBaths ?? "-"} baths</Text>
+                </View>
+                <View className="flex-row items-center gap-1.5">
+                    <Ionicons name="globe-outline" size={13} color="#ffffff60" />
+                    <Text className="text-fdm-fg/60 text-xs">{request.listingSource ?? "FDM"}</Text>
+                </View>
+            </View>
+
+            <View className="flex-row items-center gap-1.5 mt-3 pl-1">
+                <Ionicons name="time-outline" size={12} color="#ffffff40" />
+                <Text className="text-fdm-fg/30 text-xs">
+                    {new Date(request.createdAt).toLocaleDateString()}
+                </Text>
+                {!request.status.includes("PENDING") && request.reviewerEmail && (
+                    <>
+                        <Text className="text-fdm-fg/20 text-xs mx-1">·</Text>
+                        <Ionicons name="shield-checkmark-outline" size={12} color="#ffffff40" />
+                        <Text className="text-fdm-fg/30 text-xs">{request.reviewerEmail}</Text>
+                    </>
+                )}
+            </View>
+
+            {request.status === "PENDING" && (
+                <ActionButtons
+                    request={request}
+                    isProcessing={isProcessing}
+                    onApprove={onApprove}
+                    onReject={onReject}
+                />
+            )}
+        </View>
+    );
+}
+
 // ─── Dispatcher ───────────────────────────────────────────────────────────────
 
 export default function RequestCard(props: RequestCardProps) {
     if (props.request.requestType === "CITY_CHANGE") {
         return <CityChangeCard {...props} />;
+    }
+    if (props.request.requestType === "LISTING_UPLOAD") {
+        return <ListingUploadCard {...props} />;
     }
     return <SignUpCard {...props} />;
 }

@@ -4,6 +4,7 @@ import {
     RequestRecord,
     RequestResponse,
     RequestStatus,
+    RequestType,
     ReviewRequestDTO,
 } from "./requestTypes";
 
@@ -15,6 +16,7 @@ function mapRequestRow(row: Record<string, any>): RequestRecord {
         userId: row.userId ?? "",
         requestType: row.requestType ?? row.request_type,
         status: row.status as RequestStatus,
+        listingId: row.listingId ?? row.listing_id ?? null,
         oldCity: row.oldCity ?? row.old_city ?? null,
         newCity: row.newCity ?? row.new_city ?? null,
         reviewedBy: row.reviewedBy ?? row.reviewed_by ?? null,
@@ -33,6 +35,7 @@ export const createRequest = async (
             userId: dto.userId,
             requestType: dto.requestType,
             status: "PENDING" as const,
+            listingId: dto.listingId ?? null,
             oldCity: dto.oldCity ?? null,
             newCity: dto.newCity ?? null,
         })
@@ -117,6 +120,55 @@ export const getAllRequests = async (
         }
     }
 
+    // Enrich listing data for listing upload requests
+    const listingRequestIds = [
+        ...new Set(
+            requests
+                .filter((r) => r.requestType === "LISTING_UPLOAD" && r.listingId !== null)
+                .map((r) => Number(r.listingId))
+        ),
+    ];
+
+    if (listingRequestIds.length > 0) {
+        const { data: listingRows } = await supabase
+            .from("Listings")
+            .select("id, title, price, rentPeriod, propertyType, beds, baths, source, photos, ListingLocations(city, address)")
+            .in("id", listingRequestIds);
+
+        if (listingRows) {
+            const listingMap = new Map<number, Record<string, any>>(
+                listingRows.map((row) => [Number(row.id), row as Record<string, any>])
+            );
+
+            for (const request of requests) {
+                if (request.requestType !== "LISTING_UPLOAD" || request.listingId === null) {
+                    continue;
+                }
+
+                const listing = listingMap.get(Number(request.listingId));
+                if (!listing) {
+                    continue;
+                }
+
+                const rawLocations = listing.ListingLocations;
+                const listingLocation = Array.isArray(rawLocations)
+                    ? rawLocations[0]
+                    : rawLocations;
+
+                request.listingTitle = listing.title ?? undefined;
+                request.listingPrice = listing.price ?? undefined;
+                request.listingRentPeriod = listing.rentPeriod ?? undefined;
+                request.listingPropertyType = listing.propertyType ?? undefined;
+                request.listingBeds = listing.beds ?? null;
+                request.listingBaths = listing.baths ?? null;
+                request.listingSource = listing.source ?? undefined;
+                request.listingPhotos = Array.isArray(listing.photos) ? listing.photos : [];
+                request.listingCity = listingLocation?.city ?? null;
+                request.listingAddress = listingLocation?.address ?? null;
+            }
+        }
+    }
+
     return { success: true, data: requests };
 };
 
@@ -171,7 +223,53 @@ export const reviewRequest = async (
         return { success: false, error: "This request has already been reviewed." };
     }
 
-    // 2. Update the request status
+    // 2. Apply decision side-effects before marking request as reviewed.
+    if (
+        request.requestType === "CITY_CHANGE" &&
+        dto.decision === "APPROVED" &&
+        request.newCity
+    ) {
+        const { error: userUpdateError } = await supabase
+            .from("Users")
+            .update({ officeLocation: request.newCity })
+            .eq("userId", request.userId);
+
+        if (userUpdateError) {
+            return { success: false, error: userUpdateError.message };
+        }
+    }
+
+    // Sign-up decisions update user account approval.
+    if (request.requestType === "SIGN_UP") {
+        const approvalStatus = dto.decision === "APPROVED" ? "APPROVED" : "REJECTED";
+        const { error: userUpdateError } = await supabase
+            .from("Users")
+            .update({ approvalStatus })
+            .eq("userId", request.userId);
+
+        if (userUpdateError) {
+            return { success: false, error: userUpdateError.message };
+        }
+    }
+
+    // Listing upload decisions determine public visibility.
+    if (request.requestType === "LISTING_UPLOAD") {
+        if (!request.listingId) {
+            return { success: false, error: "Listing request is missing listingId." };
+        }
+
+        const listingApprovalStatus = dto.decision === "APPROVED" ? "APPROVED" : "REJECTED";
+        const { error: listingUpdateError } = await supabase
+            .from("Listings")
+            .update({ approvalStatus: listingApprovalStatus })
+            .eq("id", Number(request.listingId));
+
+        if (listingUpdateError) {
+            return { success: false, error: listingUpdateError.message };
+        }
+    }
+
+    // 3. Mark request as reviewed.
     const { data: updatedRequest, error: updateError } = await supabase
         .from(REQUESTS_TABLE)
         .update({
@@ -187,41 +285,16 @@ export const reviewRequest = async (
         return { success: false, error: updateError.message };
     }
 
-    // 3. If it's a city change approval, update the user's office location
-    if (
-        request.requestType === "CITY_CHANGE" &&
-        dto.decision === "APPROVED" &&
-        request.newCity
-    ) {
-        const { error: userUpdateError } = await supabase
-            .from("Users")
-            .update({ officeLocation: request.newCity })
-            .eq("userId", request.userId);
-
-        if (userUpdateError) {
-            console.warn("Failed to update user office location:", userUpdateError.message);
-        }
-    }
-
-    // 4. If it's a sign-up decision, update the user's approval status
-    if (request.requestType === "SIGN_UP") {
-        const approvalStatus = dto.decision === "APPROVED" ? "APPROVED" : "REJECTED";
-        const { error: userUpdateError } = await supabase
-            .from("Users")
-            .update({ approvalStatus })
-            .eq("userId", request.userId);
-
-        if (userUpdateError) {
-            console.warn("Failed to update user approval status:", userUpdateError.message);
-        }
-    }
-
-    // 5. Create audit log entry
+    // 4. Create audit log entry
     const actionType =
         request.requestType === "CITY_CHANGE"
             ? dto.decision === "APPROVED"
                 ? "CITY_CHANGE_APPROVED"
                 : "CITY_CHANGE_DENIED"
+            : request.requestType === "LISTING_UPLOAD"
+                ? dto.decision === "APPROVED"
+                    ? "LISTING_UPLOAD_APPROVED"
+                    : "LISTING_UPLOAD_DENIED"
             : dto.decision === "APPROVED"
                 ? "SIGN_UP_APPROVED"
                 : "SIGN_UP_DENIED";
@@ -241,15 +314,21 @@ export const reviewRequest = async (
 // Checks if a user already has a pending request of a given type.
 export const hasPendingRequest = async (
     userId: string,
-    requestType: "SIGN_UP" | "CITY_CHANGE"
+    requestType: RequestType,
+    listingId?: number
 ): Promise<RequestResponse<boolean>> => {
-    const { data, error } = await supabase
+    let query = supabase
         .from(REQUESTS_TABLE)
         .select("id")
         .eq("userId", userId)
         .eq("requestType", requestType)
-        .eq("status", "PENDING")
-        .limit(1);
+        .eq("status", "PENDING");
+
+    if (requestType === "LISTING_UPLOAD" && typeof listingId === "number") {
+        query = query.eq("listingId", listingId);
+    }
+
+    const { data, error } = await query.limit(1);
 
     if (error) {
         return { success: false, error: error.message };

@@ -58,6 +58,7 @@ export type Database = {
           userId: string | null
           requestType: Database["public"]["Enums"]["RequestType"]
           status: Database["public"]["Enums"]["RequestStatus"]
+          listingId: number | null
           oldCity: string | null
           newCity: string | null
           reviewedBy: string | null
@@ -69,6 +70,7 @@ export type Database = {
           userId?: string | null
           requestType: Database["public"]["Enums"]["RequestType"]
           status?: Database["public"]["Enums"]["RequestStatus"]
+          listingId?: number | null
           oldCity?: string | null
           newCity?: string | null
           reviewedBy?: string | null
@@ -80,6 +82,7 @@ export type Database = {
           userId?: string | null
           requestType?: Database["public"]["Enums"]["RequestType"]
           status?: Database["public"]["Enums"]["RequestStatus"]
+          listingId?: number | null
           oldCity?: string | null
           newCity?: string | null
           reviewedBy?: string | null
@@ -100,6 +103,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "Users"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "Requests_listingId_fkey"
+            columns: ["listingId"]
+            isOneToOne: false
+            referencedRelation: "Listings"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -232,6 +242,7 @@ export type Database = {
       // the main table for all the flats people upload
       Listings: {
         Row: {
+          approvalStatus: Database["public"]["Enums"]["ApprovalStatus"]
           baths?: number
           beds?: number
           created_at: string
@@ -247,6 +258,7 @@ export type Database = {
           userId: string
         }
         Insert: {
+          approvalStatus?: Database["public"]["Enums"]["ApprovalStatus"]
           baths?: number
           beds?: number
           created_at?: string
@@ -261,6 +273,7 @@ export type Database = {
           userId: string
         }
         Update: {
+          approvalStatus?: Database["public"]["Enums"]["ApprovalStatus"]
           baths?: number
           beds?: number
           created_at?: string
@@ -303,6 +316,10 @@ export type Database = {
         | "CITY_CHANGE_REQUESTED"
         | "CITY_CHANGE_APPROVED"
         | "CITY_CHANGE_DENIED"
+        | "CITY_CHANGED"
+        | "LISTING_UPLOAD_REQUESTED"
+        | "LISTING_UPLOAD_APPROVED"
+        | "LISTING_UPLOAD_DENIED"
       ApprovalStatus: "PENDING" | "APPROVED" | "REJECTED"
       PropertyType:
         | "FLAT"
@@ -311,7 +328,7 @@ export type Database = {
         | "SEMIDETACHED"
         | "DETACHED"
       Role: "ADMIN" | "CONSULTANT"
-      RequestType: "SIGN_UP" | "CITY_CHANGE"
+      RequestType: "SIGN_UP" | "CITY_CHANGE" | "LISTING_UPLOAD"
       RequestStatus: "PENDING" | "APPROVED" | "REJECTED"
     }
     CompositeTypes: {
@@ -451,6 +468,10 @@ export const Constants = {
         "CITY_CHANGE_REQUESTED",
         "CITY_CHANGE_APPROVED",
         "CITY_CHANGE_DENIED",
+        "CITY_CHANGED",
+        "LISTING_UPLOAD_REQUESTED",
+        "LISTING_UPLOAD_APPROVED",
+        "LISTING_UPLOAD_DENIED",
       ],
       ApprovalStatus: ["PENDING", "APPROVED", "REJECTED"],
       PropertyType: [
@@ -461,7 +482,7 @@ export const Constants = {
         "DETACHED",
       ],
       Role: ["ADMIN", "CONSULTANT"],
-      RequestType: ["SIGN_UP", "CITY_CHANGE"],
+      RequestType: ["SIGN_UP", "CITY_CHANGE", "LISTING_UPLOAD"],
       RequestStatus: ["PENDING", "APPROVED", "REJECTED"],
     },
   },

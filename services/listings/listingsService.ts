@@ -1,5 +1,6 @@
 import { supabase } from "../../lib/supabase";
 import { Database } from "../../types/database.types";
+import * as RequestController from "../requests/requestController";
 
 export type ListingLocationRow = Database["public"]["Tables"]["ListingLocations"]["Row"];
 export type Listing = Database["public"]["Tables"]["Listings"]["Row"] & {
@@ -14,6 +15,7 @@ export const fetchListings = async (): Promise<Listing[]> => {
   const { data, error } = await supabase
     .from("Listings")
     .select("*, ListingLocations(*)")
+    .eq("approvalStatus", "APPROVED")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -32,6 +34,7 @@ export const fetchListingById = async (id: number | string): Promise<Listing> =>
     .from("Listings")
     .select("*, ListingLocations(*)")
     .eq("id", Number(id))
+    .eq("approvalStatus", "APPROVED")
     .single();
 
   if (error) {
@@ -61,9 +64,14 @@ export const deleteListing = async (id: number | string): Promise<void> => {
 
 // saves a new flat listing into the database using supabase
 export const createListing = async (listing: InsertListing, city: string, address: string): Promise<Listing> => {
+  const listingToInsert: InsertListing = {
+    ...listing,
+    approvalStatus: "PENDING",
+  };
+
   const { data, error } = await supabase
     .from("Listings")
-    .insert(listing)
+    .insert(listingToInsert)
     .select()
     .single();
 
@@ -81,11 +89,43 @@ export const createListing = async (listing: InsertListing, city: string, addres
     });
 
   if (locError) {
+    await supabase.from("Listings").delete().eq("id", data.id);
     console.error("Error creating listing location:", locError);
-    // Ideally we should rollback the listing creation but ignoring it for now for simplicity
+    throw locError;
   }
 
-  return data;
+  const requestResult = await RequestController.createRequest({
+    userId: data.userId,
+    requestType: "LISTING_UPLOAD",
+    listingId: data.id,
+  });
+
+  if (!requestResult.success) {
+    await supabase.from("Listings").delete().eq("id", data.id);
+    throw new Error(requestResult.error ?? "Failed to create listing approval request.");
+  }
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const actorUserId = sessionData?.session?.user?.id ?? data.userId;
+
+  await supabase.from("AuditLogs").insert({
+    actionType: "LISTING_UPLOAD_REQUESTED",
+    userId: actorUserId,
+    targetId: data.userId,
+  });
+
+  const { data: listingWithLocation, error: fetchCreatedError } = await supabase
+    .from("Listings")
+    .select("*, ListingLocations(*)")
+    .eq("id", data.id)
+    .single();
+
+  if (fetchCreatedError || !listingWithLocation) {
+    console.error("Error fetching created listing:", fetchCreatedError);
+    throw fetchCreatedError ?? new Error("Listing created but could not be fetched.");
+  }
+
+  return listingWithLocation;
 };
 
 // upload photo
