@@ -1,14 +1,13 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
-import { Image } from "expo-image";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import { fetchListingById, deleteListing, Listing } from "../../services/listings/listingsService";
+import { fetchListingById, deleteListing, Listing, getSignedListingPhotoUrl } from "../../services/listings/listingsService";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@context/AuthContext";
 
-// Listing Detail Screen
+// listing detail screen
 
 // opens up a single listing so the user can see all the details
 // also lets the owner delete their own listing
@@ -21,6 +20,8 @@ export default function ListingDetailScreen() {
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [signedPhotos, setSignedPhotos] = useState<string[]>([]);
+
   useEffect(() => {
     if (!id) return;
     
@@ -29,6 +30,30 @@ export default function ListingDetailScreen() {
       try {
         const data = await fetchListingById(Number(id));
         setListing(data);
+        
+        // make sure urls work and get signed ones if the bucket is private
+        let rawPhotos: string[] = [];
+        if (data.photos) {
+            if (Array.isArray(data.photos)) {
+                rawPhotos = data.photos;
+            } else if (typeof data.photos === 'string') {
+                try {
+                    rawPhotos = JSON.parse(data.photos);
+                } catch (e) {
+                    const matches = (data.photos as string).match(/https?:\/\/[^,}\]]+/g);
+                    if (matches) rawPhotos = matches;
+                }
+            }
+        }
+        
+        const cleaned = rawPhotos
+            .map(url => url ? url.replace(/^"|"$/g, '').trim() : '')
+            .filter(url => url.startsWith('http'));
+
+        if (cleaned.length > 0) {
+            const signed = await Promise.all(cleaned.map(url => getSignedListingPhotoUrl(url)));
+            setSignedPhotos(signed);
+        }
       } catch (err) {
         console.error("Failed to fetch flat details", err);
       } finally {
@@ -74,27 +99,49 @@ export default function ListingDetailScreen() {
     return "pw";
   };
 
+  const windowWidth = Dimensions.get('window').width;
+
   return (
     <View className="flex-1 bg-fdm-bg">
       <StatusBar style="light" />
       
       <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
-        {/* Photo Header */}
+        {/* photo header */}
         <View className="w-full h-80 bg-fdm-fg/10 relative">
-          {listing.photos && listing.photos.length > 0 ? (
-            <Image 
-              source={{ uri: listing.photos[0] }} 
-              style={{ width: '100%', height: '100%' }}
-              contentFit="cover"
-              transition={300}
-            />
+          {signedPhotos.length > 0 ? (
+            <>
+              <ScrollView 
+                horizontal 
+                pagingEnabled 
+                showsHorizontalScrollIndicator={false}
+                style={{ width: '100%', height: 320 }}
+              >
+                {signedPhotos.map((url, index) => (
+                  <View key={index} style={{ width: windowWidth, height: 320 }}>
+                    <Image 
+                      key={url}
+                      source={{ uri: url }} 
+                      style={{ width: windowWidth, height: 320 }}
+                      resizeMode="cover"
+                    />
+                  </View>
+                ))}
+              </ScrollView>
+              {signedPhotos.length > 1 && (
+                <View className="absolute bottom-4 w-full flex-row justify-center items-center gap-2 pointer-events-none">
+                  {signedPhotos.map((_, idx) => (
+                    <View key={idx} className="w-2 h-2 rounded-full bg-white/70" />
+                  ))}
+                </View>
+              )}
+            </>
           ) : (
             <View className="flex-1 items-center justify-center">
               <Ionicons name="home" size={60} color="#ccff0030" />
             </View>
           )}
 
-          {/* Back Button Overlay */}
+          {/* back button overlay */}
           <TouchableOpacity 
             className="absolute left-6 h-12 w-12 bg-black/40 rounded-full items-center justify-center backdrop-blur-md border border-white/10"
             style={{ top: insets.top || 48 }}
@@ -104,7 +151,7 @@ export default function ListingDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Content Body */}
+        {/* content body */}
         <View className="px-6 pt-6 pb-20">
           
           <View className="flex-row justify-between items-start mb-2">
@@ -143,6 +190,15 @@ export default function ListingDetailScreen() {
                  </Text>
              </View>
           </View>
+
+          {listing.description ? (
+            <View className="mb-6">
+              <Text className="text-white text-lg font-bold mb-2">Description</Text>
+              <Text className="text-fdm-fg/80 text-base leading-relaxed">
+                {listing.description}
+              </Text>
+            </View>
+          ) : null}
           
           {user?.userId === listing.userId && (
             <TouchableOpacity 
