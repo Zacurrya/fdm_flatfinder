@@ -49,14 +49,26 @@ export const fetchListingById = async (id: number | string): Promise<Listing> =>
 
 // removes a listing from the database when the owner wants to take it down
 export const deleteListing = async (id: number | string): Promise<void> => {
-  const { error } = await supabase
+  const listingId = Number(id);
+
+  const { error: favouritesDeleteError } = await supabase
+    .from("UserFavourites")
+    .delete()
+    .eq("listingId", listingId);
+
+  if (favouritesDeleteError) {
+    console.error(`Error deleting favourites for listing ${id}:`, favouritesDeleteError);
+    throw favouritesDeleteError;
+  }
+
+  const { error: listingDeleteError } = await supabase
     .from("Listings")
     .delete()
-    .eq("id", Number(id));
+    .eq("id", listingId);
     
-  if (error) {
-    console.error(`Error deleting listing ${id}:`, error);
-    throw error;
+  if (listingDeleteError) {
+    console.error(`Error deleting listing ${id}:`, listingDeleteError);
+    throw listingDeleteError;
   }
 };
 
