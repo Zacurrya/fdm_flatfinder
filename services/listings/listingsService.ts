@@ -134,7 +134,6 @@ export const createListing = async (listing: InsertListing, city: string, addres
 // returns the public URL so we can store it in the listing record
 
 import { File as ExpoFile } from 'expo-file-system';
-import * as LegacyFileSystem from 'expo-file-system/legacy';
 
 export const uploadListingPhoto = async (uri: string): Promise<string> => {
   try {

@@ -1,12 +1,12 @@
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import { useAuth } from "@context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View, Image } from "react-native";
+import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { createListing, InsertListing, uploadListingPhoto } from "../../services/listings/listingsService";
-import { useRouter } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
 
 // add listing screen
 

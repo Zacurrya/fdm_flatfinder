@@ -1,3 +1,4 @@
+import * as RequestService from "./requestService";
 import {
     CreateRequestDTO,
     RequestRecord,
@@ -5,7 +6,6 @@ import {
     RequestStatus,
     ReviewRequestDTO,
 } from "./requestTypes";
-import * as RequestService from "./requestService";
 
 // Create a new request (sign-up or city change).
 export const createRequest = async (

@@ -2,14 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { AuditLog } from "@services/audit/auditTypes";
 import { useState } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  useWindowDimensions,
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+    useWindowDimensions,
 } from "react-native";
 import AdminTabs from "./AdminTabs";
 
