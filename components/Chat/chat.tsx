@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { ChatService } from "../chatservice/chatServices";        
-import { MessageBuilder } from "../chatservice/messageBuilder";   
-import { Message } from "../chatservice/models/message";          
+import { ChatService } from "../../services/chatservice/chatServices";        
+import { MessageBuilder } from "../../services/chatservice/messageBuilder";   
+import { Message } from "../../services/chatservice/models/message";          
 import { ChatInput } from "./chatInput";
 import { ChatMessage } from "./chatMessage";
                  

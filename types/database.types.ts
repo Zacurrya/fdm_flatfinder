@@ -7,8 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
@@ -104,6 +103,7 @@ export type Database = {
           },
         ]
       }
+      // all the users signed up in our app
       Users: {
         Row: {
           approvalStatus: Database["public"]["Enums"]["ApprovalStatus"] | null
@@ -161,11 +161,14 @@ export type Database = {
         }
         Relationships: []
       }
-            Listings: {
+      // the main table for all the flats people upload
+      Listings: {
         Row: {
           baths?: number
           beds?: number
           created_at: string
+          // we added these to show more info and where the flat came from
+          description?: string | null
           id: number
           location: string
           photos?: string[]
@@ -180,6 +183,7 @@ export type Database = {
           baths?: number
           beds?: number
           created_at?: string
+          description?: string | null
           id?: number
           location: string
           photos?: string[]
@@ -194,6 +198,7 @@ export type Database = {
           baths?: number
           beds?: number
           created_at?: string
+          description?: string | null
           id?: number
           location?: string
           photos?: string[]
@@ -214,7 +219,6 @@ export type Database = {
           },
         ]
       }
-
     }
     Views: {
       [_ in never]: never
@@ -241,9 +245,9 @@ export type Database = {
         | "TERRACEDHOUSE"
         | "SEMIDETACHED"
         | "DETACHED"
+      Role: "ADMIN" | "CONSULTANT"
       RequestType: "SIGN_UP" | "CITY_CHANGE"
       RequestStatus: "PENDING" | "APPROVED" | "REJECTED"
-      Role: "ADMIN" | "CONSULTANT"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -391,9 +395,9 @@ export const Constants = {
         "SEMIDETACHED",
         "DETACHED",
       ],
+      Role: ["ADMIN", "CONSULTANT"],
       RequestType: ["SIGN_UP", "CITY_CHANGE"],
       RequestStatus: ["PENDING", "APPROVED", "REJECTED"],
-      Role: ["ADMIN", "CONSULTANT"],
     },
   },
 } as const

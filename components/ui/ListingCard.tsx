@@ -1,8 +1,9 @@
+import { forwardRef, useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Image as ExpoImage } from "expo-image";
+import { Image, Text, TouchableOpacity, View, TouchableOpacityProps } from "react-native";
 
-// Listing Card Component
+// listing card component
 
 // this is the card that shows up on the home page for each flat
 // shows the photo, price, location, beds and baths
@@ -22,8 +23,9 @@ export type ListingCardData = {
 
 type ListingCardProps = {
     listing: ListingCardData;
-    onPress?: () => void;
-};
+} & TouchableOpacityProps;
+
+import { getSignedListingPhotoUrl } from "../../services/listings/listingsService";
 
 // colour + label config for each listing source
 const SOURCE_CONFIG: Record<
@@ -56,7 +58,39 @@ const SOURCE_CONFIG: Record<
     },
 };
 
-export default function ListingCard({ listing, onPress }: ListingCardProps) {
+const ListingCard = forwardRef<View, ListingCardProps>(({ listing, onPress, ...props }, ref) => {
+    const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadPhoto = async () => {
+            let parsedPhotos: string[] = [];
+            if (listing.photos) {
+                if (Array.isArray(listing.photos)) {
+                    parsedPhotos = listing.photos;
+                } else if (typeof listing.photos === 'string') {
+                    try {
+                        parsedPhotos = JSON.parse(listing.photos);
+                    } catch (e) {
+                        const matches = (listing.photos as string).match(/https?:\/\/[^,}\]]+/g);
+                        if (matches) parsedPhotos = matches;
+                    }
+                }
+                
+                if (parsedPhotos && parsedPhotos.length > 0) {
+                    const validUrls = parsedPhotos
+                        .map(url => url ? url.replace(/^"|"$/g, '').trim() : '')
+                        .filter(url => url.startsWith('http'));
+                        
+                    if (validUrls.length > 0) {
+                        const signedUrl = await getSignedListingPhotoUrl(validUrls[0]);
+                        setPhotoUrl(signedUrl);
+                    }
+                }
+            }
+        };
+        loadPhoto();
+    }, [listing.photos]);
+
     const src = listing.source ?? "FDM";
     const sourceConfig = SOURCE_CONFIG[src] ?? SOURCE_CONFIG.FDM;
 
@@ -70,6 +104,7 @@ export default function ListingCard({ listing, onPress }: ListingCardProps) {
     return (
         <View>
         <TouchableOpacity
+            ref={ref}
             onPress={onPress}
             className="bg-fdm-fg/5 rounded-3xl overflow-hidden active:opacity-80"
             style={src === "FDM" ? {
@@ -79,15 +114,16 @@ export default function ListingCard({ listing, onPress }: ListingCardProps) {
                 borderWidth: 1,
                 borderColor: "rgba(255,255,255,0.1)",
             }}
+            {...props}
         >
-            {/* Primary Photo Thumbnail */}
+            {/* primary photo thumbnail */}
             <View className="h-40 bg-fdm-fg/10 items-center justify-center w-full overflow-hidden">
-                {listing.photos && listing.photos.length > 0 ? (
-                    <Image
-                        source={{ uri: listing.photos[0] }}
-                        style={{ width: "100%", height: "100%" }}
-                        contentFit="cover"
-                        transition={200}
+                {photoUrl ? (
+                    <Image 
+                        key={photoUrl}
+                        source={{ uri: photoUrl }} 
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
                     />
                 ) : (
                     <Ionicons name="home" size={40} color="#ccff0030" />
@@ -168,4 +204,6 @@ export default function ListingCard({ listing, onPress }: ListingCardProps) {
         </TouchableOpacity>
         </View>
     );
-}
+});
+
+export default ListingCard;

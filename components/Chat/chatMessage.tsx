@@ -1,5 +1,5 @@
 import React from "react";
-import { Message } from "../chatservice/models/message";
+import { Message } from "../../services/chatservice/models/message";
 
 interface ChatMessageProps {
   message: Message;

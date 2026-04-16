@@ -4,7 +4,7 @@ import { Database } from "../../types/database.types";
 export type Listing = Database["public"]["Tables"]["Listings"]["Row"];
 export type InsertListing = Database["public"]["Tables"]["Listings"]["Insert"];
 
-// Fetch Listings
+// fetch listings
 
 // gets all the flats from the database so we can show them on the home page
 export const fetchListings = async (): Promise<Listing[]> => {
@@ -21,7 +21,7 @@ export const fetchListings = async (): Promise<Listing[]> => {
   return data || [];
 };
 
-// Fetch Single Listing
+// fetch single listing
 
 // gets one specific listing by its id so we can show the detail page
 export const fetchListingById = async (id: number | string): Promise<Listing> => {
@@ -39,7 +39,7 @@ export const fetchListingById = async (id: number | string): Promise<Listing> =>
   return data;
 };
 
-// Delete Listing
+// delete listing
 
 // removes a listing from the database when the owner wants to take it down
 export const deleteListing = async (id: number | string): Promise<void> => {
@@ -54,7 +54,7 @@ export const deleteListing = async (id: number | string): Promise<void> => {
   }
 };
 
-// Create Listing
+// create listing
 
 // saves a new flat listing into the database using supabase
 export const createListing = async (listing: InsertListing): Promise<Listing> => {
@@ -72,7 +72,7 @@ export const createListing = async (listing: InsertListing): Promise<Listing> =>
   return data;
 };
 
-// Upload Photo
+// upload photo
 
 // takes a photo from the user's phone and uploads it to the supabase storage bucket
 // returns the public URL so we can store it in the listing record
@@ -86,31 +86,14 @@ export const uploadListingPhoto = async (uri: string): Promise<string> => {
     const contentType = ext === 'heic' ? 'image/heic' : ext === 'png' ? 'image/png' : 'image/jpeg';
     const fileName = `listing_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
 
-    let fileBody: ArrayBuffer | string;
-
-    try {
-      // read the image file as binary data using the new file system API
-      const file = new ExpoFile(uri);
-      fileBody = await file.arrayBuffer();
-    } catch (_e) {
-      // fallback if the new API doesnt work, read it as base64 instead
-      console.log('Falling back to legacy base64 read...');
-      const base64 = await LegacyFileSystem.readAsStringAsync(uri, {
-        encoding: LegacyFileSystem.EncodingType.Base64,
-      });
-      // convert the base64 string into binary so supabase can accept it
-      const binaryString = atob(base64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      fileBody = bytes.buffer as ArrayBuffer;
-    }
+    // create local file object to read bits properly just like profile pics
+    const imageFile = new ExpoFile(uri);
+    const arrayBuffer = await imageFile.arrayBuffer();
 
     // send the image to supabase storage
     const { data, error } = await supabase.storage
       .from('listing-images')
-      .upload(fileName, fileBody, {
+      .upload(fileName, arrayBuffer, {
         contentType,
         upsert: false,
       });
@@ -127,5 +110,29 @@ export const uploadListingPhoto = async (uri: string): Promise<string> => {
     console.error("Failed to upload photo:", error);
     throw error;
   }
-};    
+};
 
+export const getSignedListingPhotoUrl = async (url: string): Promise<string> => {
+  if (!url) return url;
+  // if its already signed or not from our bucket just return it
+  if (url.includes('/object/sign/') || !url.includes('listing-images/')) return url;
+  
+  try {
+    const path = url.split('listing-images/')[1]?.split('?')[0];
+    if (!path) return url;
+    
+    // create signed url valid for 1 hour
+    const { data, error } = await supabase.storage
+      .from('listing-images')
+      .createSignedUrl(path, 3600);
+      
+    if (error || !data?.signedUrl) {
+      console.warn("Failed to sign url", error);
+      return url; // fallback to original
+    }
+    
+    return data.signedUrl;
+  } catch (e) {
+    return url;
+  }
+};

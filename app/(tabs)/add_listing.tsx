@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 
-// Add Listing Screen
+// add listing screen
 
 // shows a form so users can type in their flat details to upload
 // then it sends the data to the listings service
@@ -16,6 +16,7 @@ export default function AddListingScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [price, setPrice] = useState("");
   const [rentPeriod, setRentPeriod] = useState<"WEEKLY" | "BIWEEKLY" | "MONTHLY">("WEEKLY");
@@ -73,6 +74,7 @@ export default function AddListingScreen() {
       // 2. submit the listing data to supabase
       const newListing: InsertListing = {
         title,
+        description: description,
         location,
         price: parseFloat(price) || 0,
         rentPeriod: rentPeriod,
@@ -88,6 +90,7 @@ export default function AddListingScreen() {
       
       // reset the form fields after successful upload
       setTitle("");
+      setDescription("");
       setLocation("");
       setPrice("");
       setBeds("1");
@@ -142,6 +145,20 @@ export default function AddListingScreen() {
               placeholder="e.g. Modern Studio in Canary Wharf"
               placeholderTextColor="#ffffff50"
               className="bg-fdm-fg/5 text-fdm-fg border border-fdm-fg/10 rounded-2xl px-4 py-3"
+            />
+          </View>
+
+          <View>
+            <Text className="text-fdm-fg/70 mb-1 ml-1 text-sm">Description</Text>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Tell us more about the property..."
+              placeholderTextColor="#ffffff50"
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              className="bg-fdm-fg/5 text-fdm-fg border border-fdm-fg/10 rounded-2xl px-4 py-3 min-h-[100px]"
             />
           </View>
 
