@@ -92,6 +92,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="messages/[conversationId]"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="admin"
         options={{
           tabBarLabel: "Admin",

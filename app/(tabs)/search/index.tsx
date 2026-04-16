@@ -1,13 +1,13 @@
-import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
-import { useAuth } from "@context/AuthContext";
-import { View, Text, ScrollView, useWindowDimensions, TouchableOpacity, TextInput, Modal, SafeAreaView, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useState, useCallback } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
-import { fetchListings, Listing } from "../../../services/listings/listingsService";
-import { getUserFavourites, addFavourite, removeFavourite } from "../../../services/user/userService";
-import ListingCard from "@/components/ui/ListingCard";
 import FilterSidebar from "@/components/search/FilterSidebar";
+import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
+import ListingCard from "@/components/ui/ListingCard";
+import { useAuth } from "@context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Modal, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { fetchListings, Listing } from "../../../services/listings/listingsService";
+import { addFavourite, getUserFavourites, removeFavourite } from "../../../services/user/userService";
 
 export default function SearchScreen() {
   const { user } = useAuth();

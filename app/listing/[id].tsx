@@ -1,11 +1,12 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Image } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { StatusBar } from "expo-status-bar";
-import { fetchListingById, deleteListing, Listing, getSignedListingPhotoUrl } from "../../services/listings/listingsService";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getMessages, getOrCreateConversation, sendMessage } from "../../services/chat/chatService";
+import { deleteListing, fetchListingById, getSignedListingPhotoUrl, Listing } from "../../services/listings/listingsService";
 
 // listing detail screen
 
@@ -199,6 +200,46 @@ export default function ListingDetailScreen() {
               </Text>
             </View>
           ) : null}
+
+          {user?.userId !== listing.userId && (
+            <TouchableOpacity
+              onPress={async () => {
+                if (!user?.userId) return;
+
+                try {
+                  const conversation = await getOrCreateConversation(
+                    user.userId,
+                    listing.userId,
+                    listing.id as number
+                  );
+
+                  const existingMessages = await getMessages(conversation.id);
+                  if (existingMessages.length === 0) {
+                    const rentLabel = getRentLabel(listing.rentPeriod);
+                    const locationLabel =
+                      listing.ListingLocations?.address ??
+                      listing.ListingLocations?.city ??
+                      "your area";
+
+                    await sendMessage(
+                      conversation.id,
+                      user.userId,
+                      `Hi! I'm interested in your listing: "${listing.title}" - GBP ${listing.price}/${rentLabel} in ${locationLabel}.`
+                    );
+                  }
+
+                  router.push(`/(tabs)/messages/${conversation.id}` as any);
+                } catch (error) {
+                  console.error("Failed to open conversation", error);
+                  Alert.alert("Error", "Could not open chat. Please try again.");
+                }
+              }}
+              className="bg-fdm-accent py-4 rounded-2xl flex-row justify-center items-center mt-2"
+            >
+              <Ionicons name="chatbubble-outline" size={20} color="#1a1a1a" />
+              <Text className="text-fdm-bg font-bold ml-2">Message Seller</Text>
+            </TouchableOpacity>
+          )}
           
           {user?.userId === listing.userId && (
             <TouchableOpacity 
