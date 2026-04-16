@@ -29,7 +29,7 @@ export default function TabsLayout() {
           borderTopColor: tabBorderColor,
           borderTopWidth: 1,
           height: tabBarContentHeight + tabBarTopPadding + tabBarBottomPadding,
-          paddingBottom: isLandscape ? tabBarBottomPadding : tabBarBottomPadding * 2.5,
+          paddingBottom: tabBarBottomPadding,
           paddingTop: tabBarTopPadding,
         },
         tabBarActiveTintColor: tabActiveColor,
@@ -39,6 +39,7 @@ export default function TabsLayout() {
           fontSize: isLandscape ? 10 : 12,
           letterSpacing: 0.5,
         },
+        tabBarShowLabel: isLandscape,
       }}
     >
       <Tabs.Screen
