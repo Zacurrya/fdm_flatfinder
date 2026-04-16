@@ -1,8 +1,8 @@
+import { forwardRef, useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Text, TouchableOpacity, View } from "react-native";
-import { Image } from "expo-image";
+import { Text, TouchableOpacity, View, TouchableOpacityProps, Image } from "react-native";
 
-// Listing Card Component
+// listing card component
 
 // this is the card that shows up on the home page for each flat
 // shows the photo, price, location, beds and baths
@@ -21,23 +21,58 @@ export type ListingCardData = {
 
 type ListingCardProps = {
     listing: ListingCardData;
-    onPress?: () => void;
-};
+} & TouchableOpacityProps;
 
-export default function ListingCard({ listing, onPress }: ListingCardProps) {
+import { getSignedListingPhotoUrl } from "../../services/listings/listingsService";
+
+const ListingCard = forwardRef<View, ListingCardProps>(({ listing, onPress, ...props }, ref) => {
+    const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadPhoto = async () => {
+            let parsedPhotos: string[] = [];
+            if (listing.photos) {
+                if (Array.isArray(listing.photos)) {
+                    parsedPhotos = listing.photos;
+                } else if (typeof listing.photos === 'string') {
+                    try {
+                        parsedPhotos = JSON.parse(listing.photos);
+                    } catch (e) {
+                        const matches = (listing.photos as string).match(/https?:\/\/[^,}\]]+/g);
+                        if (matches) parsedPhotos = matches;
+                    }
+                }
+                
+                if (parsedPhotos && parsedPhotos.length > 0) {
+                    const validUrls = parsedPhotos
+                        .map(url => url ? url.replace(/^"|"$/g, '').trim() : '')
+                        .filter(url => url.startsWith('http'));
+                        
+                    if (validUrls.length > 0) {
+                        const signedUrl = await getSignedListingPhotoUrl(validUrls[0]);
+                        setPhotoUrl(signedUrl);
+                    }
+                }
+            }
+        };
+        loadPhoto();
+    }, [listing.photos]);
+
     return (
         <TouchableOpacity
+            ref={ref}
             onPress={onPress}
             className="bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl overflow-hidden active:opacity-80"
+            {...props}
         >
-            {/* Primary Photo Thumbnail */}
+            {/* primary photo thumbnail */}
             <View className="h-40 bg-fdm-fg/10 items-center justify-center w-full overflow-hidden">
-                {listing.photos && listing.photos.length > 0 ? (
+                {photoUrl ? (
                     <Image 
-                        source={{ uri: listing.photos[0] }} 
+                        key={photoUrl}
+                        source={{ uri: photoUrl }} 
                         style={{ width: '100%', height: '100%' }}
-                        contentFit="cover"
-                        transition={200}
+                        resizeMode="cover"
                     />
                 ) : (
                     <Ionicons name="home" size={40} color="#ccff0030" />
@@ -77,4 +112,6 @@ export default function ListingCard({ listing, onPress }: ListingCardProps) {
             </View>
         </TouchableOpacity>
     );
-}
+});
+
+export default ListingCard;
