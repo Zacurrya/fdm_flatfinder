@@ -7,8 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
@@ -53,57 +52,7 @@ export type Database = {
           },
         ]
       }
-      Requests: {
-        Row: {
-          id: number
-          userId: string | null
-          requestType: Database["public"]["Enums"]["RequestType"]
-          status: Database["public"]["Enums"]["RequestStatus"]
-          oldCity: string | null
-          newCity: string | null
-          reviewedBy: string | null
-          reviewedAt: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: number
-          userId?: string | null
-          requestType: Database["public"]["Enums"]["RequestType"]
-          status?: Database["public"]["Enums"]["RequestStatus"]
-          oldCity?: string | null
-          newCity?: string | null
-          reviewedBy?: string | null
-          reviewedAt?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: number
-          userId?: string | null
-          requestType?: Database["public"]["Enums"]["RequestType"]
-          status?: Database["public"]["Enums"]["RequestStatus"]
-          oldCity?: string | null
-          newCity?: string | null
-          reviewedBy?: string | null
-          reviewedAt?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "Requests_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "Requests_reviewedBy_fkey"
-            columns: ["reviewedBy"]
-            isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
+      // all the users signed up in our app
       Users: {
         Row: {
           approvalStatus: Database["public"]["Enums"]["ApprovalStatus"] | null
@@ -146,32 +95,33 @@ export type Database = {
       UserSettings: {
         Row: {
           created_at: string
-          currency: string | null
           userId: string | null
         }
         Insert: {
           created_at?: string
-          currency?: string | null
           userId?: string | null
         }
         Update: {
           created_at?: string
-          currency?: string | null
           userId?: string | null
         }
         Relationships: []
       }
-            Listings: {
+      // the main table for all the flats people upload
+      Listings: {
         Row: {
           baths?: number
           beds?: number
           created_at: string
+          // we added these to show more info and where the flat came from
+          description?: string | null
           id: number
           location: string
           photos?: string[]
           price: number
           propertyType: Database["public"]["Enums"]["PropertyType"]
           rentPeriod: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          source?: string | null
           title: string
           userId: string
         }
@@ -179,12 +129,14 @@ export type Database = {
           baths?: number
           beds?: number
           created_at?: string
+          description?: string | null
           id?: number
           location: string
           photos?: string[]
           price: number
           propertyType: Database["public"]["Enums"]["PropertyType"]
           rentPeriod: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          source?: string | null
           title: string
           userId: string
         }
@@ -192,12 +144,14 @@ export type Database = {
           baths?: number
           beds?: number
           created_at?: string
+          description?: string | null
           id?: number
           location?: string
           photos?: string[]
           price?: number
           propertyType?: Database["public"]["Enums"]["PropertyType"]
           rentPeriod?: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          source?: string | null
           title?: string
           userId?: string
         }
@@ -211,7 +165,6 @@ export type Database = {
           },
         ]
       }
-
     }
     Views: {
       [_ in never]: never
@@ -225,12 +178,6 @@ export type Database = {
         | "USER_DENIED"
         | "USER_BANNED"
         | "MESSAGE_DELETED"
-        | "SIGN_UP_REQUESTED"
-        | "SIGN_UP_APPROVED"
-        | "SIGN_UP_DENIED"
-        | "CITY_CHANGE_REQUESTED"
-        | "CITY_CHANGE_APPROVED"
-        | "CITY_CHANGE_DENIED"
       ApprovalStatus: "PENDING" | "APPROVED" | "REJECTED"
       PropertyType:
         | "FLAT"
@@ -238,8 +185,6 @@ export type Database = {
         | "TERRACEDHOUSE"
         | "SEMIDETACHED"
         | "DETACHED"
-      RequestType: "SIGN_UP" | "CITY_CHANGE"
-      RequestStatus: "PENDING" | "APPROVED" | "REJECTED"
       Role: "ADMIN" | "CONSULTANT"
     }
     CompositeTypes: {
@@ -373,12 +318,6 @@ export const Constants = {
         "USER_DENIED",
         "USER_BANNED",
         "MESSAGE_DELETED",
-        "SIGN_UP_REQUESTED",
-        "SIGN_UP_APPROVED",
-        "SIGN_UP_DENIED",
-        "CITY_CHANGE_REQUESTED",
-        "CITY_CHANGE_APPROVED",
-        "CITY_CHANGE_DENIED",
       ],
       ApprovalStatus: ["PENDING", "APPROVED", "REJECTED"],
       PropertyType: [
@@ -388,8 +327,6 @@ export const Constants = {
         "SEMIDETACHED",
         "DETACHED",
       ],
-      RequestType: ["SIGN_UP", "CITY_CHANGE"],
-      RequestStatus: ["PENDING", "APPROVED", "REJECTED"],
       Role: ["ADMIN", "CONSULTANT"],
     },
   },
