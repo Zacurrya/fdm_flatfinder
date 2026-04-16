@@ -313,10 +313,10 @@ export const requestOfficeLocationChange = async (
     authUserId: string,
     officeLocation: string
 ): Promise<AuthResponse> => {
-    // Fetch the current office location (old city)
+    // Fetch the current office location (old city) and role
     const { data: profile, error: profileError } = await supabase
         .from("Users")
-        .select("officeLocation")
+        .select("officeLocation, role")
         .eq("userId", authUserId)
         .single();
 
@@ -325,9 +325,31 @@ export const requestOfficeLocationChange = async (
     }
 
     const oldCity = profile.officeLocation ?? "";
+    const role = profile.role;
 
     if (oldCity.toLowerCase() === officeLocation.toLowerCase()) {
         return { success: false, error: "New city must be different from your current city." };
+    }
+
+    if (role === "ADMIN") {
+        // Admins bypass approval: update city immediately
+        const { error: updateError } = await supabase
+            .from("Users")
+            .update({ officeLocation })
+            .eq("userId", authUserId);
+            
+        if (updateError) {
+            return { success: false, error: updateError.message };
+        }
+
+        // Audit the direct update
+        await supabase.from("AuditLogs").insert({
+            actionType: "CITY_CHANGED",
+            userId: authUserId,
+            targetId: authUserId,
+        });
+
+        return { success: true };
     }
 
     // Check for existing pending city change request
