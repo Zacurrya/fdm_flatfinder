@@ -1,0 +1,418 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
+  public: {
+    Tables: {
+      AuditLogs: {
+        Row: {
+          actionType: Database["public"]["Enums"]["ActionType"] | null
+          id: number
+          targetId: string | null
+          timestamp: string
+          userId: string | null
+        }
+        Insert: {
+          actionType?: Database["public"]["Enums"]["ActionType"] | null
+          id?: number
+          targetId?: string | null
+          timestamp?: string
+          userId?: string | null
+        }
+        Update: {
+          actionType?: Database["public"]["Enums"]["ActionType"] | null
+          id?: number
+          targetId?: string | null
+          timestamp?: string
+          userId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "AuditLogs_targetId_fkey"
+            columns: ["targetId"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "AuditLogs_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      // all the users signed up in our app
+      Users: {
+        Row: {
+          approvalStatus: Database["public"]["Enums"]["ApprovalStatus"] | null
+          created_at: string
+          email: string | null
+          firstName: string | null
+          lastName: string | null
+          officeLocation: string | null
+          phoneNumber: string | null
+          profilePicture: string | null
+          role: Database["public"]["Enums"]["Role"]
+          userId: string
+        }
+        Insert: {
+          approvalStatus?: Database["public"]["Enums"]["ApprovalStatus"] | null
+          created_at?: string
+          email?: string | null
+          firstName?: string | null
+          lastName?: string | null
+          officeLocation?: string | null
+          phoneNumber?: string | null
+          profilePicture?: string | null
+          role?: Database["public"]["Enums"]["Role"]
+          userId?: string
+        }
+        Update: {
+          approvalStatus?: Database["public"]["Enums"]["ApprovalStatus"] | null
+          created_at?: string
+          email?: string | null
+          firstName?: string | null
+          lastName?: string | null
+          officeLocation?: string | null
+          phoneNumber?: string | null
+          profilePicture?: string | null
+          role?: Database["public"]["Enums"]["Role"]
+          userId?: string
+        }
+        Relationships: []
+      }
+      UserSettings: {
+        Row: {
+          created_at: string
+          userId: string | null
+        }
+        Insert: {
+          created_at?: string
+          userId?: string | null
+        }
+        Update: {
+          created_at?: string
+          userId?: string | null
+        }
+        Relationships: []
+      }
+      // the main table for all the flats people upload
+      Listings: {
+        Row: {
+          baths?: number
+          beds?: number
+          created_at: string
+          // we added these to show more info and where the flat came from
+          description?: string | null
+          id: number
+          location: string
+          photos?: string[]
+          price: number
+          propertyType: Database["public"]["Enums"]["PropertyType"]
+          rentPeriod: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          source?: string | null
+          title: string
+          userId: string
+        }
+        Insert: {
+          baths?: number
+          beds?: number
+          created_at?: string
+          description?: string | null
+          id?: number
+          location: string
+          photos?: string[]
+          price: number
+          propertyType: Database["public"]["Enums"]["PropertyType"]
+          rentPeriod: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          source?: string | null
+          title: string
+          userId: string
+        }
+        Update: {
+          baths?: number
+          beds?: number
+          created_at?: string
+          description?: string | null
+          id?: number
+          location?: string
+          photos?: string[]
+          price?: number
+          propertyType?: Database["public"]["Enums"]["PropertyType"]
+          rentPeriod?: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          source?: string | null
+          title?: string
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Listings_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+    }
+      Conversations: {
+        Row: {
+          id: string
+          user1_id: string
+          user2_id: string
+          listing_id: number | null
+          last_message: string | null
+          last_message_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user1_id: string
+          user2_id: string
+          listing_id?: number | null
+          last_message?: string | null
+          last_message_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user1_id?: string
+          user2_id?: string
+          listing_id?: number | null
+          last_message?: string | null
+          last_message_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Conversations_user1_id_fkey"
+            columns: ["user1_id"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "Conversations_user2_id_fkey"
+            columns: ["user2_id"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      Messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          sender_id: string
+          content: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          sender_id: string
+          content: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          sender_id?: string
+          content?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "Conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      is_admin: { Args: never; Returns: boolean }
+    }
+    Enums: {
+      ActionType:
+        | "USER_APPROVED"
+        | "USER_DENIED"
+        | "USER_BANNED"
+        | "MESSAGE_DELETED"
+      ApprovalStatus: "PENDING" | "APPROVED" | "REJECTED"
+      PropertyType:
+        | "FLAT"
+        | "STUDIO"
+        | "TERRACEDHOUSE"
+        | "SEMIDETACHED"
+        | "DETACHED"
+      Role: "ADMIN" | "CONSULTANT"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      ActionType: [
+        "USER_APPROVED",
+        "USER_DENIED",
+        "USER_BANNED",
+        "MESSAGE_DELETED",
+      ],
+      ApprovalStatus: ["PENDING", "APPROVED", "REJECTED"],
+      PropertyType: [
+        "FLAT",
+        "STUDIO",
+        "TERRACEDHOUSE",
+        "SEMIDETACHED",
+        "DETACHED",
+      ],
+      Role: ["ADMIN", "CONSULTANT"],
+    },
+  },
+} as const

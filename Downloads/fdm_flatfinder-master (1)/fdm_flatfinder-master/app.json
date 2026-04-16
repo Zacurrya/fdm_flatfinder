@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "FDM Relocate",
+    "slug": "fdm_flatfinder",
+    "version": "1.0.0",
+    "orientation": "default",
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1b1b1b"
+    },
+    "icon": "./assets/images/favicon.svg",
+    "scheme": "fdmflatfinder",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "splash": {
+        "image": "./assets/images/icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#1b1b1b"
+      }
+    },
+    "android": {
+      "package": "com.fdm.flatfinder",
+      "splash": {
+        "image": "./assets/images/icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#1b1b1b"
+      },
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/favicon.svg",
+        "backgroundColor": "#1b1b1b"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.svg"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#1b1b1b",
+          "dark": {
+            "backgroundColor": "#1b1b1b"
+          }
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
