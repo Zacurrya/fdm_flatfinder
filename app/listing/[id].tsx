@@ -169,7 +169,7 @@ export default function ListingDetailScreen() {
 
           <View className="flex-row items-center mb-6">
             <Ionicons name="location" size={16} color="#ffffff60" />
-            <Text className="text-fdm-fg/60 text-base ml-1">{listing.location}</Text>
+            <Text className="text-fdm-fg/60 text-base ml-1">{listing.ListingLocations?.address || "Address unavailable"}</Text>
           </View>
 
           <View className="flex-row border-y border-white/10 py-5 mb-8 justify-around">

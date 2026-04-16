@@ -1,4 +1,3 @@
-import NotificationButton from "@/components/home/NotificationButton";
 import CityImage from "@/components/ui/CityImage";
 import { Image } from "expo-image";
 import { Text, View, useWindowDimensions } from "react-native";
@@ -7,14 +6,12 @@ type HomeHeaderProps = {
   cityName: string;
   firstName?: string;
   officeLocation?: string;
-  onPressNotifications?: () => void;
 };
 
 export default function HomeHeader({
   cityName,
   firstName,
   officeLocation,
-  onPressNotifications = () => {},
 }: HomeHeaderProps) {
   const { width, height } = useWindowDimensions();
 
@@ -43,9 +40,6 @@ export default function HomeHeader({
         </View>
         </View>
 
-        <NotificationButton 
-          onPressNotifications={onPressNotifications}
-        />
       </View>
   );
 }

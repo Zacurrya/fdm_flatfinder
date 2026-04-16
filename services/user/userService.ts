@@ -365,3 +365,27 @@ export const requestOfficeLocationChange = async (
 
     return { success: true };
 };
+
+export const addFavourite = async (userId: string, listingId: number): Promise<AuthResponse> => {
+    const { error } = await supabase.from("UserFavourites").insert({
+        userId,
+        listingId,
+    });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+};
+
+export const removeFavourite = async (userId: string, listingId: number): Promise<AuthResponse> => {
+    const { error } = await supabase.from("UserFavourites").delete()
+        .eq("userId", userId)
+        .eq("listingId", listingId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+};
+
+export const getUserFavourites = async (userId: string): Promise<AuthResponse<number[]>> => {
+    const { data, error } = await supabase.from("UserFavourites").select("listingId").eq("userId", userId);
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data.map(d => d.listingId) };
+};
+

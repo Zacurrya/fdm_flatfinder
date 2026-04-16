@@ -1,13 +1,14 @@
 import HomeHeader from "@components/home/HomeHeader";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
-import ListingCard, { ListingCardData } from "@components/ui/ListingCard";
+import ListingCard from "@components/ui/ListingCard";
 import { useAuth } from "@context/AuthContext";
+import { fetchListings, Listing } from "@services/listings/listingsService";
+import { getUserFavourites } from "@services/user/userService";
+import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { useCallback, useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
-import { fetchListings, Listing } from "../../services/listings/listingsService";
 
 // Home Screen
 
@@ -18,34 +19,56 @@ export default function HomeScreen() {
   const cityName = user?.officeLocation || "home";
 
   const [listings, setListings] = useState<Listing[]>([]);
+  const [favIds, setFavIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const navigation = useNavigation();
+
+  const loadListings = useCallback(async (isActive = true) => {
+    try {
+      const [data, favResponse] = await Promise.all([
+        fetchListings(),
+        user?.userId ? getUserFavourites(user.userId) : Promise.resolve({ success: true, data: [] })
+      ]);
+
+      if (isActive) {
+        const userFavIds = favResponse.success ? favResponse.data || [] : [];
+        setFavIds(userFavIds);
+        const filtered = data.filter((l) => {
+          const isFaved = userFavIds.includes(Number(l.id));
+          const listingCity = l.ListingLocations?.city;
+          const isSameCity = !!listingCity && !!user?.officeLocation && listingCity.toLowerCase() === user.officeLocation.toLowerCase();
+          return isFaved && isSameCity;
+        });
+        setListings(filtered);
+      }
+    } catch (error) {
+      console.error("Failed to fetch listings:", error);
+    } finally {
+      if (isActive) {
+        setLoading(false);
+      }
+    }
+  }, [user?.userId]);
 
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      const loadListings = async () => {
-        try {
-          const data = await fetchListings();
-          if (isActive) {
-            setListings(data);
-          }
-        } catch (error) {
-          console.error("Failed to fetch listings:", error);
-        } finally {
-          if (isActive) {
-            setLoading(false);
-          }
-        }
-      };
-
-      loadListings();
-
-      return () => {
-        isActive = false;
-      };
-    }, [])
+      loadListings(isActive);
+      return () => { isActive = false; };
+    }, [loadListings])
   );
+
+  useEffect(() => {
+    // @ts-expect-error - expo-router navigation types don't inherently map tab events without explicit typing
+    const unsubscribe = navigation.addListener('tabPress', (e) => {
+      // Re-fetch data every time the home tab is pressed
+      setLoading(true);
+      loadListings(true);
+    });
+
+    return unsubscribe;
+  }, [navigation, loadListings]);
 
   if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
     return (
@@ -80,7 +103,7 @@ export default function HomeScreen() {
         {/* Featured Listings */}
         <View className="px-6 mb-2">
           <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-fdm-fg text-lg font-bold tracking-tight">Featured/Favourited Listings (Undecided)</Text>
+            <Text className="text-fdm-fg text-lg font-bold tracking-tight">Saved Listings</Text>
             <TouchableOpacity>
               <Text className="text-fdm-accent text-sm font-semibold">See all</Text>
             </TouchableOpacity>
@@ -90,12 +113,32 @@ export default function HomeScreen() {
             {loading ? (
               <Text className="text-fdm-fg/50 text-center py-4">Loading listings...</Text>
             ) : listings.length === 0 ? (
-              <Text className="text-fdm-fg/50 text-center py-4">No listings found. Be the first to add one!</Text>
+              <Text className="text-fdm-fg/50 text-center py-4">No saved listings yet.</Text>
             ) : (
               listings.map((listing) => (
-                <ListingCard 
-                  key={listing.id} 
-                  listing={listing} 
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  isFavourite={favIds.includes(Number(listing.id))}
+                  onToggleFavourite={async () => {
+                    const lId = Number(listing.id);
+                    if (!user) return;
+
+                    const isFaved = favIds.includes(lId);
+
+                    if (isFaved) {
+                      setFavIds(prev => prev.filter(id => id !== lId));
+                      // We don't rollback list blindly, but log error
+                      const { removeFavourite } = await import("../../services/user/userService");
+                      const res = await removeFavourite(user.userId, lId);
+                      if (!res.success) {
+                         console.error("Unfavourite failed on Home:", res.error);
+                         // Note: We'd ideally rollback UI but for home screen filtering, we log it for now
+                      } else {
+                         setListings(prev => prev.filter(l => l.id !== lId));
+                      }
+                    }
+                  }}
                   onPress={() => router.push(`/listing/${listing.id}`)}
                 />
               ))

@@ -161,6 +161,74 @@ export type Database = {
         }
         Relationships: []
       }
+      UserFavourites: {
+        Row: {
+          id: number
+          userId: string
+          listingId: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          userId: string
+          listingId: number
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          userId?: string
+          listingId?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "UserFavourites_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "Users"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "UserFavourites_listingId_fkey"
+            columns: ["listingId"]
+            isOneToOne: false
+            referencedRelation: "Listings"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      ListingLocations: {
+        Row: {
+          id: number
+          listingId: number
+          city: string
+          address: string
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          listingId: number
+          city: string
+          address: string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          listingId?: number
+          city?: string
+          address?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ListingLocations_listingId_fkey"
+            columns: ["listingId"]
+            isOneToOne: true
+            referencedRelation: "Listings"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       // the main table for all the flats people upload
       Listings: {
         Row: {
@@ -170,7 +238,6 @@ export type Database = {
           // we added these to show more info and where the flat came from
           description?: string | null
           id: number
-          location: string
           photos?: string[]
           price: number
           propertyType: Database["public"]["Enums"]["PropertyType"]
@@ -185,7 +252,6 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: number
-          location: string
           photos?: string[]
           price: number
           propertyType: Database["public"]["Enums"]["PropertyType"]
@@ -200,7 +266,6 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: number
-          location?: string
           photos?: string[]
           price?: number
           propertyType?: Database["public"]["Enums"]["PropertyType"]

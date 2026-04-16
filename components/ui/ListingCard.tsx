@@ -9,23 +9,17 @@ import { Image, Text, TouchableOpacity, View, TouchableOpacityProps } from "reac
 // shows the photo, price, location, beds and baths
 
 // data we need from the listing to display on the card
-export type ListingCardData = {
-    id: number | string;
-    title: string;
-    location: string;
-    price: number | string;
-    rentPeriod?: "WEEKLY" | "BIWEEKLY" | "MONTHLY";
-    photos?: string[] | null;
-    beds?: number;
-    baths?: number;
-    source?: "FDM" | "RIGHTMOVE" | "OPENRENT" | "ZOOPLA";
-};
+import { getSignedListingPhotoUrl, Listing } from "../../services/listings/listingsService";
+
+export type ListingCardData = Listing;
 
 type ListingCardProps = {
     listing: ListingCardData;
+    isFavourite?: boolean;
+    onToggleFavourite?: () => void;
 } & TouchableOpacityProps;
 
-import { getSignedListingPhotoUrl } from "../../services/listings/listingsService";
+
 
 // colour + label config for each listing source
 const SOURCE_CONFIG: Record<
@@ -58,7 +52,7 @@ const SOURCE_CONFIG: Record<
     },
 };
 
-const ListingCard = forwardRef<View, ListingCardProps>(({ listing, onPress, ...props }, ref) => {
+const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, onToggleFavourite, onPress, ...props }, ref) => {
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
     useEffect(() => {
@@ -159,6 +153,30 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, onPress, ...p
                         {sourceConfig.label}
                     </Text>
                 </View>
+
+                {/* Favourite Button (Top Left) */}
+                {onToggleFavourite && (
+                    <TouchableOpacity
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            onToggleFavourite();
+                        }}
+                        style={{
+                            position: "absolute",
+                            top: 10,
+                            left: 10,
+                            backgroundColor: "rgba(0,0,0,0.4)",
+                            padding: 6,
+                            borderRadius: 20,
+                        }}
+                    >
+                        <Ionicons 
+                            name={isFavourite ? "heart" : "heart-outline"} 
+                            size={20} 
+                            color={isFavourite ? "#ef4444" : "#ffffff"} 
+                        />
+                    </TouchableOpacity>
+                )}
             </View>
 
             <View className="p-4">
@@ -174,7 +192,7 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, onPress, ...p
                                 color="#ffffff60"
                             />
                             <Text className="text-fdm-fg/50 text-xs">
-                                {listing.location}
+                                {listing.ListingLocations?.address || "Unknown location"}
                             </Text>
                         </View>
                     </View>

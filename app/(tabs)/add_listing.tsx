@@ -17,7 +17,8 @@ export default function AddListingScreen() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [location, setLocation] = useState("");
+  const [city, setCity] = useState(user?.officeLocation || "");
+  const [address, setAddress] = useState("");
   const [price, setPrice] = useState("");
   const [rentPeriod, setRentPeriod] = useState<"WEEKLY" | "BIWEEKLY" | "MONTHLY">("WEEKLY");
   const [beds, setBeds] = useState("1");
@@ -55,7 +56,7 @@ export default function AddListingScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!title || !location || !price) {
+    if (!title || !city || !address || !price) {
       Alert.alert("Missing Fields", "Please fill in all required fields.");
       return;
     }
@@ -75,7 +76,6 @@ export default function AddListingScreen() {
       const newListing: InsertListing = {
         title,
         description: description,
-        location,
         price: parseFloat(price) || 0,
         rentPeriod: rentPeriod,
         propertyType: propertyType,
@@ -85,13 +85,14 @@ export default function AddListingScreen() {
         beds: parseInt(beds) || 1,
       };
 
-      await createListing(newListing);
+      await createListing(newListing, city, address);
       Alert.alert("Success", "Your property listing has been uploaded!");
       
       // reset the form fields after successful upload
       setTitle("");
       setDescription("");
-      setLocation("");
+      setCity(user?.officeLocation || "");
+      setAddress("");
       setPrice("");
       setBeds("1");
       setBaths("1");
@@ -163,11 +164,22 @@ export default function AddListingScreen() {
           </View>
 
           <View>
-            <Text className="text-fdm-fg/70 mb-1 ml-1 text-sm">Location</Text>
+            <Text className="text-fdm-fg/70 mb-1 ml-1 text-sm">City</Text>
             <TextInput
-              value={location}
-              onChangeText={setLocation}
-              placeholder="e.g. East London"
+              value={city}
+              onChangeText={setCity}
+              placeholder="e.g. London"
+              placeholderTextColor="#ffffff50"
+              className="bg-fdm-fg/5 text-fdm-fg border border-fdm-fg/10 rounded-2xl px-4 py-3"
+            />
+          </View>
+
+          <View>
+            <Text className="text-fdm-fg/70 mb-1 ml-1 text-sm">Property Address</Text>
+            <TextInput
+              value={address}
+              onChangeText={setAddress}
+              placeholder="e.g. 10 Canada Square, E14 5AB"
               placeholderTextColor="#ffffff50"
               className="bg-fdm-fg/5 text-fdm-fg border border-fdm-fg/10 rounded-2xl px-4 py-3"
             />

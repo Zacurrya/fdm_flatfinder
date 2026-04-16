@@ -1,9 +1,60 @@
 import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
 import { useAuth } from "@context/AuthContext";
-import { ScrollView, Text, View } from "react-native";
+import { View, Text, ScrollView, useWindowDimensions, TouchableOpacity, TextInput, Modal, SafeAreaView, ActivityIndicator } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useState, useCallback } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { fetchListings, Listing } from "../../../services/listings/listingsService";
+import { getUserFavourites, addFavourite, removeFavourite } from "../../../services/user/userService";
+import ListingCard from "@/components/ui/ListingCard";
+import FilterSidebar from "@/components/search/FilterSidebar";
 
 export default function SearchScreen() {
   const { user } = useAuth();
+  const router = useRouter();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [favIds, setFavIds] = useState<number[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Filter states
+  const [minPrice, setMinPrice] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<string>("");
+  const [bedrooms, setBedrooms] = useState<number | null>(null);
+  const [bathrooms, setBathrooms] = useState<number | null>(null);
+  const [sourceFilter, setSourceFilter] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      const loadListings = async () => {
+        try {
+          const [data, favData] = await Promise.all([
+            fetchListings(),
+            user?.userId ? getUserFavourites(user.userId) : Promise.resolve({ success: true, data: [] })
+          ]);
+          if (isActive) {
+            setListings(data);
+            setFavIds(favData.success ? favData.data || [] : []);
+          }
+        } catch (error) {
+          console.error("Failed to fetch listings:", error);
+        } finally {
+          if (isActive) setLoading(false);
+        }
+      };
+      
+      setLoading(true);
+      loadListings();
+      
+      return () => { isActive = false; };
+    }, [user?.userId])
+  );
 
   if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
     return (
@@ -18,14 +69,146 @@ export default function SearchScreen() {
     );
   }
 
+  const filteredListings = listings.filter((l) => {
+    const listingCity = l.ListingLocations?.city;
+    if (!listingCity || !user?.officeLocation || listingCity.toLowerCase() !== user.officeLocation.toLowerCase()) {
+      return false;
+    }
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const address = l.ListingLocations?.address || "";
+      if (!l.title.toLowerCase().includes(q) && !address.toLowerCase().includes(q)) return false;
+    }
+    
+    let monthlyPrice = l.price;
+    if (l.rentPeriod === "WEEKLY") monthlyPrice = (l.price * 52) / 12;
+    if (l.rentPeriod === "BIWEEKLY") monthlyPrice = (l.price * 26) / 12;
+
+    if (minPrice && monthlyPrice < parseInt(minPrice)) return false;
+    if (maxPrice && monthlyPrice > parseInt(maxPrice)) return false;
+    if (bedrooms && l.beds && l.beds < bedrooms) return false;
+    if (bathrooms && l.baths && l.baths < bathrooms) return false;
+    if (sourceFilter && l.source !== sourceFilter) return false;
+    return true;
+  });
+
+  const sidebarProps = {
+    minPrice, setMinPrice,
+    maxPrice, setMaxPrice,
+    bedrooms, setBedrooms,
+    bathrooms, setBathrooms,
+    sourceFilter, setSourceFilter,
+  };
+
+  const renderSidebar = () => (
+    <View className="w-80 bg-[#151515] border-r border-[#ffffff10] h-full">
+      <FilterSidebar {...sidebarProps} />
+    </View>
+  );
+
   return (
-    <ScrollView
-      className="flex-1 bg-fdm-bg"
-      contentContainerStyle={{ flexGrow: 1 }}
-    >
-      <View className="flex-1 items-center justify-center">
-        <Text className="text-fdm-fg/40 text-sm">Search — coming soon</Text>
+    <View className="flex-1 bg-fdm-bg">
+      <View className="flex-1 flex-row pt-8">
+        {/* Landscape Sidebar */}
+        {isLandscape && renderSidebar()}
+
+        {/* Main Content */}
+        <View className="flex-1">
+          {/* Header */}
+          <View className={`px-6 py-4 flex-row items-center gap-3 border-b border-fdm-fg/10 ${!isLandscape ? 'pt-8' : ''}`}>
+            <View className="flex-1 flex-row items-center bg-fdm-fg/5 rounded-2xl px-4 py-3 border border-fdm-fg/10">
+              <Ionicons name="search" size={20} color="#ffffff60" />
+              <TextInput
+                className="flex-1 text-fdm-fg ml-3 font-medium text-base h-7 outline-none"
+                placeholder="Search flat names, location..."
+                placeholderTextColor="#ffffff50"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+            
+            {!isLandscape && (
+              <TouchableOpacity 
+                onPress={() => setShowMobileSidebar(true)}
+                className="w-12 h-12 bg-fdm-fg/5 items-center justify-center rounded-2xl border border-fdm-fg/10 active:bg-fdm-fg/10"
+              >
+                <Ionicons name="options-outline" size={24} color="#ccff00" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Results list */}
+          <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+            {loading ? (
+              <ActivityIndicator color="#ccff00" size="large" className="mt-10" />
+            ) : filteredListings.length === 0 ? (
+              <View className="items-center justify-center mt-20">
+                <Ionicons name="search-outline" size={64} color="#ffffff20" />
+                <Text className="text-fdm-fg/50 text-lg mt-4 font-medium text-center">No flats found matching your search</Text>
+                <TouchableOpacity 
+                  onPress={() => {
+                    setMinPrice(""); setMaxPrice(""); setBedrooms(null); setBathrooms(null); setSourceFilter(null); setSearchQuery("");
+                  }} 
+                  className="mt-6 px-6 py-3 bg-fdm-fg/5 rounded-xl border border-fdm-fg/10"
+                >
+                  <Text className="text-fdm-accent font-bold">Clear Filters</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ flexDirection: isLandscape ? 'row' : 'column', flexWrap: 'wrap', marginHorizontal: -8 }}>
+                {filteredListings.map(listing => (
+                  <View key={listing.id} style={{ width: isLandscape ? '50%' : '100%', padding: 8 }}>
+                    <ListingCard 
+                      listing={listing} 
+                      isFavourite={favIds.includes(Number(listing.id))}
+                      onToggleFavourite={async () => {
+                        if (!user) return;
+                        const lId = Number(listing.id);
+                        const isFaved = favIds.includes(lId);
+                        
+                        if (isFaved) {
+                            setFavIds(prev => prev.filter(id => id !== lId));
+                            const res = await removeFavourite(user.userId, lId);
+                            if (!res.success) {
+                                console.error("Unfavourite failed:", res.error);
+                                setFavIds(prev => [...prev, lId]); // rollback
+                            }
+                        } else {
+                            setFavIds(prev => [...prev, lId]);
+                            const res = await addFavourite(user.userId, lId);
+                            if (!res.success) {
+                                console.error("Favourite failed:", res.error);
+                                setFavIds(prev => prev.filter(id => id !== lId)); // rollback
+                            }
+                        }
+                      }}
+                      onPress={() => router.push(`/listing/${listing.id}`)}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </ScrollView>
+        </View>
       </View>
-    </ScrollView>
+
+      {/* Mobile Modal Sidebar */}
+      {!isLandscape && (
+        <Modal
+          visible={showMobileSidebar}
+          animationType="slide"
+          presentationStyle="formSheet"
+          onRequestClose={() => setShowMobileSidebar(false)}
+        >
+          <View className="flex-1 bg-fdm-bg pt-8">
+            <FilterSidebar 
+              {...sidebarProps} 
+              onClose={() => setShowMobileSidebar(false)} 
+            />
+          </View>
+        </Modal>
+      )}
+    </View>
   );
 }

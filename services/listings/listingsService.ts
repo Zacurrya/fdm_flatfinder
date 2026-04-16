@@ -1,7 +1,10 @@
 import { supabase } from "../../lib/supabase";
 import { Database } from "../../types/database.types";
 
-export type Listing = Database["public"]["Tables"]["Listings"]["Row"];
+export type ListingLocationRow = Database["public"]["Tables"]["ListingLocations"]["Row"];
+export type Listing = Database["public"]["Tables"]["Listings"]["Row"] & {
+  ListingLocations?: ListingLocationRow | null;
+};
 export type InsertListing = Database["public"]["Tables"]["Listings"]["Insert"];
 
 // fetch listings
@@ -10,7 +13,7 @@ export type InsertListing = Database["public"]["Tables"]["Listings"]["Insert"];
 export const fetchListings = async (): Promise<Listing[]> => {
   const { data, error } = await supabase
     .from("Listings")
-    .select("*")
+    .select("*, ListingLocations(*)")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -27,7 +30,7 @@ export const fetchListings = async (): Promise<Listing[]> => {
 export const fetchListingById = async (id: number | string): Promise<Listing> => {
   const { data, error } = await supabase
     .from("Listings")
-    .select("*")
+    .select("*, ListingLocations(*)")
     .eq("id", Number(id))
     .single();
 
@@ -57,16 +60,29 @@ export const deleteListing = async (id: number | string): Promise<void> => {
 // create listing
 
 // saves a new flat listing into the database using supabase
-export const createListing = async (listing: InsertListing): Promise<Listing> => {
+export const createListing = async (listing: InsertListing, city: string, address: string): Promise<Listing> => {
   const { data, error } = await supabase
     .from("Listings")
     .insert(listing)
     .select()
     .single();
 
-  if (error) {
+  if (error || !data) {
     console.error("Error creating listing:", error);
     throw error;
+  }
+
+  const { error: locError } = await supabase
+    .from("ListingLocations")
+    .insert({
+      listingId: data.id,
+      city,
+      address,
+    });
+
+  if (locError) {
+    console.error("Error creating listing location:", locError);
+    // Ideally we should rollback the listing creation but ignoring it for now for simplicity
   }
 
   return data;
