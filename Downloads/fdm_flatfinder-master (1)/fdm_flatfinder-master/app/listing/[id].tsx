@@ -7,6 +7,7 @@ import { fetchListingById, deleteListing, Listing, getSignedListingPhotoUrl } fr
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@context/AuthContext";
 import { getOrCreateConversation } from "../../services/chat/chatService";
+import { isFavourited, addFavourite, removeFavourite } from "../../services/listings/favouritesService";
 
 // listing detail screen
 
@@ -20,6 +21,8 @@ export default function ListingDetailScreen() {
   
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [favourited, setFavourited] = useState(false);
+  const [togglingFav, setTogglingFav] = useState(false);
 
   const [signedPhotos, setSignedPhotos] = useState<string[]>([]);
 
@@ -31,6 +34,11 @@ export default function ListingDetailScreen() {
       try {
         const data = await fetchListingById(Number(id));
         setListing(data);
+
+        if (user?.userId) {
+          const fav = await isFavourited(user.userId, Number(id));
+          setFavourited(fav);
+        }
         
         // make sure urls work and get signed ones if the bucket is private
         let rawPhotos: string[] = [];
@@ -143,13 +151,45 @@ export default function ListingDetailScreen() {
           )}
 
           {/* back button overlay */}
-          <TouchableOpacity 
+          <TouchableOpacity
             className="absolute left-6 h-12 w-12 bg-black/40 rounded-full items-center justify-center backdrop-blur-md border border-white/10"
             style={{ top: insets.top || 48 }}
             onPress={() => router.back()}
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
+
+          {/* favourite button */}
+          {user?.userId && (
+            <TouchableOpacity
+              className="absolute right-6 h-12 w-12 bg-black/40 rounded-full items-center justify-center border border-white/10"
+              style={{ top: insets.top || 48 }}
+              onPress={async () => {
+                if (!user?.userId || !listing) return;
+                setTogglingFav(true);
+                try {
+                  if (favourited) {
+                    await removeFavourite(user.userId, listing.id as number);
+                    setFavourited(false);
+                  } else {
+                    await addFavourite(user.userId, listing.id as number);
+                    setFavourited(true);
+                  }
+                } catch {
+                  Alert.alert("Error", "Could not update favourite.");
+                } finally {
+                  setTogglingFav(false);
+                }
+              }}
+              disabled={togglingFav}
+            >
+              <Ionicons
+                name={favourited ? "heart" : "heart-outline"}
+                size={22}
+                color={favourited ? "#ef4444" : "white"}
+              />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* content body */}
@@ -206,11 +246,23 @@ export default function ListingDetailScreen() {
               onPress={async () => {
                 if (!user?.userId) return;
                 try {
-                  const conv = await getOrCreateConversation(
+                  const { getOrCreateConversation: getConv, sendMessage } = await import("../../services/chat/chatService");
+                  const conv = await getConv(
                     user.userId,
                     listing.userId,
                     listing.id as number
                   );
+                  // send an intro message the first time this conversation is created
+                  const { getMessages } = await import("../../services/chat/chatService");
+                  const existing = await getMessages(conv.id);
+                  if (existing.length === 0) {
+                    const label = `${getRentLabel(listing.rentPeriod)}`;
+                    await sendMessage(
+                      conv.id,
+                      user.userId,
+                      `Hi! I'm interested in your listing: "${listing.title}" — £${listing.price}/${label} in ${listing.location}.`
+                    );
+                  }
                   router.push(`/(tabs)/messages/${conv.id}` as any);
                 } catch (e) {
                   Alert.alert("Error", "Could not open chat. Please try again.");

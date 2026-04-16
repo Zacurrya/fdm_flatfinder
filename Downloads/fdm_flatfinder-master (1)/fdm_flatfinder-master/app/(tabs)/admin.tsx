@@ -9,21 +9,26 @@ import * as AuditController from "@services/audit/auditController";
 import { AuditLog } from "@services/audit/auditTypes";
 import * as RequestController from "@services/requests/requestController";
 import { RequestRecord, RequestStatus } from "@services/requests/requestTypes";
+import { fetchAllListings, approveListing, deleteListing, Listing } from "../../services/listings/listingsService";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Text, View, useWindowDimensions } from "react-native";
+import { Alert, Text, View, useWindowDimensions, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 
 export default function AdminScreen() {
   const { user } = useAuth();
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
-  const [activeTab, setActiveTab] = useState<"requests" | "audits">("requests");
+  const [activeTab, setActiveTab] = useState<"requests" | "audits" | "listings">("requests");
   const [requests, setRequests] = useState<RequestRecord[]>([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(true);
   const [requestsError, setRequestsError] = useState("");
   const [requestStatusFilter, setRequestStatusFilter] = useState<RequestStatus | "ALL">("ALL");
   const [requestProcessingId, setRequestProcessingId] = useState<number | null>(null);
+
+  const [allListings, setAllListings] = useState<Listing[]>([]);
+  const [isLoadingListings, setIsLoadingListings] = useState(false);
+  const [hasLoadedListings, setHasLoadedListings] = useState(false);
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [isLoadingAudits, setIsLoadingAudits] = useState(false);
@@ -74,6 +79,50 @@ export default function AdminScreen() {
       void fetchAuditHistory();
     }
   }, [activeTab, hasLoadedAudits, fetchAuditHistory]);
+
+  const fetchListingsForAdmin = useCallback(async () => {
+    setIsLoadingListings(true);
+    try {
+      const data = await fetchAllListings();
+      setAllListings(data);
+    } catch {
+      Alert.alert("Error", "Could not load listings.");
+    } finally {
+      setIsLoadingListings(false);
+      setHasLoadedListings(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "listings" && !hasLoadedListings) {
+      void fetchListingsForAdmin();
+    }
+  }, [activeTab, hasLoadedListings, fetchListingsForAdmin]);
+
+  const handleApproveListing = useCallback(async (id: number) => {
+    try {
+      await approveListing(id);
+      setAllListings((prev) => prev.map((l) => l.id === id ? { ...l, isApproved: true } : l));
+    } catch {
+      Alert.alert("Error", "Could not approve listing.");
+    }
+  }, []);
+
+  const handleDeleteListing = useCallback(async (id: number) => {
+    Alert.alert("Delete Listing", "Are you sure you want to delete this listing?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete", style: "destructive", onPress: async () => {
+          try {
+            await deleteListing(id);
+            setAllListings((prev) => prev.filter((l) => l.id !== id));
+          } catch {
+            Alert.alert("Error", "Could not delete listing.");
+          }
+        }
+      }
+    ]);
+  }, []);
 
   const handleReviewRequest = useCallback(
     async (request: RequestRecord, decision: "APPROVED" | "REJECTED") => {
@@ -162,6 +211,8 @@ export default function AdminScreen() {
   const subtitle =
     activeTab === "requests"
       ? `${requests.length} ${requests.length === 1 ? "request" : "requests"}`
+      : activeTab === "listings"
+      ? `${allListings.length} listing${allListings.length === 1 ? "" : "s"}`
       : `${auditLogs.length} audit ${auditLogs.length === 1 ? "entry" : "entries"}`;
 
   return (
@@ -197,6 +248,45 @@ export default function AdminScreen() {
           onReject={handleRejectRequest}
           onRefresh={handleRefreshRequests}
         />
+      ) : activeTab === "listings" ? (
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+          {isLoadingListings ? (
+            <ActivityIndicator color="#ccff00" style={{ marginTop: 40 }} />
+          ) : allListings.length === 0 ? (
+            <Text className="text-fdm-fg/40 text-center mt-10">No listings yet.</Text>
+          ) : (
+            allListings.map((listing) => (
+              <View key={listing.id} className="bg-fdm-fg/5 border border-fdm-fg/10 rounded-2xl p-4 mb-3">
+                <View className="flex-row justify-between items-start mb-1">
+                  <Text className="text-fdm-fg font-bold text-base flex-1 mr-2" numberOfLines={1}>{listing.title}</Text>
+                  <View className={`px-2 py-0.5 rounded-full ${listing.isApproved ? "bg-green-500/20 border border-green-500/40" : "bg-yellow-500/20 border border-yellow-500/40"}`}>
+                    <Text className={`text-xs font-semibold ${listing.isApproved ? "text-green-400" : "text-yellow-400"}`}>
+                      {listing.isApproved ? "Approved" : "Pending"}
+                    </Text>
+                  </View>
+                </View>
+                <Text className="text-fdm-fg/50 text-sm mb-1">{listing.location} · £{listing.price}/{listing.rentPeriod === "WEEKLY" ? "wk" : listing.rentPeriod === "BIWEEKLY" ? "biwk" : "mo"}</Text>
+                <Text className="text-fdm-fg/40 text-xs mb-3">{listing.beds} bed · {listing.baths} bath · {listing.propertyType}</Text>
+                <View className="flex-row gap-2">
+                  {!listing.isApproved && (
+                    <TouchableOpacity
+                      onPress={() => handleApproveListing(listing.id as number)}
+                      className="flex-1 bg-fdm-accent/20 border border-fdm-accent/40 py-2 rounded-xl items-center"
+                    >
+                      <Text className="text-fdm-accent text-sm font-semibold">Approve</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    onPress={() => handleDeleteListing(listing.id as number)}
+                    className="flex-1 bg-red-500/10 border border-red-500/30 py-2 rounded-xl items-center"
+                  >
+                    <Text className="text-red-400 text-sm font-semibold">Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
+        </ScrollView>
       ) : (
         <AuditTable
           auditLogs={auditLogs}

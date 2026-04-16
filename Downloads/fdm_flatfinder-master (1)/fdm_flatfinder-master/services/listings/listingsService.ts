@@ -6,15 +6,92 @@ export type InsertListing = Database["public"]["Tables"]["Listings"]["Insert"];
 
 // fetch listings
 
-// gets all the flats from the database so we can show them on the home page
+// gets all approved flats from the database so we can show them on the home page
 export const fetchListings = async (): Promise<Listing[]> => {
+  const { data, error } = await supabase
+    .from("Listings")
+    .select("*")
+    .eq("isApproved", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching listings:", error);
+    throw error;
+  }
+
+  return data || [];
+};
+
+// fetch all listings (admin only — includes unapproved)
+export const fetchAllListings = async (): Promise<Listing[]> => {
   const { data, error } = await supabase
     .from("Listings")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching listings:", error);
+    console.error("Error fetching all listings:", error);
+    throw error;
+  }
+
+  return data || [];
+};
+
+// approve a listing
+export const approveListing = async (id: number | string): Promise<void> => {
+  const { error } = await supabase
+    .from("Listings")
+    .update({ isApproved: true })
+    .eq("id", Number(id));
+
+  if (error) {
+    console.error("Error approving listing:", error);
+    throw error;
+  }
+};
+
+// search listings with filters
+export const searchListings = async (filters: {
+  location?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  beds?: number;
+  baths?: number;
+  propertyType?: string;
+  rentPeriod?: string;
+}): Promise<Listing[]> => {
+  let query = supabase
+    .from("Listings")
+    .select("*")
+    .eq("isApproved", true)
+    .order("created_at", { ascending: false });
+
+  if (filters.location) {
+    query = query.ilike("location", `%${filters.location}%`);
+  }
+  if (filters.minPrice !== undefined) {
+    query = query.gte("price", filters.minPrice);
+  }
+  if (filters.maxPrice !== undefined) {
+    query = query.lte("price", filters.maxPrice);
+  }
+  if (filters.beds !== undefined) {
+    query = query.eq("beds", filters.beds);
+  }
+  if (filters.baths !== undefined) {
+    query = query.eq("baths", filters.baths);
+  }
+  if (filters.propertyType) {
+    query = query.eq("propertyType", filters.propertyType);
+  }
+  if (filters.rentPeriod) {
+    query = query.eq("rentPeriod", filters.rentPeriod);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Error searching listings:", error);
     throw error;
   }
 

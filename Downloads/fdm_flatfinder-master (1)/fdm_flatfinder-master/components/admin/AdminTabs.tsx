@@ -1,6 +1,6 @@
 import { Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 
-type AdminTab = "requests" | "audits";
+type AdminTab = "requests" | "audits" | "listings";
 
 type AdminTabsProps = {
   activeTab: AdminTab;
@@ -9,6 +9,7 @@ type AdminTabsProps = {
 
 const TABS: { key: AdminTab; label: string }[] = [
   { key: "requests", label: "Requests" },
+  { key: "listings", label: "Listings" },
   { key: "audits", label: "Audit Logs" },
 ];
 

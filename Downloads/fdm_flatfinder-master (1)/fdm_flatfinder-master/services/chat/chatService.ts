@@ -4,13 +4,27 @@ import { Database } from "../../types/database.types";
 export type Conversation = Database["public"]["Tables"]["Conversations"]["Row"];
 export type Message = Database["public"]["Tables"]["Messages"]["Row"];
 
+export type OtherUserProfile = {
+  userId: string;
+  firstName: string | null;
+  lastName: string | null;
+  profilePicture: string | null;
+  phoneNumber: string | null;
+  email: string | null;
+};
+
+export type ListingSnippet = {
+  id: number;
+  title: string;
+  price: number;
+  rentPeriod: string;
+  location: string;
+  photos: string[] | null;
+};
+
 export type ConversationWithUser = Conversation & {
-  otherUser: {
-    userId: string;
-    firstName: string | null;
-    lastName: string | null;
-    profilePicture: string | null;
-  };
+  otherUser: OtherUserProfile;
+  listing: ListingSnippet | null;
 };
 
 // get or create a conversation between two users (optionally linked to a listing)
@@ -19,7 +33,6 @@ export const getOrCreateConversation = async (
   otherUserId: string,
   listingId?: number
 ): Promise<Conversation> => {
-  // check if a conversation already exists between these two users
   const { data: existing } = await supabase
     .from("Conversations")
     .select("*")
@@ -30,7 +43,6 @@ export const getOrCreateConversation = async (
 
   if (existing) return existing;
 
-  // create a new conversation
   const { data, error } = await supabase
     .from("Conversations")
     .insert({
@@ -49,7 +61,7 @@ export const getOrCreateConversation = async (
   return data;
 };
 
-// get all conversations for the current user with the other person's profile
+// get all conversations for the current user with other user profile + listing snippet
 export const getConversations = async (
   userId: string
 ): Promise<ConversationWithUser[]> => {
@@ -66,15 +78,24 @@ export const getConversations = async (
 
   if (!data || data.length === 0) return [];
 
-  // fetch the other user's profile for each conversation
   const enriched: ConversationWithUser[] = await Promise.all(
     data.map(async (conv) => {
       const otherUserId = conv.user1_id === userId ? conv.user2_id : conv.user1_id;
-      const { data: otherUser } = await supabase
-        .from("Users")
-        .select("userId, firstName, lastName, profilePicture")
-        .eq("userId", otherUserId)
-        .single();
+
+      const [{ data: otherUser }, listingResult] = await Promise.all([
+        supabase
+          .from("Users")
+          .select("userId, firstName, lastName, profilePicture, phoneNumber, email")
+          .eq("userId", otherUserId)
+          .single(),
+        conv.listing_id
+          ? supabase
+              .from("Listings")
+              .select("id, title, price, rentPeriod, location, photos")
+              .eq("id", conv.listing_id)
+              .single()
+          : Promise.resolve({ data: null }),
+      ]);
 
       return {
         ...conv,
@@ -83,12 +104,58 @@ export const getConversations = async (
           firstName: "Unknown",
           lastName: "",
           profilePicture: null,
+          phoneNumber: null,
+          email: null,
         },
+        listing: (listingResult as any).data ?? null,
       };
     })
   );
 
   return enriched;
+};
+
+// get other user profile + listing details for a single conversation
+export const getConversationDetails = async (
+  conversationId: string,
+  currentUserId: string
+): Promise<{ otherUser: OtherUserProfile; listing: ListingSnippet | null }> => {
+  const { data: conv, error } = await supabase
+    .from("Conversations")
+    .select("user1_id, user2_id, listing_id")
+    .eq("id", conversationId)
+    .single();
+
+  if (error || !conv) throw error ?? new Error("Conversation not found");
+
+  const otherUserId = conv.user1_id === currentUserId ? conv.user2_id : conv.user1_id;
+
+  const [{ data: otherUser }, listingResult] = await Promise.all([
+    supabase
+      .from("Users")
+      .select("userId, firstName, lastName, profilePicture, phoneNumber, email")
+      .eq("userId", otherUserId)
+      .single(),
+    conv.listing_id
+      ? supabase
+          .from("Listings")
+          .select("id, title, price, rentPeriod, location, photos")
+          .eq("id", conv.listing_id)
+          .single()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  return {
+    otherUser: otherUser ?? {
+      userId: otherUserId,
+      firstName: "Unknown",
+      lastName: "",
+      profilePicture: null,
+      phoneNumber: null,
+      email: null,
+    },
+    listing: (listingResult as any).data ?? null,
+  };
 };
 
 // get all messages in a conversation
@@ -107,7 +174,7 @@ export const getMessages = async (conversationId: string): Promise<Message[]> =>
   return data || [];
 };
 
-// send a message and update the conversation's last_message
+// send a message and update the conversation's last_message preview
 export const sendMessage = async (
   conversationId: string,
   senderId: string,
@@ -124,7 +191,6 @@ export const sendMessage = async (
     throw error;
   }
 
-  // update the conversation preview
   await supabase
     .from("Conversations")
     .update({ last_message: content, last_message_at: new Date().toISOString() })
@@ -133,7 +199,7 @@ export const sendMessage = async (
   return data;
 };
 
-// subscribe to new messages in a conversation (realtime)
+// subscribe to new messages in a conversation via Supabase realtime
 export const subscribeToMessages = (
   conversationId: string,
   onNewMessage: (message: Message) => void

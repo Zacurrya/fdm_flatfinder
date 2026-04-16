@@ -2,7 +2,14 @@ import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
 import { useAuth } from "@context/AuthContext";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View, Image } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+  Image,
+} from "react-native";
 import { getConversations, ConversationWithUser } from "../../../services/chat/chatService";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,14 +38,18 @@ export default function MessagesScreen() {
       };
 
       load();
-      return () => { active = false; };
+      return () => {
+        active = false;
+      };
     }, [user?.userId])
   );
 
   if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
     return (
       <AwaitingApprovalView
-        title={user.approvalStatus === "REJECTED" ? "Account Denied" : "Awaiting Admin Approval"}
+        title={
+          user.approvalStatus === "REJECTED" ? "Account Denied" : "Awaiting Admin Approval"
+        }
         message={
           user.approvalStatus === "REJECTED"
             ? "Your account has been denied. Please contact an administrator for more information."
@@ -51,8 +62,11 @@ export default function MessagesScreen() {
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
     const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const diffDays = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (diffDays === 0)
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     if (diffDays === 1) return "Yesterday";
     return date.toLocaleDateString([], { day: "numeric", month: "short" });
   };
@@ -63,7 +77,9 @@ export default function MessagesScreen() {
 
       {/* header */}
       <View className="pt-14 pb-4 px-6">
-        <Text className="text-fdm-fg text-3xl font-bold tracking-tight">Messages</Text>
+        <Text className="text-fdm-fg text-3xl font-bold tracking-tight">
+          Messages
+        </Text>
       </View>
 
       {loading ? (
@@ -73,7 +89,9 @@ export default function MessagesScreen() {
       ) : conversations.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <Ionicons name="chatbubbles-outline" size={56} color="#ffffff20" />
-          <Text className="text-fdm-fg/40 text-base text-center mt-4">No messages yet.</Text>
+          <Text className="text-fdm-fg/40 text-base text-center mt-4">
+            No messages yet.
+          </Text>
           <Text className="text-fdm-fg/30 text-sm text-center mt-1">
             Open a listing and tap "Message Seller" to start a conversation.
           </Text>
@@ -81,13 +99,23 @@ export default function MessagesScreen() {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
           {conversations.map((conv) => {
-            const name = [conv.otherUser.firstName, conv.otherUser.lastName].filter(Boolean).join(" ") || "User";
-            const initials = name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+            const name =
+              [conv.otherUser.firstName, conv.otherUser.lastName]
+                .filter(Boolean)
+                .join(" ") || "User";
+            const initials = name
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase()
+              .slice(0, 2);
 
             return (
               <TouchableOpacity
                 key={conv.id}
-                onPress={() => router.push(`/(tabs)/messages/${conv.id}` as any)}
+                onPress={() =>
+                  router.push(`/(tabs)/messages/${conv.id}` as any)
+                }
                 className="flex-row items-center px-6 py-4 border-b border-fdm-fg/5 active:bg-fdm-fg/5"
               >
                 {/* avatar */}
@@ -98,22 +126,56 @@ export default function MessagesScreen() {
                   />
                 ) : (
                   <View className="w-12 h-12 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center">
-                    <Text className="text-fdm-accent font-bold text-base">{initials}</Text>
+                    <Text className="text-fdm-accent font-bold text-base">
+                      {initials}
+                    </Text>
                   </View>
                 )}
 
                 {/* text */}
                 <View className="flex-1 ml-4">
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-fdm-fg font-semibold text-base">{name}</Text>
-                    <Text className="text-fdm-fg/40 text-xs">{formatTime(conv.last_message_at)}</Text>
+                    <Text className="text-fdm-fg font-semibold text-base">
+                      {name}
+                    </Text>
+                    <Text className="text-fdm-fg/40 text-xs">
+                      {formatTime(conv.last_message_at)}
+                    </Text>
                   </View>
-                  <Text className="text-fdm-fg/50 text-sm mt-0.5" numberOfLines={1}>
+
+                  {/* last message preview */}
+                  <Text
+                    className="text-fdm-fg/50 text-sm mt-0.5"
+                    numberOfLines={1}
+                  >
                     {conv.last_message ?? "Start a conversation"}
                   </Text>
+
+                  {/* listing tag — shown when the conversation is linked to a listing */}
+                  {conv.listing && (
+                    <View className="flex-row items-center mt-1.5 gap-1">
+                      <Ionicons name="home-outline" size={11} color="#ccff0070" />
+                      <Text
+                        className="text-fdm-accent/70 text-xs flex-1"
+                        numberOfLines={1}
+                      >
+                        {conv.listing.title} · £{conv.listing.price}/
+                        {conv.listing.rentPeriod === "WEEKLY"
+                          ? "pw"
+                          : conv.listing.rentPeriod === "BIWEEKLY"
+                          ? "biwk"
+                          : "pcm"}
+                      </Text>
+                    </View>
+                  )}
                 </View>
 
-                <Ionicons name="chevron-forward" size={16} color="#ffffff30" className="ml-2" />
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color="#ffffff30"
+                  style={{ marginLeft: 8 }}
+                />
               </TouchableOpacity>
             );
           })}
