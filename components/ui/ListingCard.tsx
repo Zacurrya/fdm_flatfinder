@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
+import { Text, TouchableOpacity, View } from "react-native";
 
 // Listing Card Component
 
@@ -17,6 +17,7 @@ export type ListingCardData = {
     photos?: string[] | null;
     beds?: number;
     baths?: number;
+    source?: "FDM" | "RIGHTMOVE" | "OPENRENT" | "ZOOPLA";
 };
 
 type ListingCardProps = {
@@ -24,38 +25,126 @@ type ListingCardProps = {
     onPress?: () => void;
 };
 
+// colour + label config for each listing source
+const SOURCE_CONFIG: Record<
+    string,
+    { label: string; color: string; bg: string; border: string }
+> = {
+    FDM: {
+        label: "FDM",
+        color: "#ccff00",
+        bg: "rgba(10, 20, 0, 0.72)",
+        border: "#ccff0060",
+    },
+    RIGHTMOVE: {
+        label: "Rightmove",
+        color: "#00e8c6",
+        bg: "rgba(0, 20, 16, 0.72)",
+        border: "#00e8c660",
+    },
+    OPENRENT: {
+        label: "OpenRent",
+        color: "#fb923c",
+        bg: "rgba(30, 10, 0, 0.72)",
+        border: "#fb923c60",
+    },
+    ZOOPLA: {
+        label: "Zoopla",
+        color: "#c4b5fd",
+        bg: "rgba(15, 8, 30, 0.72)",
+        border: "#c4b5fd60",
+    },
+};
+
 export default function ListingCard({ listing, onPress }: ListingCardProps) {
+    const src = listing.source ?? "FDM";
+    const sourceConfig = SOURCE_CONFIG[src] ?? SOURCE_CONFIG.FDM;
+
+    const rentLabel =
+        listing.rentPeriod === "WEEKLY"
+            ? "wk"
+            : listing.rentPeriod === "BIWEEKLY"
+                ? "biwk"
+                : "mo";
+
     return (
+        <View>
         <TouchableOpacity
             onPress={onPress}
-            className="bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl overflow-hidden active:opacity-80"
+            className="bg-fdm-fg/5 rounded-3xl overflow-hidden active:opacity-80"
+            style={src === "FDM" ? {
+                borderWidth: 1.5,
+                borderColor: "#ccff0070",
+            } : {
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.1)",
+            }}
         >
             {/* Primary Photo Thumbnail */}
             <View className="h-40 bg-fdm-fg/10 items-center justify-center w-full overflow-hidden">
                 {listing.photos && listing.photos.length > 0 ? (
-                    <Image 
-                        source={{ uri: listing.photos[0] }} 
-                        style={{ width: '100%', height: '100%' }}
+                    <Image
+                        source={{ uri: listing.photos[0] }}
+                        style={{ width: "100%", height: "100%" }}
                         contentFit="cover"
                         transition={200}
                     />
                 ) : (
                     <Ionicons name="home" size={40} color="#ccff0030" />
                 )}
+
+                {/* Source Badge — top-right overlay on photo */}
+                <View
+                    style={{
+                        position: "absolute",
+                        top: 10,
+                        right: 10,
+                        backgroundColor: sourceConfig.bg,
+                        borderWidth: 1,
+                        borderColor: sourceConfig.border,
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 20,
+                        shadowColor: sourceConfig.color,
+                        shadowOpacity: 0.6,
+                        shadowRadius: 8,
+                        shadowOffset: { width: 0, height: 2 },
+                        elevation: 6,
+                    }}
+                >
+                    <Text
+                        style={{
+                            color: sourceConfig.color,
+                            fontSize: 11,
+                            fontWeight: "700",
+                            letterSpacing: 0.5,
+                        }}
+                    >
+                        {sourceConfig.label}
+                    </Text>
+                </View>
             </View>
 
             <View className="p-4">
                 <View className="flex-row items-start justify-between">
                     <View className="flex-1 pr-2">
-                        <Text className="text-fdm-fg font-bold text-base">{listing.title}</Text>
+                        <Text className="text-fdm-fg font-bold text-base">
+                            {listing.title}
+                        </Text>
                         <View className="flex-row items-center mt-1 gap-1">
-                            <Ionicons name="location-outline" size={13} color="#ffffff60" />
-                            <Text className="text-fdm-fg/50 text-xs">{listing.location}</Text>
+                            <Ionicons
+                                name="location-outline"
+                                size={13}
+                                color="#ffffff60"
+                            />
+                            <Text className="text-fdm-fg/50 text-xs">
+                                {listing.location}
+                            </Text>
                         </View>
                     </View>
                     <View className="bg-fdm-accent/10 border border-fdm-accent/20 px-3 py-1 rounded-xl">
                         <Text className="text-fdm-accent font-bold text-sm">
-                            £{listing.price}/{listing.rentPeriod === "WEEKLY" ? "wk" : listing.rentPeriod === "BIWEEKLY" ? "biwk" : "mo"}
+                            £{listing.price}/{rentLabel}
                         </Text>
                     </View>
                 </View>
@@ -63,18 +152,20 @@ export default function ListingCard({ listing, onPress }: ListingCardProps) {
                 <View className="flex-row gap-4 mt-3 pt-3 border-t border-fdm-fg/10">
                     <View className="flex-row items-center gap-1">
                         <Ionicons name="bed-outline" size={14} color="#ffffff50" />
-                        <Text className="text-fdm-fg/50 text-xs">{listing.beds} bed</Text>
+                        <Text className="text-fdm-fg/50 text-xs">
+                            {listing.beds} bed
+                        </Text>
                     </View>
                     <View className="flex-row items-center gap-1">
                         <Ionicons name="water-outline" size={14} color="#ffffff50" />
-                        <Text className="text-fdm-fg/50 text-xs">{listing.baths} bath</Text>
+                        <Text className="text-fdm-fg/50 text-xs">
+                            {listing.baths} bath
+                        </Text>
                     </View>
-                    <View className="flex-row items-center gap-1">
-                        <Ionicons name="people-outline" size={14} color="#ffffff50" />
-                        <Text className="text-fdm-fg/50 text-xs">FDMers nearby</Text>
-                    </View>
+
                 </View>
             </View>
         </TouchableOpacity>
+        </View>
     );
 }

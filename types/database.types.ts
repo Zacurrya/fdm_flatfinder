@@ -172,6 +172,7 @@ export type Database = {
           price: number
           propertyType: Database["public"]["Enums"]["PropertyType"]
           rentPeriod: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          source: "FDM" | "RIGHTMOVE" | "OPENRENT" | "ZOOPLA"
           title: string
           userId: string
         }
@@ -185,6 +186,7 @@ export type Database = {
           price: number
           propertyType: Database["public"]["Enums"]["PropertyType"]
           rentPeriod: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          source?: "FDM" | "RIGHTMOVE" | "OPENRENT" | "ZOOPLA"
           title: string
           userId: string
         }
@@ -198,6 +200,7 @@ export type Database = {
           price?: number
           propertyType?: Database["public"]["Enums"]["PropertyType"]
           rentPeriod?: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+          source?: "FDM" | "RIGHTMOVE" | "OPENRENT" | "ZOOPLA"
           title?: string
           userId?: string
         }

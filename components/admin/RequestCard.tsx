@@ -14,8 +14,8 @@ function StatusBadge({ status }: { status: string }) {
         status === "PENDING"
             ? { bg: "bg-yellow-500/15", border: "border-yellow-500/25", text: "text-yellow-400", label: "Pending" }
             : status === "APPROVED"
-            ? { bg: "bg-emerald-500/15", border: "border-emerald-500/25", text: "text-emerald-400", label: "Approved" }
-            : { bg: "bg-red-500/15", border: "border-red-500/25", text: "text-red-400", label: "Rejected" };
+                ? { bg: "bg-emerald-500/15", border: "border-emerald-500/25", text: "text-emerald-400", label: "Approved" }
+                : { bg: "bg-red-500/15", border: "border-red-500/25", text: "text-red-400", label: "Rejected" };
 
     return (
         <View className={`${config.bg} border ${config.border} px-3 py-1 rounded-xl`}>
@@ -60,7 +60,7 @@ function ActionButtons({
     );
 }
 
-// ─── Sign Up Card ────────────────────────────────────────────────────────────
+// Sign Up Card
 
 function SignUpCard({ request, isProcessing, onApprove, onReject }: RequestCardProps) {
     const displayName =
@@ -134,7 +134,7 @@ function SignUpCard({ request, isProcessing, onApprove, onReject }: RequestCardP
     );
 }
 
-// ─── City Change Card ─────────────────────────────────────────────────────────
+// City Change Card
 
 function CityChangeCard({ request, isProcessing, onApprove, onReject }: RequestCardProps) {
     const displayName =

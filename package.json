@@ -9,7 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "update-types": "npx supabase gen types typescript --project-id cpsijfnxawfrjyydurxw > types/database.types.ts"
+    "update-types": "npx supabase gen types typescript --project-id cpsijfnxawfrjyydurxw > types/database.types.ts",
+    "seed": "node ./scripts/seedListings.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/michroma": "^0.4.2",
