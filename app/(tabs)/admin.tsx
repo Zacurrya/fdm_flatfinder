@@ -1,6 +1,6 @@
-import AuditTable from "@components/admin/AuditTable";
 import AdminRequestsTable from "@components/admin/AdminRequestsTable";
 import AdminTabs from "@components/admin/AdminTabs";
+import AuditTable from "@components/admin/AuditTable";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { useAuth } from "@context/AuthContext";

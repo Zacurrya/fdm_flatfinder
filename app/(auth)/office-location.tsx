@@ -13,7 +13,7 @@ import {
     Text,
     TouchableOpacity,
     View,
-  useWindowDimensions,
+    useWindowDimensions,
 } from "react-native";
 
 export default function OfficeLocation() {

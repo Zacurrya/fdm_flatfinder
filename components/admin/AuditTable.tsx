@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { AuditLog } from "@services/audit/auditTypes";
 import { useState } from "react";
-import AdminTabs from "./AdminTabs";
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +11,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import AdminTabs from "./AdminTabs";
 
 type AuditTableProps = {
   auditLogs: AuditLog[];
