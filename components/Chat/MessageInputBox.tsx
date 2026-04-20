@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { TextInput, TouchableOpacity, View } from "react-native";
+import { Image, TextInput, TouchableOpacity, View } from "react-native";
 
 type MessageInputBoxProps = {
   value: string;
@@ -12,6 +12,8 @@ type MessageInputBoxProps = {
   onPressImage?: () => void;
   actionsDisabled?: boolean;
   showActions?: boolean;
+  attachment?: { uri: string; type: "image" } | null;
+  onClearAttachment?: () => void;
 };
 
 export default function MessageInputBox({
@@ -25,11 +27,30 @@ export default function MessageInputBox({
   onPressImage,
   actionsDisabled = false,
   showActions = true,
+  attachment,
+  onClearAttachment,
 }: MessageInputBoxProps) {
   const rightInsetClassName = showActions ? "pr-28" : "pr-12";
 
   return (
-    <View className="flex-1 bg-fdm-fg/10 border border-fdm-fg/10 rounded-3xl px-2 py-1">
+    <View className="flex-1 bg-fdm-fg/10 border border-fdm-fg/10 rounded-3xl px-2 py-2">
+      {attachment?.type === "image" ? (
+        <View className="flex-row items-center mb-2 px-1">
+          <View className="relative">
+            <Image
+              source={{ uri: attachment.uri }}
+              className="w-16 h-16 rounded-xl border border-fdm-fg/10"
+            />
+            <TouchableOpacity
+              onPress={onClearAttachment}
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-fdm-bg border border-fdm-fg/20 items-center justify-center shadow-lg"
+            >
+              <Ionicons name="close" size={14} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : null}
+
       <TextInput
         value={value}
         onChangeText={onChangeText}

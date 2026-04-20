@@ -217,6 +217,32 @@ export const getCityChatMessages = async (cityChatId: number): Promise<CityChatM
   }));
 };
 
+export const getCityChatParticipantCount = async (cityChatId: number): Promise<number> => {
+  const result = await supabase
+    .from("CityChatMessages" as any)
+    .select("senderId", { count: "exact", head: true })
+    .eq("CityChatId", cityChatId);
+
+  if (result.error) {
+    console.error("Error fetching city chat participant count:", result.error);
+    return 0;
+  }
+
+  // To get UNIQUE participants, the above count: "exact" on a select head: true might just count messages.
+  // Better way:
+  const uniqueResult = await supabase
+    .from("CityChatMessages" as any)
+    .select("senderId")
+    .eq("CityChatId", cityChatId);
+
+  if (uniqueResult.error || !uniqueResult.data) {
+    return 0;
+  }
+
+  const distinctSenders = new Set(uniqueResult.data.map((m: any) => m.senderId));
+  return distinctSenders.size;
+};
+
 export const sendCityChatMessage = async (
   cityChatId: number,
   senderId: string,

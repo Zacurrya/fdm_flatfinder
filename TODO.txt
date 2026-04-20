@@ -4,15 +4,14 @@
     - Zoopla
     - PropertyGuru (Singapore)
 - Componentise the chat screen
-- Make gap between messages larger
-- Align user icons to top left of their message bubble
 - Chats header shouldn't say the number of messages, but the number of people in the chat
 
 messageBuilder:
 - Recognise listing embeds, image embeds, group chat specific audits, and then apply the appropriate message type component to render
 
-
+- Users should be able to caption their images
 - Audit messages should notice if a new person is in the city
+- Util files for complicated codes like checking for image files 
 
 CONSIDER: 
 - Move cities to a separate table, grouping them by region

@@ -7,7 +7,7 @@ import {
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import ContactActionButtons from "@components/Chat/ContactActionButtons";
 import MessageAvatar from "@components/Chat/MessageAvatar";
-import MessageBubble from "@components/Chat/MessageBubble";
+import MessageBuilder from "@/components/MessageTypes/MessageBuilder";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -185,13 +185,13 @@ export default function ChatScreen() {
         )}
 
         <View
-          className={`flex-row mb-1 px-4 items-end ${isMe ? "justify-end" : "justify-start"}`}
+          className={`flex-row px-4 items-start ${isMe ? "justify-end" : "justify-start"}`}
         >
           {!isMe ? (
             <MessageAvatar profilePicture={otherUser?.profilePicture} initials={initials} />
           ) : null}
 
-          <MessageBubble
+          <MessageBuilder
             content={item.content}
             timeLabel={formatTime(item.createdAt)}
             isMe={isMe}
@@ -285,7 +285,7 @@ export default function ChatScreen() {
       flatListRef={flatListRef}
       renderMessage={renderMessage}
       listEmptyText="Send a message to get started"
-      composerProps={{
+      inputProps={{
         value: inputText,
         onChangeText: setInputText,
         placeholder: "Message...",

@@ -1,9 +1,10 @@
-import ChatComposer from "@components/Chat/ChatComposer";
+import MessageInputBox from "@components/Chat/MessageInputBox";
 import { Ionicons } from "@expo/vector-icons";
 import { MappedChatMessage } from "@utils/mapMessages";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ReactNode, RefObject } from "react";
+import { ListRenderItem } from "react-native";
 import {
     ActivityIndicator,
     FlatList,
@@ -15,7 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type ComposerProps = {
+type MessageInputProps = {
     value: string;
     onChangeText: (text: string) => void;
     placeholder?: string;
@@ -26,6 +27,8 @@ type ComposerProps = {
     onPressPlus?: () => void;
     onPressImage?: () => void;
     actionsDisabled?: boolean;
+    attachment?: { uri: string; type: "image" } | null;
+    onClearAttachment?: () => void;
 };
 
 type ChatScreenLayoutProps = {
@@ -37,17 +40,13 @@ type ChatScreenLayoutProps = {
     footerExtra?: ReactNode;
     messages: MappedChatMessage[];
     loading: boolean;
-    flatListRef: RefObject<FlatList>;
-    renderMessage: ({
-        item,
-        index,
-    }: {
-        item: MappedChatMessage;
-        index: number;
-    }) => ReactNode;
+    flatListRef: RefObject<FlatList | null>;
+    renderMessage: ListRenderItem<MappedChatMessage>;
     listEmptyIcon?: ReactNode;
     listEmptyText?: string;
-    composerProps: ComposerProps;
+    inputProps: MessageInputProps;
+    /** spacing between messages (Tailwind scale, e.g. 2 for mb-2). Defaults to 2.5. */
+    messageGap?: number | string;
 };
 
 export default function ChatScreenLayout({
@@ -60,7 +59,8 @@ export default function ChatScreenLayout({
     renderMessage,
     listEmptyIcon,
     listEmptyText = "Send a message to get started",
-    composerProps,
+    inputProps,
+    messageGap = 2.5,
 }: ChatScreenLayoutProps) {
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -100,18 +100,21 @@ export default function ChatScreenLayout({
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                     keyboardVerticalOffset={0}
                 >
-                    {/* Maps messages via the  */}
+                    {/* Messages List */}
                     <FlatList
                         ref={flatListRef}
                         data={messages}
                         keyExtractor={(item) => String(item.id)}
-                        renderItem={renderMessage}
-                        contentContainerStyle={{ paddingVertical: 12, flexGrow: 1 }}
+                        renderItem={(info) => (
+                            <View style={{ marginBottom: typeof messageGap === 'number' ? messageGap * 4 : undefined }}>
+                                {renderMessage(info)}
+                            </View>
+                        )}
                         onContentSizeChange={() =>
                             flatListRef.current?.scrollToEnd({ animated: false })
                         }
                         ListEmptyComponent={
-                            <View className="flex-1 items-center justify-center py-20">
+                            <View className="flex-1 items-center justify-center">
                                 {listEmptyIcon ?? (
                                     <Ionicons
                                         name="chatbubble-outline"
@@ -119,15 +122,18 @@ export default function ChatScreenLayout({
                                         color="#ffffff20"
                                     />
                                 )}
-                                <Text className="text-fdm-fg/30 text-sm mt-3">
+                                <Text className="text-fdm-fg/30 text-sm mt-4">
                                     {listEmptyText}
                                 </Text>
                             </View>
                         }
                     />
 
-                    <View style={{ paddingBottom: Math.max(insets.bottom, 12) }}>
-                        <ChatComposer {...composerProps} />
+                    <View
+                        className="flex-row items-end px-2 py-2 bg-fdm-bg"
+                        style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+                    >
+                        <MessageInputBox {...inputProps} />
                     </View>
                 </KeyboardAvoidingView>
             )}

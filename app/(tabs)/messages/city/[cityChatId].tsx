@@ -7,11 +7,12 @@ import {
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import ComposerActionsModal from "@components/Chat/ComposerActionsModal";
 import MessageAvatar from "@components/Chat/MessageAvatar";
-import MessageBubble from "@components/Chat/MessageBubble";
+import MessageBuilder from "@/components/MessageTypes/MessageBuilder";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@lib/supabase";
 import {
+  getCityChatParticipantCount,
   getCityChatSenderProfile,
   sendCityChatMessage,
   subscribeToCityChatMessages,
@@ -30,8 +31,10 @@ export default function CityChatScreen() {
   const cityLabel = typeof city === "string" && city.trim() ? decodeURIComponent(city) : "City";
 
   const [messages, setMessages] = useState<MappedChatMessage[]>([]);
+  const [participantCount, setParticipantCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState("");
+  const [attachment, setAttachment] = useState<{ uri: string; type: "image" } | null>(null);
   const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isComposerModalVisible, setIsComposerModalVisible] = useState(false);
@@ -43,14 +46,22 @@ export default function CityChatScreen() {
   useEffect(() => {
     if (!isValidId) return;
 
-    const loadMessages = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
-        const result = await fetchAndMapCityChatMessages({ cityChatId: parsedCityChatId });
-        if (!result.success || !result.data) {
-          throw new Error(result.error ?? "Failed to load city chat messages.");
+        const [msgResult, countResult] = await Promise.all([
+          fetchAndMapCityChatMessages({ cityChatId: parsedCityChatId }),
+          getCityChatParticipantCount({ cityChatId: parsedCityChatId }),
+        ]);
+
+        if (!msgResult.success || !msgResult.data) {
+          throw new Error(msgResult.error ?? "Failed to load city chat messages.");
         }
-        setMessages(result.data);
+
+        setMessages(msgResult.data);
+        if (countResult.success && countResult.data !== undefined) {
+          setParticipantCount(countResult.data);
+        }
       } catch (error) {
         console.error("Failed to load city chat messages:", error);
       } finally {
@@ -58,7 +69,7 @@ export default function CityChatScreen() {
       }
     };
 
-    void loadMessages();
+    void loadData();
   }, [isValidId, parsedCityChatId, user?.userId]);
 
   // ── Real-time subscription ────────────────────────────────────────────────
@@ -111,14 +122,19 @@ export default function CityChatScreen() {
   // ── Send text ─────────────────────────────────────────────────────────────
   const handleSend = async () => {
     const content = inputText.trim();
-    if (!content || !user?.userId || !isValidId || sending) return;
+    if ((!content && !attachment) || !user?.userId || !isValidId || sending) return;
 
     setInputText("");
+    setAttachment(null);
     setSending(true);
 
+    // Optimistic UI for local rendering
+    const tempId = `temp-${Date.now()}`;
+    const tempMessageContent = attachment ? (content ? `${attachment.uri} ${content}` : attachment.uri) : content;
+
     const tempMessage: MappedChatMessage = {
-      id: `temp-${Date.now()}`,
-      content,
+      id: tempId,
+      content: tempMessageContent,
       createdAt: new Date().toISOString(),
       senderId: user.userId,
     };
@@ -127,10 +143,23 @@ export default function CityChatScreen() {
     flatListRef.current?.scrollToEnd({ animated: true });
 
     try {
+      let finalContent = content;
+
+      // Handle image upload if attached
+      if (attachment) {
+        setUploadingImage(true);
+        try {
+          const uploadedUrl = await uploadListingPhoto({ uri: attachment.uri });
+          finalContent = content ? `${uploadedUrl} ${content}` : uploadedUrl;
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+
       const result = await sendCityChatMessage({
         cityChatId: parsedCityChatId,
         senderId: user.userId,
-        content,
+        content: finalContent,
       });
 
       if (!result.success || !result.data) {
@@ -138,11 +167,12 @@ export default function CityChatScreen() {
       }
 
       const mappedSavedMessage = mapCityChatMessage(result.data);
-      setMessages((prev) => prev.map((m) => (m.id === tempMessage.id ? mappedSavedMessage : m)));
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? mappedSavedMessage : m)));
     } catch (error) {
       console.error("Failed to send city chat message:", error);
-      setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInputText(content);
+      // We don't restore the attachment for simplicity, as it's usually safer
     } finally {
       setSending(false);
     }
@@ -161,38 +191,11 @@ export default function CityChatScreen() {
 
       if (pickerResult.canceled || pickerResult.assets.length === 0) return;
 
-      setUploadingImage(true);
-
       const imageUri = pickerResult.assets[0].uri;
-      const uploadedUrl = await uploadListingPhoto({ uri: imageUri });
-
-      const tempMessage: MappedChatMessage = {
-        id: `temp-${Date.now()}`,
-        senderId: user.userId,
-        content: uploadedUrl,
-        createdAt: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, tempMessage]);
-      flatListRef.current?.scrollToEnd({ animated: true });
-
-      const result = await sendCityChatMessage({
-        cityChatId: parsedCityChatId,
-        senderId: user.userId,
-        content: uploadedUrl,
-      });
-
-      if (!result.success || !result.data) {
-        throw new Error(result.error ?? "Failed to send image.");
-      }
-
-      const mappedSavedMessage = mapCityChatMessage(result.data);
-      setMessages((prev) => prev.map((m) => (m.id === tempMessage.id ? mappedSavedMessage : m)));
+      setAttachment({ uri: imageUri, type: "image" });
     } catch (error) {
-      console.error("Failed to upload/send image:", error);
-      Alert.alert("Upload Failed", "We couldn't upload your image right now.");
-    } finally {
-      setUploadingImage(false);
+      console.error("Failed to select image:", error);
+      Alert.alert("Selection Failed", "We couldn't select your image.");
     }
   };
 
@@ -232,7 +235,7 @@ export default function CityChatScreen() {
           </View>
         )}
 
-        <View className={`flex-row mb-1 px-4 items-end ${isMe ? "justify-end" : "justify-start"}`}>
+        <View className={`flex-row px-4 items-start ${isMe ? "justify-end" : "justify-start"}`}>
           {!isMe ? (
             <MessageAvatar
               profilePicture={item.senderProfilePicture}
@@ -241,7 +244,7 @@ export default function CityChatScreen() {
             />
           ) : null}
 
-          <MessageBubble
+          <MessageBuilder
             content={item.content}
             timeLabel={formatTime(item.createdAt)}
             isMe={isMe}
@@ -267,7 +270,7 @@ export default function CityChatScreen() {
           {cityLabel} Group Chat
         </Text>
         <Text className="text-fdm-fg/40 text-xs mt-0.5" numberOfLines={1}>
-          {messages.length} {messages.length === 1 ? "message" : "messages"}
+          {participantCount} {participantCount === 1 ? "person" : "people"} in this group
         </Text>
       </View>
     </>
@@ -282,17 +285,19 @@ export default function CityChatScreen() {
       renderMessage={renderMessage}
       listEmptyIcon={<Ionicons name="people-outline" size={40} color="#ffffff20" />}
       listEmptyText="No messages in this city chat yet"
-      composerProps={{
+      inputProps={{
         value: inputText,
         onChangeText: setInputText,
-        placeholder: "Message city group...",
+        placeholder: attachment ? "Add a caption..." : "Message city group...",
         editable: !uploadingImage,
         onSend: handleSend,
-        sendDisabled: !inputText.trim() || sending || uploadingImage,
+        sendDisabled: (!inputText.trim() && !attachment) || sending || uploadingImage,
         showActions: true,
         onPressPlus: () => setIsComposerModalVisible(true),
         onPressImage: handleUploadImage,
         actionsDisabled: uploadingImage || sending,
+        attachment: attachment,
+        onClearAttachment: () => setAttachment(null),
       }}
       footerExtra={
         <ComposerActionsModal

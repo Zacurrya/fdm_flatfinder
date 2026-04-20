@@ -6,6 +6,7 @@ import {
   CityChatSenderProfile,
   fetchCityChats as fetchCityChatsService,
   getCityChatMessages as getCityChatMessagesService,
+  getCityChatParticipantCount as getCityChatParticipantCountService,
   getOrCreateCityChatByCity as getOrCreateCityChatByCityService,
   getCityChatSenderProfile as getCityChatSenderProfileService,
   sendCityChatMessage as sendCityChatMessageService,
@@ -90,6 +91,22 @@ export const getCityChatMessages = async (
     return { success: true, data: messages };
   } catch (error) {
     return { success: false, error: (error as Error)?.message ?? "Failed to fetch city chat messages." };
+  }
+};
+
+export const getCityChatParticipantCount = async (
+  request: GetCityChatMessagesDTO
+): Promise<CityChatResponse<number>> => {
+  const validation = validateGetCityChatMessagesRequest(request);
+  if (!validation.valid) {
+    return { success: false, error: validation.error };
+  }
+
+  try {
+    const count = await getCityChatParticipantCountService(request.cityChatId);
+    return { success: true, data: count };
+  } catch (error) {
+    return { success: false, error: (error as Error)?.message ?? "Failed to fetch participant count." };
   }
 };
 
