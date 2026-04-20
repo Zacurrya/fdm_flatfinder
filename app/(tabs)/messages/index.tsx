@@ -1,10 +1,11 @@
-import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
-import CityImage from "@/components/ui/CityImage";
-import { formatCurrencyWithSymbol } from "@/utils/currency";
+import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
+import CityImage from "@components/ui/CityImage";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { ConversationWithUser, getConversations } from "@services/chat/chatController";
 import { CityChat, fetchCityChats, getOrCreateCityChatByCity } from "@services/cityChat/cityChatController";
+import { formatCurrencyWithSymbol } from "@utils/currency";
+import { formatRelativeDate, getInitials } from "@utils/formatters";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
@@ -84,19 +85,6 @@ export default function MessagesScreen() {
     );
   }
 
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    const now = new Date();
-    const diffDays = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (diffDays === 0) {
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    }
-    if (diffDays === 1) return "Yesterday";
-    return date.toLocaleDateString([], { day: "numeric", month: "short" });
-  };
-
   return (
     <View className="flex-1 bg-fdm-bg">
       <StatusBar style="light" />
@@ -141,7 +129,7 @@ export default function MessagesScreen() {
                     {cityChat.city} Group Chat
                   </Text>
                   {cityChat.last_message_at ? (
-                    <Text className="text-fdm-fg/40 text-xs">{formatTime(cityChat.last_message_at)}</Text>
+                    <Text className="text-fdm-fg/40 text-xs">{formatRelativeDate(cityChat.last_message_at)}</Text>
                   ) : null}
                 </View>
 
@@ -164,12 +152,7 @@ export default function MessagesScreen() {
               [conv.otherUser.firstName, conv.otherUser.lastName]
                 .filter(Boolean)
                 .join(" ") || "User";
-            const initials = name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase()
-              .slice(0, 2);
+            const initials = getInitials(name);
 
             return (
               <TouchableOpacity
@@ -191,7 +174,7 @@ export default function MessagesScreen() {
                 <View className="flex-1 ml-4">
                   <View className="flex-row justify-between items-center">
                     <Text className="text-fdm-fg font-semibold text-base">{name}</Text>
-                    <Text className="text-fdm-fg/40 text-xs">{formatTime(conv.last_message_at)}</Text>
+                    <Text className="text-fdm-fg/40 text-xs">{formatRelativeDate(conv.last_message_at)}</Text>
                   </View>
 
                   <Text className="text-fdm-fg/50 text-sm mt-0.5" numberOfLines={1}>

@@ -1,5 +1,5 @@
-import ProfilePicModal from "@/components/profile/ProfilePicModal";
 import ProfileCard from "@components/profile/ProfileCard";
+import ProfilePicModal from "@components/profile/ProfilePicModal";
 import SettingsModal from "@components/profile/SettingsModal";
 import SignOutButton from "@components/profile/SignOutButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";

@@ -1,3 +1,4 @@
+import { IMAGE_URL_REGEX } from "@utils/mediaParser";
 import { Image, Text, View } from "react-native";
 import { MessageProps } from "./types";
 
@@ -13,9 +14,8 @@ export default function ImageMessage({
 
   // Find the image URL.
   // We match extensions or the Supabase standard storage path.
-  const urlRegex = /(https?:\/\/[^\s]+(\.(png|jpe?g|gif|webp|heic)(\?.*)?|\/storage\/v1\/object\/public\/[^\s]+))/i;
-  const match = content.match(urlRegex);
-  
+  const match = content.match(IMAGE_URL_REGEX);
+
   const imageUrl = match ? match[0] : content.trim();
   const caption = match ? content.replace(imageUrl, "").trim() : "";
 

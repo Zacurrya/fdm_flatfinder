@@ -1,26 +1,27 @@
-import { formatCurrencyWithSymbol } from "@/utils/currency";
-import {
-    fetchAndMapConversationMessages,
-    mapConversationMessage,
-    MappedChatMessage,
-} from "@/utils/mapMessages";
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import ContactActionButtons from "@components/Chat/ContactActionButtons";
 import MessageAvatar from "@components/Chat/MessageAvatar";
-import MessageBuilder from "@/components/MessageTypes/MessageBuilder";
+import MessageBuilder from "@components/MessageTypes/MessageBuilder";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { supabase } from "@lib/supabase";
 import {
-    getConversationDetails,
-    ListingSnippet,
-    OtherUserProfile,
-    sendMessage,
-    subscribeToMessages,
+  getConversationDetails,
+  ListingSnippet,
+  OtherUserProfile,
+  sendMessage,
+  subscribeToMessages,
 } from "@services/chat/chatController";
+import { formatCurrencyWithSymbol } from "@utils/currency";
+import { formatTime, getInitials } from "@utils/formatters";
+import {
+  fetchAndMapConversationMessages,
+  mapConversationMessage,
+  MappedChatMessage,
+} from "@utils/mapMessages";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
-import { supabase } from "../../../lib/supabase";
 
 function getFirstPhotoUrl(photos: string[] | null | undefined): string | null {
   if (!photos || photos.length === 0) return null;
@@ -42,7 +43,7 @@ export default function ChatScreen() {
   const [listingPhotoUrl, setListingPhotoUrl] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
-  // ── Load messages & conversation details ──────────────────────────────────
+  // Load messages & conversation details
   useEffect(() => {
     if (!conversationId || !user?.userId) return;
 
@@ -80,7 +81,7 @@ export default function ChatScreen() {
     void loadData();
   }, [conversationId, user?.userId]);
 
-  // ── Real-time subscription ────────────────────────────────────────────────
+  // Real-time subscription
   useEffect(() => {
     if (!conversationId) return;
 
@@ -105,7 +106,7 @@ export default function ChatScreen() {
     return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
 
-  // ── Send ──────────────────────────────────────────────────────────────────
+  // Send 
   const handleSend = async () => {
     const content = inputText.trim();
     if (!content || !user?.userId || !conversationId || sending) return;
@@ -141,11 +142,8 @@ export default function ChatScreen() {
     }
   };
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const formatTime = (isoString: string) =>
-    new Date(isoString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-  const getRentLabel = (period: string | null | undefined) => {
+  // Helpers 
+  const getRentLabel = (period: string | null | undefined): string => {
     if (period === "WEEKLY") return "pw";
     if (period === "BIWEEKLY") return "biwk";
     return "pcm";
@@ -155,14 +153,9 @@ export default function ChatScreen() {
     ? [otherUser.firstName, otherUser.lastName].filter(Boolean).join(" ") || "User"
     : "Chat";
 
-  const initials = otherUserName
-    .split(" ")
-    .map((name) => name[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const initials = getInitials(otherUserName);
 
-  // ── Render helpers ────────────────────────────────────────────────────────
+  // Render helpers
   const renderMessage = ({ item, index }: { item: MappedChatMessage; index: number }) => {
     const isMe = item.senderId === user?.userId;
     const previous = messages[index - 1];
@@ -201,7 +194,7 @@ export default function ChatScreen() {
     );
   };
 
-  // ── Slot: header avatar + title ───────────────────────────────────────────
+  // Slot: header avatar + title
   const headerContent = (
     <>
       <View className="w-10 h-10 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center mr-3 overflow-hidden">

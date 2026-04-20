@@ -1,7 +1,7 @@
-import BackButton from '@/components/ui/BackButton';
-import { useAuth } from "@/context/AuthContext";
 import LoginForm from "@components/auth/LoginForm";
+import BackButton from '@components/ui/BackButton';
 import BackgroundCircle from "@components/ui/BackgroundCircle";
+import { useAuth } from "@context/AuthContext";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";

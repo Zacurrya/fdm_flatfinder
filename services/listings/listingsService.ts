@@ -1,6 +1,6 @@
 import { supabase } from "@lib/supabase";
+import { Database } from "@types/database.types";
 import { File as ExpoFile } from 'expo-file-system';
-import { Database } from "../../types/database.types";
 import * as RequestController from "../requests/requestController";
 
 export type ListingLocationRow = Database["public"]["Tables"]["ListingLocations"]["Row"];
@@ -64,7 +64,7 @@ export const deleteListing = async (id: number | string): Promise<void> => {
     .from("Listings")
     .delete()
     .eq("id", listingId);
-    
+
   if (listingDeleteError) {
     console.error(`Error deleting listing ${id}:`, listingDeleteError);
     throw listingDeleteError;

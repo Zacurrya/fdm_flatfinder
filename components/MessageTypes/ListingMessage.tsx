@@ -1,5 +1,5 @@
-import { decodeListingShareMessage } from "@/utils/chatListingShare";
 import ChatListingCard from "@components/Chat/ChatListingCard";
+import { decodeListingShareMessage } from "@utils/chatListingShare";
 import { Text, View } from "react-native";
 import { MessageProps } from "./types";
 

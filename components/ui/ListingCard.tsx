@@ -1,5 +1,5 @@
-import { formatCurrencyWithSymbol } from "@/utils/currency";
 import { Ionicons } from "@expo/vector-icons";
+import { formatCurrencyWithSymbol } from "@utils/currency";
 import { forwardRef, useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, TouchableOpacityProps, View } from "react-native";
 
@@ -96,129 +96,129 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
 
     return (
         <View>
-        <TouchableOpacity
-            ref={ref}
-            onPress={onPress}
-            className="bg-fdm-fg/5 rounded-3xl overflow-hidden active:opacity-80"
-            style={src === "FDM" ? {
-                borderWidth: 1.5,
-                borderColor: "#ccff0070",
-            } : {
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.1)",
-            }}
-            {...props}
-        >
-            {/* primary photo thumbnail */}
-            <View className="h-40 bg-fdm-fg/10 items-center justify-center w-full overflow-hidden">
-                {photoUrl ? (
-                    <Image 
-                        key={photoUrl}
-                        source={{ uri: photoUrl }} 
-                        style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
-                    />
-                ) : (
-                    <Ionicons name="home" size={40} color="#ccff0030" />
-                )}
+            <TouchableOpacity
+                ref={ref}
+                onPress={onPress}
+                className="bg-fdm-fg/5 rounded-3xl overflow-hidden active:opacity-80"
+                style={src === "FDM" ? {
+                    borderWidth: 1.5,
+                    borderColor: "#ccff0070",
+                } : {
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.1)",
+                }}
+                {...props}
+            >
+                {/* primary photo thumbnail */}
+                <View className="h-40 bg-fdm-fg/10 items-center justify-center w-full overflow-hidden">
+                    {photoUrl ? (
+                        <Image
+                            key={photoUrl}
+                            source={{ uri: photoUrl }}
+                            style={{ width: '100%', height: '100%' }}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <Ionicons name="home" size={40} color="#ccff0030" />
+                    )}
 
-                {/* Source Badge — top-right overlay on photo */}
-                <View
-                    style={{
-                        position: "absolute",
-                        top: 10,
-                        right: 10,
-                        backgroundColor: sourceConfig.bg,
-                        borderWidth: 1,
-                        borderColor: sourceConfig.border,
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 20,
-                        shadowColor: sourceConfig.color,
-                        shadowOpacity: 0.6,
-                        shadowRadius: 8,
-                        shadowOffset: { width: 0, height: 2 },
-                        elevation: 6,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: sourceConfig.color,
-                            fontSize: 11,
-                            fontWeight: "700",
-                            letterSpacing: 0.5,
-                        }}
-                    >
-                        {sourceConfig.label}
-                    </Text>
-                </View>
-
-                {/* Favourite Button (Top Left) */}
-                {onToggleFavourite && (
-                    <TouchableOpacity
-                        onPress={(e) => {
-                            e.stopPropagation();
-                            onToggleFavourite();
-                        }}
+                    {/* Source Badge — top-right overlay on photo */}
+                    <View
                         style={{
                             position: "absolute",
                             top: 10,
-                            left: 10,
-                            backgroundColor: "rgba(0,0,0,0.4)",
-                            padding: 6,
+                            right: 10,
+                            backgroundColor: sourceConfig.bg,
+                            borderWidth: 1,
+                            borderColor: sourceConfig.border,
+                            paddingHorizontal: 10,
+                            paddingVertical: 4,
                             borderRadius: 20,
+                            shadowColor: sourceConfig.color,
+                            shadowOpacity: 0.6,
+                            shadowRadius: 8,
+                            shadowOffset: { width: 0, height: 2 },
+                            elevation: 6,
                         }}
                     >
-                        <Ionicons 
-                            name={isFavourite ? "heart" : "heart-outline"} 
-                            size={20} 
-                            color={isFavourite ? "#ef4444" : "#ffffff"} 
-                        />
-                    </TouchableOpacity>
-                )}
-            </View>
-            {/* listing details */}
-            <View className="p-4">
-                <View className="flex-row items-start justify-between">
-                    <View className="flex-1 pr-2">
-                        <Text className="text-fdm-fg font-bold text-base">
-                            {listing.title}
-                        </Text>
-                        <View className="flex-row items-center mt-1 gap-1">
-                            <Ionicons
-                                name="location-outline"
-                                size={13}
-                                color="#ffffff60"
-                            />
-                            <Text className="text-fdm-fg/50 text-xs">
-                                {listing.ListingLocations?.address || "Unknown location"}
-                            </Text>
-                        </View>
-                    </View>
-                    <View className="bg-fdm-accent/10 border border-fdm-accent/20 px-3 py-1 rounded-xl">
-                        <Text className="text-fdm-accent font-bold text-sm">
-                            {formatCurrencyWithSymbol(listing.price)}/{rentLabel}
-                        </Text>
-                    </View>
-                </View>
-                {/* beds and baths row */}
-                <View className="flex-row gap-4 mt-3 pt-3 border-t border-fdm-fg/10">
-                    <View className="flex-row items-center gap-1">
-                        <Ionicons name="bed-outline" size={14} color="#ffffff50" />
-                        <Text className="text-fdm-fg/50 text-xs">
-                            {listing.beds} bed
-                        </Text>
-                    </View>
-                    <View className="flex-row items-center gap-1">
-                        <Ionicons name="water-outline" size={14} color="#ffffff50" />
-                        <Text className="text-fdm-fg/50 text-xs">
-                            {listing.baths} bath
+                        <Text
+                            style={{
+                                color: sourceConfig.color,
+                                fontSize: 11,
+                                fontWeight: "700",
+                                letterSpacing: 0.5,
+                            }}
+                        >
+                            {sourceConfig.label}
                         </Text>
                     </View>
 
+                    {/* Favourite Button (Top Left) */}
+                    {onToggleFavourite && (
+                        <TouchableOpacity
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                onToggleFavourite();
+                            }}
+                            style={{
+                                position: "absolute",
+                                top: 10,
+                                left: 10,
+                                backgroundColor: "rgba(0,0,0,0.4)",
+                                padding: 6,
+                                borderRadius: 20,
+                            }}
+                        >
+                            <Ionicons
+                                name={isFavourite ? "heart" : "heart-outline"}
+                                size={20}
+                                color={isFavourite ? "#ef4444" : "#ffffff"}
+                            />
+                        </TouchableOpacity>
+                    )}
                 </View>
-            </View>
-        </TouchableOpacity>
+                {/* listing details */}
+                <View className="p-4">
+                    <View className="flex-row items-start justify-between">
+                        <View className="flex-1 pr-2">
+                            <Text className="text-fdm-fg font-bold text-base">
+                                {listing.title}
+                            </Text>
+                            <View className="flex-row items-center mt-1 gap-1">
+                                <Ionicons
+                                    name="location-outline"
+                                    size={13}
+                                    color="#ffffff60"
+                                />
+                                <Text className="text-fdm-fg/50 text-xs">
+                                    {listing.ListingLocations?.address || "Unknown location"}
+                                </Text>
+                            </View>
+                        </View>
+                        <View className="bg-fdm-accent/10 border border-fdm-accent/20 px-3 py-1 rounded-xl">
+                            <Text className="text-fdm-accent font-bold text-sm">
+                                {formatCurrencyWithSymbol(listing.price)}/{rentLabel}
+                            </Text>
+                        </View>
+                    </View>
+                    {/* beds and baths row */}
+                    <View className="flex-row gap-4 mt-3 pt-3 border-t border-fdm-fg/10">
+                        <View className="flex-row items-center gap-1">
+                            <Ionicons name="bed-outline" size={14} color="#ffffff50" />
+                            <Text className="text-fdm-fg/50 text-xs">
+                                {listing.beds} bed
+                            </Text>
+                        </View>
+                        <View className="flex-row items-center gap-1">
+                            <Ionicons name="water-outline" size={14} color="#ffffff50" />
+                            <Text className="text-fdm-fg/50 text-xs">
+                                {listing.baths} bath
+                            </Text>
+                        </View>
+
+                    </View>
+                </View>
+            </TouchableOpacity>
         </View>
     );
 });

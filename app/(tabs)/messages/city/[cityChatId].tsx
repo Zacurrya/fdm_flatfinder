@@ -1,13 +1,8 @@
-import CityImage from "@/components/ui/CityImage";
-import {
-  fetchAndMapCityChatMessages,
-  mapCityChatMessage,
-  MappedChatMessage,
-} from "@/utils/mapMessages";
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import ComposerActionsModal from "@components/Chat/ComposerActionsModal";
 import MessageAvatar from "@components/Chat/MessageAvatar";
-import MessageBuilder from "@/components/MessageTypes/MessageBuilder";
+import MessageBuilder from "@components/MessageTypes/MessageBuilder";
+import CityImage from "@components/ui/CityImage";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@lib/supabase";
@@ -18,6 +13,12 @@ import {
   subscribeToCityChatMessages,
 } from "@services/cityChat/cityChatController";
 import { uploadListingPhoto } from "@services/listings/listingController";
+import { formatTime, getInitials } from "@utils/formatters";
+import {
+  fetchAndMapCityChatMessages,
+  mapCityChatMessage,
+  MappedChatMessage,
+} from "@utils/mapMessages";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -119,7 +120,7 @@ export default function CityChatScreen() {
     return () => { supabase.removeChannel(channel); };
   }, [isValidId, parsedCityChatId, user?.userId]);
 
-  // ── Send text ─────────────────────────────────────────────────────────────
+  // Send text
   const handleSend = async () => {
     const content = inputText.trim();
     if ((!content && !attachment) || !user?.userId || !isValidId || sending) return;
@@ -178,7 +179,7 @@ export default function CityChatScreen() {
     }
   };
 
-  // ── Upload & send image ───────────────────────────────────────────────────
+  // Upload & send image
   const handleUploadImage = async () => {
     if (!user?.userId || !isValidId || uploadingImage) return;
 
@@ -199,11 +200,7 @@ export default function CityChatScreen() {
     }
   };
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const formatTime = (isoString: string) =>
-    new Date(isoString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-  // ── Render message ────────────────────────────────────────────────────────
+  // Render message 
   const renderMessage = ({ item, index }: { item: MappedChatMessage; index: number }) => {
     const isMe = item.senderId === user?.userId;
     const previous = messages[index - 1];
@@ -214,12 +211,7 @@ export default function CityChatScreen() {
       new Date(item.createdAt).toDateString() !== new Date(previous.createdAt).toDateString();
 
     const senderName = item.senderName || "Consultant";
-    const senderInitials = senderName
-      .split(" ")
-      .map((name) => name[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+    const senderInitials = getInitials(senderName);
 
     return (
       <>

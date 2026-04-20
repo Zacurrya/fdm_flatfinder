@@ -1,5 +1,5 @@
-import PasswordInput from "@/components/auth/PasswordInput";
 import EmailInput from "@components/auth/EmailInput";
+import PasswordInput from "@components/auth/PasswordInput";
 import React from "react";
 import {
   ActivityIndicator,

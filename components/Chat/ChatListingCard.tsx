@@ -1,6 +1,6 @@
-import { formatCurrencyWithSymbol } from "@/utils/currency";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchListingById, Listing } from "@services/listings/listingController";
+import { formatCurrencyWithSymbol } from "@utils/currency";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";

@@ -1,4 +1,4 @@
-import CityImage from "@/components/ui/CityImage";
+import CityImage from "@components/ui/CityImage";
 import { Image } from "expo-image";
 import { Text, View, useWindowDimensions } from "react-native";
 
@@ -16,8 +16,8 @@ export default function HomeHeader({
   const { width, height } = useWindowDimensions();
 
   return (
-      <View className={`${width > height ? "pt-6" : "pt-16"} pb-4 px-6 z-10 flex-row items-center justify-between`}>
-        <View className="flex-row items-center gap-20">
+    <View className={`${width > height ? "pt-6" : "pt-16"} pb-4 px-6 z-10 flex-row items-center justify-between`}>
+      <View className="flex-row items-center gap-20">
         {/* Logo + Greeting */}
         <View>
           <Image
@@ -38,8 +38,8 @@ export default function HomeHeader({
         <View className="h-28 w-16">
           <CityImage officeLocation={officeLocation} />
         </View>
-        </View>
-
       </View>
+
+    </View>
   );
 }

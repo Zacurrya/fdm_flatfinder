@@ -1,5 +1,6 @@
 import { supabase } from "@lib/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { isNonEmptyString, isPositiveInteger, SupabaseErrorLike } from "@utils/validation";
 
 export type CityChat = {
   id: number;
@@ -32,9 +33,6 @@ export type CityChatValidationResult =
   | { valid: true }
   | { valid: false; error: string };
 
-type SupabaseErrorLike = {
-  message: string;
-};
 
 type GetCityChatByCityRequest = {
   city: string;
@@ -54,11 +52,6 @@ type GetCityChatSenderProfileRequest = {
   senderId: string;
 };
 
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
-
-const isPositiveInteger = (value: unknown): value is number =>
-  typeof value === "number" && Number.isInteger(value) && value > 0;
 
 export const validateGetCityChatByCityRequest = (
   request: GetCityChatByCityRequest
@@ -120,9 +113,9 @@ const getCityChatSenderProfiles = async (
     .from("Users")
     .select("userId, firstName, lastName, profilePicture")
     .in("userId", uniqueSenderIds)) as {
-    data: CityChatSenderProfile[] | null;
-    error: SupabaseErrorLike | null;
-  };
+      data: CityChatSenderProfile[] | null;
+      error: SupabaseErrorLike | null;
+    };
 
   if (result.error) {
     console.warn("Failed to fetch city chat sender profiles:", result.error);
@@ -144,9 +137,9 @@ export const getOrCreateCityChatByCity = async (city: string): Promise<CityChat>
     .select("*")
     .eq("city", normalizedCity)
     .maybeSingle()) as {
-    data: CityChat | null;
-    error: SupabaseErrorLike | null;
-  };
+      data: CityChat | null;
+      error: SupabaseErrorLike | null;
+    };
 
   if (existingResult.error) {
     console.error("Error fetching city chat:", existingResult.error);
@@ -162,9 +155,9 @@ export const getOrCreateCityChatByCity = async (city: string): Promise<CityChat>
     .insert({ city: normalizedCity })
     .select()
     .single()) as {
-    data: CityChat | null;
-    error: SupabaseErrorLike | null;
-  };
+      data: CityChat | null;
+      error: SupabaseErrorLike | null;
+    };
 
   if (createdResult.error || !createdResult.data) {
     console.error("Error creating city chat:", createdResult.error);
@@ -181,9 +174,9 @@ export const fetchCityChats = async (): Promise<CityChat[]> => {
     .select("*")
     .order("last_message_at", { ascending: false })
     .order("created_at", { ascending: false })) as {
-    data: CityChat[] | null;
-    error: SupabaseErrorLike | null;
-  };
+      data: CityChat[] | null;
+      error: SupabaseErrorLike | null;
+    };
 
   if (result.error) {
     console.error("Error fetching city chats:", result.error);
@@ -199,9 +192,9 @@ export const getCityChatMessages = async (cityChatId: number): Promise<CityChatM
     .select("*")
     .eq("CityChatId", cityChatId)
     .order("created_at", { ascending: true })) as {
-    data: CityChatMessage[] | null;
-    error: SupabaseErrorLike | null;
-  };
+      data: CityChatMessage[] | null;
+      error: SupabaseErrorLike | null;
+    };
 
   if (result.error) {
     console.error("Error fetching city chat messages:", result.error);
@@ -259,9 +252,9 @@ export const sendCityChatMessage = async (
     })
     .select()
     .single()) as {
-    data: CityChatMessage | null;
-    error: SupabaseErrorLike | null;
-  };
+      data: CityChatMessage | null;
+      error: SupabaseErrorLike | null;
+    };
 
   if (insertResult.error || !insertResult.data) {
     console.error("Error sending city chat message:", insertResult.error);
@@ -275,8 +268,8 @@ export const sendCityChatMessage = async (
       last_message_at: new Date().toISOString(),
     })
     .eq("id", cityChatId)) as {
-    error: SupabaseErrorLike | null;
-  };
+      error: SupabaseErrorLike | null;
+    };
 
   if (updateResult.error) {
     console.warn("Failed to update city chat preview:", updateResult.error);
@@ -298,9 +291,9 @@ export const getCityChatSenderProfile = async (
     .select("userId, firstName, lastName, profilePicture")
     .eq("userId", senderId)
     .maybeSingle()) as {
-    data: CityChatSenderProfile | null;
-    error: SupabaseErrorLike | null;
-  };
+      data: CityChatSenderProfile | null;
+      error: SupabaseErrorLike | null;
+    };
 
   if (result.error) {
     console.warn("Failed to fetch city chat sender profile:", result.error);

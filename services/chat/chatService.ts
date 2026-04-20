@@ -1,5 +1,6 @@
 import { supabase } from "@lib/supabase";
-import { Database } from "@/types/database.types";
+import { Database } from "@types/database.types";
+import { isNonEmptyString, isPositiveInteger } from "@utils/validation";
 
 export type Conversation = Database["public"]["Tables"]["Conversations"]["Row"];
 export type Message = Database["public"]["Tables"]["Messages"]["Row"];
@@ -56,11 +57,6 @@ type SendMessageRequest = {
   content: string;
 };
 
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
-
-const isPositiveInteger = (value: unknown): value is number =>
-  typeof value === "number" && Number.isInteger(value) && value > 0;
 
 export const validateGetOrCreateConversationRequest = (
   request: GetOrCreateConversationRequest
@@ -228,10 +224,10 @@ export const getConversations = async (userId: string): Promise<ConversationWith
           .single(),
         conv.listing_id
           ? supabase
-              .from("Listings")
-              .select("id, title, price, rentPeriod, photos, ListingLocations(address, city)")
-              .eq("id", conv.listing_id)
-              .single()
+            .from("Listings")
+            .select("id, title, price, rentPeriod, photos, ListingLocations(address, city)")
+            .eq("id", conv.listing_id)
+            .single()
           : Promise.resolve({ data: null, error: null }),
       ]);
 
@@ -287,10 +283,10 @@ export const getConversationDetails = async (
       .single(),
     conv.listing_id
       ? supabase
-          .from("Listings")
-          .select("id, title, price, rentPeriod, photos, ListingLocations(address, city)")
-          .eq("id", conv.listing_id)
-          .single()
+        .from("Listings")
+        .select("id, title, price, rentPeriod, photos, ListingLocations(address, city)")
+        .eq("id", conv.listing_id)
+        .single()
       : Promise.resolve({ data: null, error: null }),
   ]);
 

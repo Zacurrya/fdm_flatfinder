@@ -1,10 +1,10 @@
-import { encodeListingShareMessage } from "@/utils/chatListingShare";
-import { formatCurrencyWithSymbol } from "@/utils/currency";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { getMessages, getOrCreateConversation, sendMessage } from "@services/chat/chatController";
 import { getOrCreateCityChatByCity, sendCityChatMessage } from "@services/cityChat/cityChatController";
 import { deleteListing, fetchListingById, Listing } from "@services/listings/listingController";
+import { encodeListingShareMessage } from "@utils/chatListingShare";
+import { formatCurrencyWithSymbol } from "@utils/currency";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -20,7 +20,7 @@ export default function ListingDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  
+
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -28,31 +28,31 @@ export default function ListingDetailScreen() {
 
   useEffect(() => {
     if (!id) return;
-    
+
     // load the listing data when the page opens
     const loadData = async () => {
       try {
         const data = await fetchListingById({ id: Number(id) });
         setListing(data);
-        
+
         // make sure urls work and get signed ones if the bucket is private
         let rawPhotos: string[] = [];
         if (data.photos) {
-            if (Array.isArray(data.photos)) {
-                rawPhotos = data.photos;
-            } else if (typeof data.photos === 'string') {
-                try {
-                    rawPhotos = JSON.parse(data.photos);
-                } catch {
-                    const matches = (data.photos as string).match(/https?:\/\/[^,}\]]+/g);
-                    if (matches) rawPhotos = matches;
-                }
+          if (Array.isArray(data.photos)) {
+            rawPhotos = data.photos;
+          } else if (typeof data.photos === 'string') {
+            try {
+              rawPhotos = JSON.parse(data.photos);
+            } catch {
+              const matches = (data.photos as string).match(/https?:\/\/[^,}\]]+/g);
+              if (matches) rawPhotos = matches;
             }
+          }
         }
-        
+
         const cleaned = rawPhotos
-            .map(url => url ? url.replace(/^"|"$/g, '').trim() : '')
-            .filter(url => url.startsWith('http'));
+          .map(url => url ? url.replace(/^"|"$/g, '').trim() : '')
+          .filter(url => url.startsWith('http'));
 
         if (cleaned.length > 0) {
           setSignedPhotos(cleaned);
@@ -78,7 +78,7 @@ export default function ListingDetailScreen() {
   if (!listing) {
     return (
       <View className="flex-1 bg-fdm-bg items-center justify-center relative">
-        <TouchableOpacity 
+        <TouchableOpacity
           className="absolute top-12 left-6 h-10 w-10 bg-fdm-fg/10 rounded-full items-center justify-center"
           onPress={() => router.back()}
         >
@@ -146,23 +146,23 @@ export default function ListingDetailScreen() {
   return (
     <View className="flex-1 bg-fdm-bg">
       <StatusBar style="light" />
-      
+
       <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
         {/* photo header */}
         <View className="w-full h-80 bg-fdm-fg/10 relative">
           {signedPhotos.length > 0 ? (
             <>
-              <ScrollView 
-                horizontal 
-                pagingEnabled 
+              <ScrollView
+                horizontal
+                pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 style={{ width: '100%', height: 320 }}
               >
                 {signedPhotos.map((url, index) => (
                   <View key={index} style={{ width: windowWidth, height: 320 }}>
-                    <Image 
+                    <Image
                       key={url}
-                      source={{ uri: url }} 
+                      source={{ uri: url }}
                       style={{ width: windowWidth, height: 320 }}
                       resizeMode="cover"
                     />
@@ -184,7 +184,7 @@ export default function ListingDetailScreen() {
           )}
 
           {/* back button overlay */}
-          <TouchableOpacity 
+          <TouchableOpacity
             className="absolute left-6 h-12 w-12 bg-black/40 rounded-full items-center justify-center backdrop-blur-md border border-white/10"
             style={{ top: insets.top || 48 }}
             onPress={() => router.back()}
@@ -205,7 +205,7 @@ export default function ListingDetailScreen() {
 
         {/* content body */}
         <View className="px-6 pt-6 pb-20">
-          
+
           <View className="flex-row justify-between items-start mb-2">
             <View className="flex-1 mr-4">
               <Text className="text-white text-3xl font-bold tracking-tight">
@@ -225,22 +225,22 @@ export default function ListingDetailScreen() {
           </View>
 
           <View className="flex-row border-y border-white/10 py-5 mb-8 justify-around">
-             <View className="items-center">
-                 <Ionicons name="bed-outline" size={24} color="#ccff00" />
-                 <Text className="text-white font-semibold mt-2">{listing.beds || 1} Bed</Text>
-             </View>
-             <View className="h-full w-[1px] bg-white/10" />
-             <View className="items-center">
-                 <Ionicons name="water-outline" size={24} color="#ccff00" />
-                 <Text className="text-white font-semibold mt-2">{listing.baths || 1} Bath</Text>
-             </View>
-             <View className="h-full w-[1px] bg-white/10" />
-             <View className="items-center">
-                 <Ionicons name="business-outline" size={24} color="#ccff00" />
-                 <Text className="text-white font-semibold mt-2 truncate w-20 text-center">
-                    {listing.propertyType ? listing.propertyType.charAt(0).toUpperCase() + listing.propertyType.slice(1).toLowerCase() : "Flat"}
-                 </Text>
-             </View>
+            <View className="items-center">
+              <Ionicons name="bed-outline" size={24} color="#ccff00" />
+              <Text className="text-white font-semibold mt-2">{listing.beds || 1} Bed</Text>
+            </View>
+            <View className="h-full w-[1px] bg-white/10" />
+            <View className="items-center">
+              <Ionicons name="water-outline" size={24} color="#ccff00" />
+              <Text className="text-white font-semibold mt-2">{listing.baths || 1} Bath</Text>
+            </View>
+            <View className="h-full w-[1px] bg-white/10" />
+            <View className="items-center">
+              <Ionicons name="business-outline" size={24} color="#ccff00" />
+              <Text className="text-white font-semibold mt-2 truncate w-20 text-center">
+                {listing.propertyType ? listing.propertyType.charAt(0).toUpperCase() + listing.propertyType.slice(1).toLowerCase() : "Flat"}
+              </Text>
+            </View>
           </View>
 
           {listing.description ? (
@@ -307,19 +307,19 @@ export default function ListingDetailScreen() {
           )}
 
           {user?.userId === listing.userId && (
-            <TouchableOpacity 
-               onPress={async () => {
-                  try {
-                    await deleteListing({ id: listing.id as number });
-                    router.back();
-                  } catch (e) {
-                    console.error("Failed to delete", e);
-                  }
-               }}
-               className="bg-red-500/20 py-4 rounded-2xl flex-row justify-center items-center mt-2 border border-red-500/30"
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  await deleteListing({ id: listing.id as number });
+                  router.back();
+                } catch (e) {
+                  console.error("Failed to delete", e);
+                }
+              }}
+              className="bg-red-500/20 py-4 rounded-2xl flex-row justify-center items-center mt-2 border border-red-500/30"
             >
-               <Ionicons name="trash-outline" size={20} color="#ef4444" className="mr-2" />
-               <Text className="text-red-500 font-bold ml-2">Delete My Listing</Text>
+              <Ionicons name="trash-outline" size={20} color="#ef4444" className="mr-2" />
+              <Text className="text-red-500 font-bold ml-2">Delete My Listing</Text>
             </TouchableOpacity>
           )}
 

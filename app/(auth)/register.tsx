@@ -1,5 +1,5 @@
-import BackButton from "@/components/ui/BackButton";
 import RegisterForm from "@components/auth/RegisterForm";
+import BackButton from "@components/ui/BackButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";

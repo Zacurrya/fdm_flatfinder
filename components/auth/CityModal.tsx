@@ -13,11 +13,11 @@ type CityModalProps = {
 };
 
 const regionIconMap: Record<string, number> = {
-  Europe: require("@/assets/images/region-icons/europe.svg"),
-  "North America": require("@/assets/images/region-icons/north-america.svg"),
-  Asia: require("@/assets/images/region-icons/asia.svg"),
-  Oceania: require("@/assets/images/region-icons/oceania.svg"),
-  Africa: require("@/assets/images/region-icons/africa.svg"),
+  Europe: require("@assets/images/region-icons/europe.svg"),
+  "North America": require("@assets/images/region-icons/north-america.svg"),
+  Asia: require("@assets/images/region-icons/asia.svg"),
+  Oceania: require("@assets/images/region-icons/oceania.svg"),
+  Africa: require("@assets/images/region-icons/africa.svg"),
 };
 
 export default function CityModal({

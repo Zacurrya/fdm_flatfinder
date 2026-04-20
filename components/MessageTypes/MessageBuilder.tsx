@@ -1,4 +1,9 @@
-import { decodeListingShareMessage } from "@/utils/chatListingShare";
+import { decodeListingShareMessage } from "@utils/chatListingShare";
+import {
+  extractAuditMessage,
+  isAuditPayload,
+  isImagePayload,
+} from "@utils/mediaParser";
 import AuditMessage from "./AuditMessage";
 import ImageMessage from "./ImageMessage";
 import ListingMessage from "./ListingMessage";
@@ -15,15 +20,13 @@ export default function MessageBuilder(props: MessageProps) {
   }
 
   // 2. Check if Image
-  const isImageRegex = /(https?:\/\/[^\s]+(\.(png|jpe?g|gif|webp|heic)(\?.*)?|\/storage\/v1\/object\/public\/[^\s]+))/i;
-  if (isImageRegex.test(trimmedContent)) {
+  if (isImagePayload(trimmedContent)) {
     return <ImageMessage {...props} />;
   }
 
-  // 3. Check if Audit (assuming audit messages start with some special prefix, 
-  // or we can detect them via specific system patterns. For now we use a common marker)
-  if (trimmedContent.startsWith("[AUDIT]") || trimmedContent.startsWith("System:")) {
-    return <AuditMessage {...props} content={trimmedContent.replace(/^(\[AUDIT\]|System:)\s*/i, "")} />;
+  // 3. Check if Audit
+  if (isAuditPayload(trimmedContent)) {
+    return <AuditMessage {...props} content={extractAuditMessage(trimmedContent)} />;
   }
 
   // 4. Fallback to normal Text Message

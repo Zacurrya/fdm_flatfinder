@@ -1,17 +1,22 @@
+
+listings:
+- Edit listings
+- Mark listings as sold
 - Create Aggregators for:
     - RightMove
     - OpenRent
     - Zoopla
     - PropertyGuru (Singapore)
+
+chats:
 - Componentise the chat screen
-- Chats header shouldn't say the number of messages, but the number of people in the chat
-
-messageBuilder:
-- Recognise listing embeds, image embeds, group chat specific audits, and then apply the appropriate message type component to render
-
 - Users should be able to caption their images
-- Audit messages should notice if a new person is in the city
-- Util files for complicated codes like checking for image files 
+- Audit messages should notice if a new person is in the city, subscribe to audits for user approvals,
+  creating an audit message in the appropriate city chat, informing that they have joined (by default when they are approved)
+
+social:
+- Send friend requests to other users, allowing you to dm them even if unrelated to a listing
+
 
 CONSIDER: 
 - Move cities to a separate table, grouping them by region

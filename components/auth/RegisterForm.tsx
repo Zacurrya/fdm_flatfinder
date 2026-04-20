@@ -1,5 +1,5 @@
-import EmailInput from "@/components/auth/EmailInput";
-import PasswordInput from "@/components/auth/PasswordInput";
+import EmailInput from "@components/auth/EmailInput";
+import PasswordInput from "@components/auth/PasswordInput";
 import PhoneNumberInput from "@components/auth/PhoneNumberInput";
 import React from "react";
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -37,21 +37,21 @@ type FieldProps = {
   error?: string;
   keyboardType?: "default" | "email-address" | "phone-pad";
   autoComplete?:
-    | "name"
-    | "given-name"
-    | "family-name"
-    | "email"
-    | "tel"
-    | "password"
-    | "new-password";
+  | "name"
+  | "given-name"
+  | "family-name"
+  | "email"
+  | "tel"
+  | "password"
+  | "new-password";
   textContentType?:
-    | "name"
-    | "givenName"
-    | "familyName"
-    | "emailAddress"
-    | "telephoneNumber"
-    | "password"
-    | "newPassword";
+  | "name"
+  | "givenName"
+  | "familyName"
+  | "emailAddress"
+  | "telephoneNumber"
+  | "password"
+  | "newPassword";
 };
 
 function Field({
@@ -111,10 +111,10 @@ export default function RegisterForm({
 }: RegisterFormProps) {
   const handleChangeWithClear =
     (onChange: (value: string) => void) =>
-    (value: string) => {
-      onChange(value);
-      clearErrorMessage?.();
-    };
+      (value: string) => {
+        onChange(value);
+        clearErrorMessage?.();
+      };
 
   return (
     <ScrollView
