@@ -1,7 +1,7 @@
+import { formatCurrencyWithSymbol } from "@/utils/currency";
 import { Ionicons } from "@expo/vector-icons";
 import { forwardRef, useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, TouchableOpacityProps, View } from "react-native";
-import { formatCurrencyWithSymbol } from "@/utils/currency";
 
 // listing card component
 

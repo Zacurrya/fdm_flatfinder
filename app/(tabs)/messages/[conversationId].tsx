@@ -1,13 +1,13 @@
+import { formatCurrencyWithSymbol } from "@/utils/currency";
 import {
     fetchAndMapConversationMessages,
     mapConversationMessage,
     MappedChatMessage,
 } from "@/utils/mapMessages";
-import ChatComposer from "@components/Chat/ChatComposer";
+import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import ContactActionButtons from "@components/Chat/ContactActionButtons";
 import MessageAvatar from "@components/Chat/MessageAvatar";
 import MessageBubble from "@components/Chat/MessageBubble";
-import { formatCurrencyWithSymbol } from "@/utils/currency";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -18,19 +18,8 @@ import {
     subscribeToMessages,
 } from "@services/chat/chatController";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
-import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { supabase } from "../../../lib/supabase";
 
 function getFirstPhotoUrl(photos: string[] | null | undefined): string | null {
@@ -43,7 +32,6 @@ export default function ChatScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { user } = useAuth();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const [messages, setMessages] = useState<MappedChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +42,7 @@ export default function ChatScreen() {
   const [listingPhotoUrl, setListingPhotoUrl] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
+  // ── Load messages & conversation details ──────────────────────────────────
   useEffect(() => {
     if (!conversationId || !user?.userId) return;
 
@@ -76,13 +65,11 @@ export default function ChatScreen() {
         setMessages(messagesResult.data);
         setOtherUser(detailsResult.data.otherUser);
         setListing(detailsResult.data.listing);
-
-        if (detailsResult.data.listing?.photos) {
-          const firstPhotoUrl = getFirstPhotoUrl(detailsResult.data.listing.photos);
-          setListingPhotoUrl(firstPhotoUrl);
-        } else {
-          setListingPhotoUrl(null);
-        }
+        setListingPhotoUrl(
+          detailsResult.data.listing?.photos
+            ? getFirstPhotoUrl(detailsResult.data.listing.photos)
+            : null
+        );
       } catch (error) {
         console.error("Failed to load chat:", error);
       } finally {
@@ -93,6 +80,7 @@ export default function ChatScreen() {
     void loadData();
   }, [conversationId, user?.userId]);
 
+  // ── Real-time subscription ────────────────────────────────────────────────
   useEffect(() => {
     if (!conversationId) return;
 
@@ -101,13 +89,9 @@ export default function ChatScreen() {
       onNewMessage: (newMessage) => {
         setMessages((prev) => {
           const mappedMessage = mapConversationMessage(newMessage);
-          if (prev.find((m) => m.id === mappedMessage.id)) {
-            return prev;
-          }
-
+          if (prev.find((m) => m.id === mappedMessage.id)) return prev;
           return [...prev, mappedMessage];
         });
-
         flatListRef.current?.scrollToEnd({ animated: true });
       },
     });
@@ -118,12 +102,10 @@ export default function ChatScreen() {
     }
 
     const channel = subscriptionResult.data;
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
 
+  // ── Send ──────────────────────────────────────────────────────────────────
   const handleSend = async () => {
     const content = inputText.trim();
     if (!content || !user?.userId || !conversationId || sending) return;
@@ -142,11 +124,7 @@ export default function ChatScreen() {
     flatListRef.current?.scrollToEnd({ animated: true });
 
     try {
-      const savedResult = await sendMessage({
-        conversationId,
-        senderId: user.userId,
-        content,
-      });
+      const savedResult = await sendMessage({ conversationId, senderId: user.userId, content });
 
       if (!savedResult.success || !savedResult.data) {
         throw new Error(savedResult.error ?? "Failed to send message.");
@@ -163,6 +141,7 @@ export default function ChatScreen() {
     }
   };
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const formatTime = (isoString: string) =>
     new Date(isoString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -183,6 +162,7 @@ export default function ChatScreen() {
     .toUpperCase()
     .slice(0, 2);
 
+  // ── Render helpers ────────────────────────────────────────────────────────
   const renderMessage = ({ item, index }: { item: MappedChatMessage; index: number }) => {
     const isMe = item.senderId === user?.userId;
     const previous = messages[index - 1];
@@ -205,15 +185,10 @@ export default function ChatScreen() {
         )}
 
         <View
-          className={`flex-row mb-1 px-4 items-end ${
-            isMe ? "justify-end" : "justify-start"
-          }`}
+          className={`flex-row mb-1 px-4 items-end ${isMe ? "justify-end" : "justify-start"}`}
         >
           {!isMe ? (
-            <MessageAvatar
-              profilePicture={otherUser?.profilePicture}
-              initials={initials}
-            />
+            <MessageAvatar profilePicture={otherUser?.profilePicture} initials={initials} />
           ) : null}
 
           <MessageBubble
@@ -226,124 +201,98 @@ export default function ChatScreen() {
     );
   };
 
-  return (
-    <View className="flex-1 bg-fdm-bg">
-      <StatusBar style="light" />
+  // ── Slot: header avatar + title ───────────────────────────────────────────
+  const headerContent = (
+    <>
+      <View className="w-10 h-10 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center mr-3 overflow-hidden">
+        {otherUser?.profilePicture ? (
+          <Image source={{ uri: otherUser.profilePicture }} style={{ width: 40, height: 40 }} />
+        ) : (
+          <Text className="text-fdm-accent font-bold text-sm">{initials}</Text>
+        )}
+      </View>
 
-      <View
-        className="px-4 border-b border-fdm-fg/10 bg-fdm-bg"
-        style={{ paddingTop: insets.top + 8, paddingBottom: 14 }}
-      >
-        <View className="flex-row items-center">
-          <TouchableOpacity
-            onPress={() => router.replace("/(tabs)/messages")}
-            className="w-10 h-10 rounded-full bg-fdm-fg/10 items-center justify-center mr-3"
-          >
-            <Ionicons name="arrow-back" size={20} color="white" />
-          </TouchableOpacity>
+      <View className="flex-1">
+        <Text className="text-fdm-fg text-base font-semibold" numberOfLines={1}>
+          {otherUserName}
+        </Text>
+        {otherUser?.phoneNumber ? (
+          <Text className="text-fdm-fg/40 text-xs mt-0.5">{otherUser.phoneNumber}</Text>
+        ) : otherUser?.email ? (
+          <Text className="text-fdm-fg/40 text-xs mt-0.5" numberOfLines={1}>
+            {otherUser.email}
+          </Text>
+        ) : null}
+      </View>
 
-          <View className="w-10 h-10 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center mr-3 overflow-hidden">
-            {otherUser?.profilePicture ? (
-              <Image source={{ uri: otherUser.profilePicture }} style={{ width: 40, height: 40 }} />
-            ) : (
-              <Text className="text-fdm-accent font-bold text-sm">{initials}</Text>
-            )}
-          </View>
+      <ContactActionButtons
+        phoneNumber={otherUser?.phoneNumber}
+        email={otherUser?.email}
+      />
+    </>
+  );
 
-          <View className="flex-1">
-            <Text className="text-fdm-fg text-base font-semibold" numberOfLines={1}>
-              {otherUserName}
-            </Text>
-            {otherUser?.phoneNumber ? (
-              <Text className="text-fdm-fg/40 text-xs mt-0.5">{otherUser.phoneNumber}</Text>
-            ) : otherUser?.email ? (
-              <Text className="text-fdm-fg/40 text-xs mt-0.5" numberOfLines={1}>
-                {otherUser.email}
-              </Text>
-            ) : null}
-          </View>
-
-          <ContactActionButtons
-            phoneNumber={otherUser?.phoneNumber}
-            email={otherUser?.email}
+  // ── Slot: listing card ────────────────────────────────────────────────────
+  const subHeader = listing ? (
+    <TouchableOpacity
+      onPress={() => router.push(`/listing/${listing.id}` as any)}
+      className="mx-4 mt-3 flex-row bg-fdm-fg/5 border border-fdm-fg/10 rounded-2xl overflow-hidden active:opacity-70"
+    >
+      <View className="w-[72px] h-[72px] bg-fdm-fg/10 items-center justify-center overflow-hidden">
+        {listingPhotoUrl ? (
+          <Image
+            source={{ uri: listingPhotoUrl }}
+            style={{ width: 72, height: 72 }}
+            resizeMode="cover"
           />
+        ) : (
+          <Ionicons name="home" size={26} color="#ccff0040" />
+        )}
+      </View>
+
+      <View className="flex-1 px-3 py-2 justify-center">
+        <Text className="text-fdm-fg font-semibold text-sm" numberOfLines={1}>
+          {listing.title}
+        </Text>
+        <View className="flex-row items-center mt-1">
+          <Ionicons name="location-outline" size={11} color="#ffffff50" />
+          <Text className="text-fdm-fg/50 text-xs flex-1" numberOfLines={1}>
+            {listing.location}
+          </Text>
+        </View>
+        <View className="flex-row items-center mt-1 gap-1">
+          <Ionicons name="home-outline" size={11} color="#ccff0060" />
+          <Text className="text-fdm-accent/70 text-xs">View listing</Text>
         </View>
       </View>
 
-      {listing && (
-        <TouchableOpacity
-          onPress={() => router.push(`/listing/${listing.id}` as any)}
-          className="mx-4 mt-3 flex-row bg-fdm-fg/5 border border-fdm-fg/10 rounded-2xl overflow-hidden active:opacity-70"
-        >
-          <View className="w-[72px] h-[72px] bg-fdm-fg/10 items-center justify-center overflow-hidden">
-            {listingPhotoUrl ? (
-              <Image source={{ uri: listingPhotoUrl }} style={{ width: 72, height: 72 }} resizeMode="cover" />
-            ) : (
-              <Ionicons name="home" size={26} color="#ccff0040" />
-            )}
-          </View>
+      <View className="px-3 justify-center items-end border-l border-fdm-fg/10">
+        <Text className="text-fdm-accent font-bold text-base">
+          {formatCurrencyWithSymbol(listing.price)}
+        </Text>
+        <Text className="text-fdm-fg/40 text-xs">{getRentLabel(listing.rentPeriod)}</Text>
+        <Ionicons name="chevron-forward" size={14} color="#ffffff20" style={{ marginTop: 4 }} />
+      </View>
+    </TouchableOpacity>
+  ) : undefined;
 
-          <View className="flex-1 px-3 py-2 justify-center">
-            <Text className="text-fdm-fg font-semibold text-sm" numberOfLines={1}>
-              {listing.title}
-            </Text>
-            <View className="flex-row items-center mt-1">
-              <Ionicons name="location-outline" size={11} color="#ffffff50" />
-              <Text className="text-fdm-fg/50 text-xs flex-1" numberOfLines={1}>
-                {listing.location}
-              </Text>
-            </View>
-            <View className="flex-row items-center mt-1 gap-1">
-              <Ionicons name="home-outline" size={11} color="#ccff0060" />
-              <Text className="text-fdm-accent/70 text-xs">View listing</Text>
-            </View>
-          </View>
-
-          <View className="px-3 justify-center items-end border-l border-fdm-fg/10">
-            <Text className="text-fdm-accent font-bold text-base">{formatCurrencyWithSymbol(listing.price)}</Text>
-            <Text className="text-fdm-fg/40 text-xs">{getRentLabel(listing.rentPeriod)}</Text>
-            <Ionicons name="chevron-forward" size={14} color="#ffffff20" style={{ marginTop: 4 }} />
-          </View>
-        </TouchableOpacity>
-      )}
-
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#ccff00" />
-        </View>
-      ) : (
-        <KeyboardAvoidingView
-          className="flex-1"
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={0}
-        >
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            keyExtractor={(item) => item.id}
-            renderItem={renderMessage}
-            contentContainerStyle={{ paddingVertical: 12, flexGrow: 1 }}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-            ListEmptyComponent={
-              <View className="flex-1 items-center justify-center py-20">
-                <Ionicons name="chatbubble-outline" size={40} color="#ffffff20" />
-                <Text className="text-fdm-fg/30 text-sm mt-3">Send a message to get started</Text>
-              </View>
-            }
-          />
-
-          <View style={{ paddingBottom: Math.max(insets.bottom, 12) }}>
-            <ChatComposer
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder="Message..."
-              onSend={handleSend}
-              sendDisabled={!inputText.trim() || sending}
-              showActions={false}
-            />
-          </View>
-        </KeyboardAvoidingView>
-      )}
-    </View>
+  return (
+    <ChatScreenLayout
+      headerContent={headerContent}
+      subHeader={subHeader}
+      messages={messages}
+      loading={loading}
+      flatListRef={flatListRef}
+      renderMessage={renderMessage}
+      listEmptyText="Send a message to get started"
+      composerProps={{
+        value: inputText,
+        onChangeText: setInputText,
+        placeholder: "Message...",
+        onSend: handleSend,
+        sendDisabled: !inputText.trim() || sending,
+        showActions: false,
+      }}
+    />
   );
 }
