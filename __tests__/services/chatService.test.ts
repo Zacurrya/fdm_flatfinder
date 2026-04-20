@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { supabase } from "@lib/supabase";
 import { mockConversation, mockMessage } from "@mocks/data/chat.json";
+import { mockConversationRequestDTO } from "@mocks/data/dtos/chatDTO.json";
 import {
-  getMessages,
-  getOrCreateConversation,
-  sendMessage,
-  validateGetOrCreateConversationRequest
+    getMessages,
+    getOrCreateConversation,
+    sendMessage,
+    validateGetOrCreateConversationRequest
 } from "@services/chat/chatService";
-import { resetSupabaseMock } from "../helpers/supabaseMock";
+import { createResolvedMock, createThenCallbackMock, resetSupabaseMock } from "../helpers/supabaseMock";
 
 jest.mock("@lib/supabase");
 
@@ -18,12 +19,22 @@ beforeEach(() => {
 describe("chatService", () => {
   describe("Validation", () => {
     test("validateGetOrCreateConversationRequest validation", () => {
+      const missingCurrentUserValidationDTO = {
+        ...mockConversationRequestDTO,
+        currentUserId: "",
+      };
       expect(validateGetOrCreateConversationRequest({
-        currentUserId: "", otherUserId: "user-456"
+        currentUserId: missingCurrentUserValidationDTO.currentUserId,
+        otherUserId: missingCurrentUserValidationDTO.otherUserId,
       })).toEqual({ valid: false, error: "Current user ID is required." });
 
+      const sameUserValidationDTO = {
+        ...mockConversationRequestDTO,
+        otherUserId: mockConversationRequestDTO.currentUserId,
+      };
       expect(validateGetOrCreateConversationRequest({
-        currentUserId: "user-123", otherUserId: "user-123"
+        currentUserId: sameUserValidationDTO.currentUserId,
+        otherUserId: sameUserValidationDTO.otherUserId,
       })).toEqual({ valid: false, error: "You cannot start a conversation with yourself." });
     });
   });
@@ -35,15 +46,20 @@ describe("chatService", () => {
         or: jest.fn().mockReturnThis(),
         order: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: [mockConversation], error: null }),
-        then: jest.fn((cb) => Promise.resolve({ data: [mockConversation], error: null }).then(cb))
+        eq: createResolvedMock({ data: [mockConversation], error: null }),
+        then: createThenCallbackMock({ data: [mockConversation], error: null })
       };
-      (supabase.from as any).mockImplementation((table: string) => {
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "Conversations") return convMock;
         return {};
       });
 
-      const result = await getOrCreateConversation("user-123", "user-456", 1);
+      const result = await getOrCreateConversation(
+        mockConversationRequestDTO.currentUserId,
+        mockConversationRequestDTO.otherUserId,
+        mockConversationRequestDTO.listingId
+      );
       expect(result).toEqual(mockConversation);
     });
   });
@@ -53,14 +69,15 @@ describe("chatService", () => {
       const messagesMock = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({ data: [mockMessage], error: null }),
+        order: createResolvedMock({ data: [mockMessage], error: null }),
       };
-      (supabase.from as any).mockImplementation((table: string) => {
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "Messages") return messagesMock;
         return {};
       });
 
-      const result = await getMessages("conv-123");
+      const result = await getMessages(mockConversationRequestDTO.conversationId);
       expect(result).toEqual([mockMessage]);
     });
   });
@@ -70,20 +87,25 @@ describe("chatService", () => {
       const messagesMock = {
         insert: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: mockMessage, error: null }),
+        single: createResolvedMock({ data: mockMessage, error: null }),
       };
       const convMock = {
         update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null }),
+        eq: createResolvedMock({ error: null }),
       };
 
-      (supabase.from as any).mockImplementation((table: string) => {
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "Messages") return messagesMock;
         if (table === "Conversations") return convMock;
         return {};
       });
 
-      const result = await sendMessage("conv-123", "user-123", "Hello");
+      const result = await sendMessage(
+        mockConversationRequestDTO.conversationId,
+        mockConversationRequestDTO.currentUserId,
+        mockConversationRequestDTO.message
+      );
       expect(messagesMock.insert).toHaveBeenCalled();
       expect(convMock.update).toHaveBeenCalled();
       expect(result).toEqual(mockMessage);

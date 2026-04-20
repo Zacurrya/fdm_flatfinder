@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { supabase } from "@lib/supabase";
+import { mockCityChangeDTO } from "@mocks/data/dtos/cityChangeDTO.json";
 import { mockUser } from "@mocks/data/users.json";
-import { addFavourite, getPendingUsers, getUserFavourites, removeFavourite, requestOfficeLocationChange } from "@services/user/userService";
-import { resetSupabaseMock } from "../helpers/supabaseMock";
+import { addFavourite, getPendingUsers, getUserFavourites, getUserProfile, removeFavourite, requestOfficeLocationChange } from "@services/user/userService";
+import { createResolvedMock, createThenCallbackMock, resetSupabaseMock } from "../helpers/supabaseMock";
 
 jest.mock("@lib/supabase");
 
@@ -11,15 +12,37 @@ beforeEach(() => {
 });
 
 describe("userService", () => {
+  describe("getUserProfile", () => {
+    test("fetches user profile", async () => {
+      const usersMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: createResolvedMock({ data: mockUser, error: null }),
+      };
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
+        if (table === "Users") return usersMock;
+        return {};
+      });
+
+      const result = await getUserProfile(mockCityChangeDTO.userId);
+
+      expect(supabase.from).toHaveBeenCalledWith("Users");
+      expect(result.success).toBe(true);
+      expect(result.data?.userId).toBe("user-123");
+    });
+  });
+
   describe("getPendingUsers", () => {
     test("fetches pending users", async () => {
       const pendingUser = { ...mockUser, approvalStatus: "PENDING" };
       const usersMock = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({ data: [pendingUser], error: null }),
+        order: createResolvedMock({ data: [pendingUser], error: null }),
       };
-      (supabase.from as any).mockImplementation((table: string) => {
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "Users") return usersMock;
         return {};
       });
@@ -37,14 +60,19 @@ describe("userService", () => {
       const usersMock = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: { officeLocation: "London", role: "CONSULTANT" }, error: null }),
+        single: createResolvedMock({ data: { officeLocation: "London", role: "CONSULTANT" }, error: null }),
       };
-      (supabase.from as any).mockImplementation((table: string) => {
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "Users") return usersMock;
         return {};
       });
 
-      const result = await requestOfficeLocationChange("user-123", "London");
+      const sameCityRequest = {
+        ...mockCityChangeDTO,
+        newCity: "London",
+      };
+      const result = await requestOfficeLocationChange(sameCityRequest.userId, sameCityRequest.newCity);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("New city must be different from your current city.");
@@ -54,24 +82,25 @@ describe("userService", () => {
       const usersMock = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: { officeLocation: "London", role: "CONSULTANT" }, error: null }),
+        single: createResolvedMock({ data: { officeLocation: "London", role: "CONSULTANT" }, error: null }),
       };
       const requestsMock = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue({ data: [], error: null }),
-        insert: jest.fn().mockResolvedValue({ error: null }),
+        limit: createResolvedMock({ data: [], error: null }),
+        insert: createResolvedMock({ error: null }),
       };
-      const auditMock = { insert: jest.fn().mockResolvedValue({ error: null }) };
+      const auditMock = { insert: createResolvedMock({ error: null }) };
 
-      (supabase.from as any).mockImplementation((table: string) => {
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "Users") return usersMock;
         if (table === "Requests") return requestsMock;
         if (table === "AuditLogs") return auditMock;
         return {};
       });
 
-      const result = await requestOfficeLocationChange("user-123", "Singapore");
+      const result = await requestOfficeLocationChange(mockCityChangeDTO.userId, mockCityChangeDTO.newCity);
 
       expect(result.success).toBe(true);
       expect(requestsMock.insert).toHaveBeenCalled();
@@ -81,13 +110,14 @@ describe("userService", () => {
 
   describe("UserFavourites", () => {
     test("adds a favourite", async () => {
-      const favouritesMock = { insert: jest.fn().mockResolvedValue({ error: null }) };
-      (supabase.from as any).mockImplementation((table: string) => {
+      const favouritesMock = { insert: createResolvedMock({ error: null }) };
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "UserFavourites") return favouritesMock;
         return {};
       });
 
-      const result = await addFavourite("user-123", 1);
+      const result = await addFavourite(mockCityChangeDTO.userId, 1);
 
       expect(favouritesMock.insert).toHaveBeenCalled();
       expect(result.success).toBe(true);
@@ -97,14 +127,15 @@ describe("userService", () => {
       const favouritesMock = {
         delete: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        then: jest.fn((cb) => Promise.resolve({ error: null }).then(cb))
+        then: createThenCallbackMock({ error: null })
       };
-      (supabase.from as any).mockImplementation((table: string) => {
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "UserFavourites") return favouritesMock;
         return {};
       });
 
-      const result = await removeFavourite("user-123", 1);
+      const result = await removeFavourite(mockCityChangeDTO.userId, 1);
 
       expect(favouritesMock.delete).toHaveBeenCalled();
       expect(result.success).toBe(true);
@@ -113,14 +144,15 @@ describe("userService", () => {
     test("gets favourites", async () => {
       const favouritesMock = {
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: [{ listingId: 1 }], error: null }),
+        eq: createResolvedMock({ data: [{ listingId: 1 }], error: null }),
       };
-      (supabase.from as any).mockImplementation((table: string) => {
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "UserFavourites") return favouritesMock;
         return {};
       });
 
-      const result = await getUserFavourites("user-123");
+      const result = await getUserFavourites(mockCityChangeDTO.userId);
 
       expect(favouritesMock.select).toHaveBeenCalled();
       expect(result.success).toBe(true);

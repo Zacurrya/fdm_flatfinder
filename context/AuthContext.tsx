@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return { success: false, error: "No active session." };
         }
 
-        const result = await AuthController.getUserProfile(session.user.id);
+        const result = await UserController.getUserProfile(session.user.id);
         if (result.success && result.data) {
             setUser(result.data);
         }
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setSession(existingSession);
 
                 // Fetch profile from Users table
-                const result = await AuthController.getUserProfile(existingSession.user.id);
+                const result = await UserController.getUserProfile(existingSession.user.id);
                 if (result.success && result.data) {
                     setUser(result.data);
                 }
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-                    const result = await AuthController.getUserProfile(newSession.user.id);
+                    const result = await UserController.getUserProfile(newSession.user.id);
                     if (result.success && result.data) {
                         setUser(result.data);
                     }

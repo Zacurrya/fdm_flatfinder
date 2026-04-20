@@ -1,12 +1,13 @@
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { createListing, uploadListingPhoto } from "@services/listings/listingController";
+import { InsertListing } from "@services/listings/listingsService";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { createListing, InsertListing, uploadListingPhoto } from "../../services/listings/listingsService";
 
 // add listing screen
 
@@ -68,7 +69,7 @@ export default function AddListingScreen() {
       // 1. upload the photos first
       const uploadedPhotoUrls = [];
       for (const uri of photos) {
-        const url = await uploadListingPhoto(uri);
+        const url = await uploadListingPhoto({ uri });
         uploadedPhotoUrls.push(url);
       }
 
@@ -85,7 +86,11 @@ export default function AddListingScreen() {
         beds: parseInt(beds) || 1,
       };
 
-      await createListing(newListing, city, address);
+      await createListing({
+        listing: newListing,
+        city,
+        address,
+      });
       Alert.alert(
         "Request Submitted",
         "Your listing was submitted for admin approval and will only appear after approval."

@@ -1,4 +1,5 @@
 import { supabase } from "@lib/supabase";
+import { getUserEmailMapByIds } from "@services/user/userService";
 import { ActionType, AuditLog, AuditResponse } from "./auditTypes";
 
 const TABLE = "AuditLogs";
@@ -84,21 +85,12 @@ export const getHistory = async (): Promise<AuditResponse<AuditLog[]>> => {
 	console.log("[AuditService] Unique user IDs to resolve:", allUserIds.length);
 
 	if (allUserIds.length > 0) {
-		const { data: users } = await supabase
-			.from("Users")
-			.select("userId, email")
-			.in("userId", allUserIds);
+		const emailMapResult = await getUserEmailMapByIds(allUserIds);
+		const emailMap = emailMapResult.data ?? {};
 
-		if (users) {
-			const emailMap: Record<string, string> = {};
-			for (const u of users) {
-				if (u.userId) emailMap[u.userId] = u.email ?? "";
-			}
-
-			for (const log of logs) {
-				log.userEmail = emailMap[log.userId] ?? "";
-				log.targetEmail = emailMap[log.targetId] ?? "";
-			}
+		for (const log of logs) {
+			log.userEmail = emailMap[log.userId] ?? "";
+			log.targetEmail = emailMap[log.targetId] ?? "";
 		}
 	}
 

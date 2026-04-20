@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { supabase } from "@lib/supabase";
+import { mockListingDTO } from "@mocks/data/dtos/listingDTO.json";
 import { mockListingRow } from "@mocks/data/listings.json";
 import { deleteListing, fetchListingById, fetchListings } from "@services/listings/listingsService";
-import { resetSupabaseMock } from "../helpers/supabaseMock";
+import { createResolvedMock, resetSupabaseMock } from "../helpers/supabaseMock";
 
 jest.mock("@lib/supabase");
 
@@ -16,9 +17,11 @@ describe("listingsService", () => {
       const listingsMock = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({ data: [mockListingRow], error: null }),
+        order: createResolvedMock({ data: [mockListingRow], error: null }),
       };
-      (supabase.from as any).mockImplementation((table: string) => {
+
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "Listings") return listingsMock;
         return {};
       });
@@ -26,6 +29,7 @@ describe("listingsService", () => {
       const result = await fetchListings();
 
       expect(supabase.from).toHaveBeenCalledWith("Listings");
+      expect(listingsMock.eq).toHaveBeenCalledWith("approvalStatus", "APPROVED");
       expect(result).toEqual([mockListingRow]);
     });
   });
@@ -35,14 +39,15 @@ describe("listingsService", () => {
       const listingsMock = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: mockListingRow, error: null }),
+        single: createResolvedMock({ data: mockListingRow, error: null }),
       };
-      (supabase.from as any).mockImplementation((table: string) => {
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "Listings") return listingsMock;
         return {};
       });
 
-      const result = await fetchListingById(1);
+      const result = await fetchListingById(mockListingDTO.listingId);
 
       expect(result).toEqual(mockListingRow);
     });
@@ -52,20 +57,21 @@ describe("listingsService", () => {
     test("deletes favourites then listing", async () => {
       const favouritesMock = {
         delete: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null }),
+        eq: createResolvedMock({ error: null }),
       };
       const listingsMock = {
         delete: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null }),
+        eq: createResolvedMock({ error: null }),
       };
 
-      (supabase.from as any).mockImplementation((table: string) => {
+      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const table = args[0] as string;
         if (table === "UserFavourites") return favouritesMock;
         if (table === "Listings") return listingsMock;
         return {};
       });
 
-      await deleteListing(1);
+      await deleteListing(mockListingDTO.listingId);
 
       expect(favouritesMock.delete).toHaveBeenCalled();
       expect(listingsMock.delete).toHaveBeenCalled();

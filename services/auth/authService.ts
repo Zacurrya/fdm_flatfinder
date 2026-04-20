@@ -244,39 +244,3 @@ export const deleteUser = async (
     return { success: true };
 };
 
-// Get User Profile 
-
-// Fetches a user's profile from the Users table by their auth UUID.
-export const getUserProfile = async (
-    authUserId: string
-): Promise<AuthResponse<User>> => {
-    const { data: profile, error } = await supabase
-        .from("Users")
-        .select("*")
-        .eq("userId", authUserId)
-        .single();
-
-    if (error || !profile) {
-        return { success: false, error: "User profile not found." };
-    }
-
-    // We need the email from auth — get the current session
-    const { data: sessionData } = await supabase.auth.getSession();
-    const email = sessionData?.session?.user?.email ?? "";
-
-    const user: User = {
-        userId: profile.userId,
-        firstName: profile.firstName ?? "",
-        lastName: profile.lastName ?? "",
-        profilePicture: profile.profilePicture ?? null,
-        email,
-        phoneNumber: profile.phoneNumber ?? "",
-        officeLocation: profile.officeLocation ?? "",
-        role: profile.role as User["role"],
-        approvalStatus: profile.approvalStatus as User["approvalStatus"],
-        createdAt: profile.created_at,
-    };
-
-    return { success: true, data: user };
-};
-

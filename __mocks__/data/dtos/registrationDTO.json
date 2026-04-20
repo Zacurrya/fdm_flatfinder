@@ -1,0 +1,10 @@
+{
+    "mockRegistrationDTO": {
+        "email": "test@fdmgroup.com",
+        "password": "Password123!",
+        "firstName": "Test",
+        "lastName": "User",
+        "phoneNumber": "+441234567890",
+        "officeLocation": "London"  
+    }
+}

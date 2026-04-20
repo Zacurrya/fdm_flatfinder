@@ -1,11 +1,26 @@
 import { jest } from "@jest/globals";
 import { supabase } from "@lib/supabase";
 
-export const resetSupabaseMock = () => {
-  jest.resetAllMocks();
+type AsyncMockFn<T> = (...args: unknown[]) => Promise<T>;
+
+export const createResolvedMock = <T>(resolvedValue: T): jest.MockedFunction<AsyncMockFn<T>> => {
+  const mock = jest.fn(async () => resolvedValue) as jest.MockedFunction<AsyncMockFn<T>>;
+  return mock;
 };
 
-export const createChainableSupabaseMock = (resolvedValue: any = { data: null, error: null }) => {
+export const asAsyncMock = <T>(fn: unknown): jest.MockedFunction<AsyncMockFn<T>> => {
+  return fn as jest.MockedFunction<AsyncMockFn<T>>;
+};
+
+export const createThenCallbackMock = <T>(resolvedValue: T) => {
+  return jest.fn((callback: (value: T) => unknown) => Promise.resolve(resolvedValue).then(callback));
+};
+
+export const resetSupabaseMock = () => {
+  jest.clearAllMocks();
+};
+
+export const createChainableSupabaseMock = (resolvedValue: unknown = { data: null, error: null }) => {
   const mockMethods = {
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
@@ -13,23 +28,25 @@ export const createChainableSupabaseMock = (resolvedValue: any = { data: null, e
     delete: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     in: jest.fn().mockReturnThis(),
-    single: jest.fn().mockResolvedValue(resolvedValue),
-    maybeSingle: jest.fn().mockResolvedValue(resolvedValue),
+    single: createResolvedMock(resolvedValue),
+    maybeSingle: createResolvedMock(resolvedValue),
     order: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     or: jest.fn().mockReturnThis(),
-    then: jest.fn((callback) => Promise.resolve(resolvedValue).then(callback))
+    then: createThenCallbackMock(resolvedValue)
   };
   return mockMethods;
 };
 
-// LOGIN MOCKS 
+// LOGIN MOCKS
 
 export const mockSuccessfulLogin = () => {
   const mockSession = { access_token: "token123" };
   const mockUserId = "37cc2c00-455e-4775-86e2-111f5df489db";
 
-  (supabase.auth.signInWithPassword as any).mockResolvedValue({
+  asAsyncMock<{ data: { session: { access_token: string }; user: { id: string; email: string } }; error: null }>(
+    supabase.auth.signInWithPassword
+  ).mockResolvedValue({
     data: {
       session: mockSession,
       user: {
@@ -40,8 +57,7 @@ export const mockSuccessfulLogin = () => {
     error: null,
   });
 
-  const single: any = jest.fn();
-  single.mockResolvedValue({
+  const single = createResolvedMock({
     data: {
       userId: mockUserId,
       firstName: "Test",
@@ -58,27 +74,31 @@ export const mockSuccessfulLogin = () => {
 
   const eq = jest.fn().mockReturnValue({ single });
   const select = jest.fn().mockReturnValue({ eq });
-  (supabase.from as any).mockReturnValue({ select });
+  (supabase.from as jest.Mock).mockReturnValue({ select });
 
   return { mockSession, mockUserId, select, eq, single };
 };
 
 export const mockFailedLogin = () => {
-  (supabase.auth.signInWithPassword as any).mockResolvedValue({
+  asAsyncMock<{ data: { session: null; user: null }; error: { message: string } }>(
+    supabase.auth.signInWithPassword
+  ).mockResolvedValue({
     data: { session: null, user: null },
     error: { message: "Invalid login credentials" },
   });
 };
 
 // GENERIC DATABASE CALL MOCK
-export const mockDatabaseCall = (resolvedValue: any) => {
+export const mockDatabaseCall = (resolvedValue: unknown) => {
   const mockChain = createChainableSupabaseMock(resolvedValue);
-  (supabase.from as any).mockReturnValue(mockChain);
+  (supabase.from as jest.Mock).mockReturnValue(mockChain);
   return mockChain;
 };
 
 export const mockAuthSession = (userId: string = "user-123", email: string = "test@fdmgroup.com") => {
-  (supabase.auth.getSession as any).mockResolvedValue({
+  asAsyncMock<{ data: { session: { user: { id: string; email: string } } }; error: null }>(
+    supabase.auth.getSession
+  ).mockResolvedValue({
     data: {
       session: {
         user: { id: userId, email }

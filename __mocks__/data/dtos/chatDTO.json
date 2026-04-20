@@ -1,0 +1,9 @@
+{
+    "mockConversationRequestDTO": {
+        "currentUserId": "user-123",
+        "otherUserId": "user-456",
+        "listingId": 1,
+        "conversationId": "conv-123",
+        "message": "Hello"
+    }
+}

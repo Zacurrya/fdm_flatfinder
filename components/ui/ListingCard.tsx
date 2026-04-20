@@ -1,7 +1,6 @@
-import { forwardRef, useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Image as ExpoImage } from "expo-image";
-import { Image, Text, TouchableOpacity, View, TouchableOpacityProps } from "react-native";
+import { forwardRef, useEffect, useState } from "react";
+import { Image, Text, TouchableOpacity, TouchableOpacityProps, View } from "react-native";
 
 // listing card component
 
@@ -9,7 +8,7 @@ import { Image, Text, TouchableOpacity, View, TouchableOpacityProps } from "reac
 // shows the photo, price, location, beds and baths
 
 // data we need from the listing to display on the card
-import { getSignedListingPhotoUrl, Listing } from "../../services/listings/listingsService";
+import { Listing } from "@services/listings/listingsService";
 
 export type ListingCardData = Listing;
 
@@ -56,33 +55,32 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        const loadPhoto = async () => {
-            let parsedPhotos: string[] = [];
-            if (listing.photos) {
-                if (Array.isArray(listing.photos)) {
-                    parsedPhotos = listing.photos;
-                } else if (typeof listing.photos === 'string') {
-                    try {
-                        parsedPhotos = JSON.parse(listing.photos);
-                    } catch (e) {
-                        const matches = (listing.photos as string).match(/https?:\/\/[^,}\]]+/g);
-                        if (matches) parsedPhotos = matches;
-                    }
-                }
-                
-                if (parsedPhotos && parsedPhotos.length > 0) {
-                    const validUrls = parsedPhotos
-                        .map(url => url ? url.replace(/^"|"$/g, '').trim() : '')
-                        .filter(url => url.startsWith('http'));
-                        
-                    if (validUrls.length > 0) {
-                        const signedUrl = await getSignedListingPhotoUrl(validUrls[0]);
-                        setPhotoUrl(signedUrl);
-                    }
+        let parsedPhotos: string[] = [];
+        if (listing.photos) {
+            if (Array.isArray(listing.photos)) {
+                parsedPhotos = listing.photos;
+            } else if (typeof listing.photos === 'string') {
+                try {
+                    parsedPhotos = JSON.parse(listing.photos);
+                } catch {
+                    const matches = (listing.photos as string).match(/https?:\/\/[^,}\]]+/g);
+                    if (matches) parsedPhotos = matches;
                 }
             }
-        };
-        loadPhoto();
+
+            if (parsedPhotos.length > 0) {
+                const validUrls = parsedPhotos
+                    .map((url) => (url ? url.replace(/^"|"$/g, '').trim() : ''))
+                    .filter((url) => url.startsWith('http'));
+
+                if (validUrls.length > 0) {
+                    setPhotoUrl(validUrls[0]);
+                    return;
+                }
+            }
+        }
+
+        setPhotoUrl(null);
     }, [listing.photos]);
 
     const src = listing.source ?? "FDM";
@@ -178,7 +176,7 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
                     </TouchableOpacity>
                 )}
             </View>
-
+            {/* listing details */}
             <View className="p-4">
                 <View className="flex-row items-start justify-between">
                     <View className="flex-1 pr-2">
@@ -202,7 +200,7 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
                         </Text>
                     </View>
                 </View>
-
+                {/* beds and baths row */}
                 <View className="flex-row gap-4 mt-3 pt-3 border-t border-fdm-fg/10">
                     <View className="flex-row items-center gap-1">
                         <Ionicons name="bed-outline" size={14} color="#ffffff50" />
@@ -223,5 +221,7 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
         </View>
     );
 });
+
+ListingCard.displayName = "ListingCard";
 
 export default ListingCard;

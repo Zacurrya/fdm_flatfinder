@@ -1,0 +1,6 @@
+{
+    "mockUserLookupDTO": {
+        "userIds": ["user-123"],
+        "expectedEmail": "test@fdmgroup.com"
+    }
+}

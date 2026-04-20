@@ -1,5 +1,6 @@
 import { supabase } from "@lib/supabase";
-import { Database } from "@/types/database.types";
+import { File as ExpoFile } from 'expo-file-system';
+import { Database } from "../../types/database.types";
 import * as RequestController from "../requests/requestController";
 
 export type ListingLocationRow = Database["public"]["Tables"]["ListingLocations"]["Row"];
@@ -26,9 +27,8 @@ export const fetchListings = async (): Promise<Listing[]> => {
   return data || [];
 };
 
-// fetch single listing
-
-// gets one specific listing by its id so we can show the detail page
+// Fetch single listing
+// Fetches a single listing to display its listing page and full details
 export const fetchListingById = async (id: number | string): Promise<Listing> => {
   const { data, error } = await supabase
     .from("Listings")
@@ -45,8 +45,7 @@ export const fetchListingById = async (id: number | string): Promise<Listing> =>
   return data;
 };
 
-// delete listing
-
+// Delete listing
 // removes a listing from the database when the owner wants to take it down
 export const deleteListing = async (id: number | string): Promise<void> => {
   const listingId = Number(id);
@@ -72,9 +71,8 @@ export const deleteListing = async (id: number | string): Promise<void> => {
   }
 };
 
-// create listing
-
-// saves a new flat listing into the database using supabase
+// Create listing
+// Creates a listing in the database with PENDING status, creating a request for admin approval
 export const createListing = async (listing: InsertListing, city: string, address: string): Promise<Listing> => {
   const listingToInsert: InsertListing = {
     ...listing,
@@ -140,13 +138,9 @@ export const createListing = async (listing: InsertListing, city: string, addres
   return listingWithLocation;
 };
 
-// upload photo
-
+// Upload photo
 // takes a photo from the user's phone and uploads it to the supabase storage bucket
 // returns the public URL so we can store it in the listing record
-
-import { File as ExpoFile } from 'expo-file-system';
-
 export const uploadListingPhoto = async (uri: string): Promise<string> => {
   try {
     const ext = uri.split('.').pop()?.toLowerCase() || 'jpg';
@@ -158,7 +152,7 @@ export const uploadListingPhoto = async (uri: string): Promise<string> => {
     const arrayBuffer = await imageFile.arrayBuffer();
 
     // send the image to supabase storage
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('listing-images')
       .upload(fileName, arrayBuffer, {
         contentType,
@@ -179,27 +173,4 @@ export const uploadListingPhoto = async (uri: string): Promise<string> => {
   }
 };
 
-export const getSignedListingPhotoUrl = async (url: string): Promise<string> => {
-  if (!url) return url;
-  // if its already signed or not from our bucket just return it
-  if (url.includes('/object/sign/') || !url.includes('listing-images/')) return url;
-  
-  try {
-    const path = url.split('listing-images/')[1]?.split('?')[0];
-    if (!path) return url;
-    
-    // create signed url valid for 1 hour
-    const { data, error } = await supabase.storage
-      .from('listing-images')
-      .createSignedUrl(path, 3600);
-      
-    if (error || !data?.signedUrl) {
-      console.warn("Failed to sign url", error);
-      return url; // fallback to original
-    }
-    
-    return data.signedUrl;
-  } catch (e) {
-    return url;
-  }
-};
+

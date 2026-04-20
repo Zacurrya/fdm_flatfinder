@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getMessages, getOrCreateConversation, sendMessage } from "../../services/chat/chatService";
-import { deleteListing, fetchListingById, getSignedListingPhotoUrl, Listing } from "../../services/listings/listingsService";
+import { deleteListing, fetchListingById } from "../../services/listings/listingController";
+import { Listing } from "../../services/listings/listingsService";
 
 // listing detail screen
 
@@ -29,7 +30,7 @@ export default function ListingDetailScreen() {
     // load the listing data when the page opens
     const loadData = async () => {
       try {
-        const data = await fetchListingById(Number(id));
+        const data = await fetchListingById({ id: Number(id) });
         setListing(data);
         
         // make sure urls work and get signed ones if the bucket is private
@@ -40,7 +41,7 @@ export default function ListingDetailScreen() {
             } else if (typeof data.photos === 'string') {
                 try {
                     rawPhotos = JSON.parse(data.photos);
-                } catch (e) {
+                } catch {
                     const matches = (data.photos as string).match(/https?:\/\/[^,}\]]+/g);
                     if (matches) rawPhotos = matches;
                 }
@@ -52,8 +53,7 @@ export default function ListingDetailScreen() {
             .filter(url => url.startsWith('http'));
 
         if (cleaned.length > 0) {
-            const signed = await Promise.all(cleaned.map(url => getSignedListingPhotoUrl(url)));
-            setSignedPhotos(signed);
+          setSignedPhotos(cleaned);
         }
       } catch (err) {
         console.error("Failed to fetch flat details", err);
@@ -245,7 +245,7 @@ export default function ListingDetailScreen() {
             <TouchableOpacity 
                onPress={async () => {
                   try {
-                    await deleteListing(listing.id as number);
+                    await deleteListing({ id: listing.id as number });
                     router.back();
                   } catch (e) {
                     console.error("Failed to delete", e);

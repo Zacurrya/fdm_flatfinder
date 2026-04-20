@@ -109,15 +109,3 @@ export const deleteUser = async (
     return AuthService.deleteUser(request);
 };
 
-// Get User Profile
-
-export const getUserProfile = async (
-    authUserId: string
-): Promise<AuthResponse<User>> => {
-    if (!authUserId) {
-        return { success: false, error: "User ID is required." };
-    }
-
-    return AuthService.getUserProfile(authUserId);
-};
-

@@ -1,0 +1,6 @@
+{
+    "mockAuditLogDTO": {
+        "actionType": "SIGN_UP_REQUESTED",
+        "targetId": "target-123"
+    }
+}

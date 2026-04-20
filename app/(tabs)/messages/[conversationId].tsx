@@ -26,7 +26,6 @@ import {
     sendMessage,
     subscribeToMessages,
 } from "../../../services/chat/chatService";
-import { getSignedListingPhotoUrl } from "../../../services/listings/listingsService";
 
 function getFirstPhotoUrl(photos: string[] | null | undefined): string | null {
   if (!photos || photos.length === 0) return null;
@@ -67,8 +66,7 @@ export default function ChatScreen() {
         if (details.listing?.photos) {
           const raw = getFirstPhotoUrl(details.listing.photos);
           if (raw) {
-            const signed = await getSignedListingPhotoUrl(raw);
-            setListingPhotoUrl(signed);
+            setListingPhotoUrl(raw);
           }
         }
       } catch (e) {

@@ -1,13 +1,14 @@
-import FilterSidebar from "@/components/search/FilterSidebar";
-import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
-import ListingCard from "@/components/ui/ListingCard";
+import FilterSidebar from "@components/search/FilterSidebar";
+import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
+import ListingCard from "@components/ui/ListingCard";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { fetchListings, Listing } from "@services/listings/listingsService";
+import { addFavourite, getUserFavourites, removeFavourite } from "@services/user/userService";
+import { filterListings } from "@utils/listingFilters";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Modal, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from "react-native";
-import { fetchListings, Listing } from "../../../services/listings/listingsService";
-import { addFavourite, getUserFavourites, removeFavourite } from "../../../services/user/userService";
 
 export default function SearchScreen() {
   const { user } = useAuth();
@@ -29,6 +30,7 @@ export default function SearchScreen() {
 
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
+  // Caches listings & favourites on screen focus
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -69,28 +71,13 @@ export default function SearchScreen() {
     );
   }
 
-  const filteredListings = listings.filter((l) => {
-    const listingCity = l.ListingLocations?.city;
-    if (!listingCity || !user?.officeLocation || listingCity.toLowerCase() !== user.officeLocation.toLowerCase()) {
-      return false;
-    }
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const address = l.ListingLocations?.address || "";
-      if (!l.title.toLowerCase().includes(q) && !address.toLowerCase().includes(q)) return false;
-    }
-    
-    let monthlyPrice = l.price;
-    if (l.rentPeriod === "WEEKLY") monthlyPrice = (l.price * 52) / 12;
-    if (l.rentPeriod === "BIWEEKLY") monthlyPrice = (l.price * 26) / 12;
-
-    if (minPrice && monthlyPrice < parseInt(minPrice)) return false;
-    if (maxPrice && monthlyPrice > parseInt(maxPrice)) return false;
-    if (bedrooms && l.beds && l.beds < bedrooms) return false;
-    if (bathrooms && l.baths && l.baths < bathrooms) return false;
-    if (sourceFilter && l.source !== sourceFilter) return false;
-    return true;
+  const filteredListings = filterListings(listings, {
+    searchQuery,
+    minPrice,
+    maxPrice,
+    bedrooms,
+    bathrooms,
+    sourceFilter,
   });
 
   const sidebarProps = {

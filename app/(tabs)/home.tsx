@@ -34,12 +34,7 @@ export default function HomeScreen() {
       if (isActive) {
         const userFavIds = favResponse.success ? favResponse.data || [] : [];
         setFavIds(userFavIds);
-        const filtered = data.filter((l) => {
-          const isFaved = userFavIds.includes(Number(l.id));
-          const listingCity = l.ListingLocations?.city;
-          const isSameCity = !!listingCity && !!user?.officeLocation && listingCity.toLowerCase() === user.officeLocation.toLowerCase();
-          return isFaved && isSameCity;
-        });
+        const filtered = data.filter((l) => userFavIds.includes(Number(l.id)));
         setListings(filtered);
       }
     } catch (error) {

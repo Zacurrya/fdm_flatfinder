@@ -13,6 +13,16 @@ export const getPendingUsers = async (): Promise<
     return UserService.getPendingUsers();
 };
 
+export const getUserProfile = async (
+    authUserId: string
+): Promise<AuthResponse<User>> => {
+    if (!authUserId) {
+        return { success: false, error: "User ID is required." };
+    }
+
+    return UserService.getUserProfile(authUserId);
+};
+
 // Upload Profile Picture
 
 export const uploadProfilePicture = async (

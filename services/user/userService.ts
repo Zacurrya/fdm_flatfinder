@@ -8,6 +8,12 @@ import { File } from "expo-file-system";
 
 const PROFILE_PICTURE_BUCKET = "profile-pictures";
 
+type UserEmailMapResult = {
+    success: boolean;
+    data?: Record<string, string>;
+    error?: string;
+};
+
 type CachedProfilePictureUrl = {
     url: string;
     expiresAtMs: number;
@@ -189,6 +195,61 @@ export const getPendingUsers = async (): Promise<
     }));
 
     return { success: true, data: users };
+};
+
+// Fetches a user's profile from the Users table by their auth UUID.
+export const getUserProfile = async (
+    authUserId: string
+): Promise<AuthResponse<User>> => {
+    const { data: profile, error } = await supabase
+        .from("Users")
+        .select("*")
+        .eq("userId", authUserId)
+        .single();
+
+    if (error || !profile) {
+        return { success: false, error: "User profile not found." };
+    }
+
+    const user: User = {
+        userId: profile.userId,
+        firstName: profile.firstName ?? "",
+        lastName: profile.lastName ?? "",
+        profilePicture: profile.profilePicture ?? null,
+        email: profile.email ?? "",
+        phoneNumber: profile.phoneNumber ?? "",
+        officeLocation: profile.officeLocation ?? "",
+        role: profile.role as User["role"],
+        approvalStatus: profile.approvalStatus as User["approvalStatus"],
+        createdAt: profile.created_at,
+    };
+
+    return { success: true, data: user };
+};
+
+export const getUserEmailMapByIds = async (
+    userIds: string[]
+): Promise<UserEmailMapResult> => {
+    const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
+
+    if (uniqueUserIds.length === 0) {
+        return { success: true, data: {} };
+    }
+
+    const { data, error } = await supabase
+        .from("Users")
+        .select("userId, email")
+        .in("userId", uniqueUserIds);
+
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    const emailMap = Object.fromEntries(
+        (data ?? []).map((row) => [row.userId, row.email ?? ""])
+    );
+
+    return { success: true, data: emailMap };
 };
 
 // Uploads a local image URI to Supabase Storage and stores the public URL

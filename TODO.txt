@@ -1,0 +1,10 @@
+- Create Aggregators for:
+    - RightMove
+    - OpenRent
+    - Zoopla
+    - PropertyGuru (Singapore)
+- Create Group Chats for each city
+
+CONSIDER: 
+- Move cities to a separate table, grouping them by region
+    - Moves towards a standard of keeping all data within the database

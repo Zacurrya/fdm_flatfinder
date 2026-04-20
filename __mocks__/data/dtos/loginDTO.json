@@ -1,0 +1,6 @@
+{
+    "mockLoginDTO": {
+        "email": "test@fdmgroup.com",
+        "password": "Password123!"
+    }
+}

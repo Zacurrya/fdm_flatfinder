@@ -27,7 +27,7 @@ function AppShell() {
   const inTabsGroup = rawSegments[0] === "(tabs)";
   const isListingDetail = rawSegments[0] === "listing";
   
-  // We should redirect to Home if they are authenticated and on the landing page OR an auth screen (like login/register)
+  // Redirect to Home if they are authenticated and on the landing page or an auth screen)
   const isAtLandingOrAuth = 
     rawSegments.length === 0 || 
     rawSegments[0] === "" || 
@@ -36,10 +36,10 @@ function AppShell() {
 
   const isAuthenticated = Boolean(session && user);
 
-  // FIXED: Only redirect to Home if authenticated and sitting on Landing/Auth screens
+  // Redirect to Home if authenticated and sitting on Landing/Auth screens
   const shouldRedirectToHome = !isLoading && isAuthenticated && isAtLandingOrAuth;
 
-  // FIXED: Redirect to Landing if trying to access TABS or LISTINGS while not logged in
+  // Redirect to Landing if trying to access TABS or LISTINGS while not logged in
   const shouldRedirectToLanding = !isLoading && !isAuthenticated && (inTabsGroup || isListingDetail);
   
   const isRouteReady = !shouldRedirectToHome && !shouldRedirectToLanding;
