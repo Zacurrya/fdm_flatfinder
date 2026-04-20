@@ -1,4 +1,5 @@
 import FilterSidebar from "@components/search/FilterSidebar";
+import SearchBar from "@components/search/SearchBar";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import ListingCard from "@components/ui/ListingCard";
 import { useAuth } from "@context/AuthContext";
@@ -8,7 +9,7 @@ import { addFavourite, getUserFavourites, removeFavourite } from "@services/user
 import { filterListings } from "@utils/listingFilters";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Modal, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function SearchScreen() {
   const { user } = useAuth();
@@ -103,26 +104,13 @@ export default function SearchScreen() {
         {/* Main Content */}
         <View className="flex-1">
           {/* Header */}
-          <View className={`px-6 py-4 flex-row items-center gap-3 border-b border-fdm-fg/10 ${!isLandscape ? 'pt-8' : ''}`}>
-            <View className="flex-1 flex-row items-center bg-fdm-fg/5 rounded-2xl px-4 py-3 border border-fdm-fg/10">
-              <Ionicons name="search" size={20} color="#ffffff60" />
-              <TextInput
-                className="flex-1 text-fdm-fg ml-3 font-medium text-base h-7 outline-none"
-                placeholder="Search flat names, location..."
-                placeholderTextColor="#ffffff50"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-            </View>
-            
-            {!isLandscape && (
-              <TouchableOpacity 
-                onPress={() => setShowMobileSidebar(true)}
-                className="w-12 h-12 bg-fdm-fg/5 items-center justify-center rounded-2xl border border-fdm-fg/10 active:bg-fdm-fg/10"
-              >
-                <Ionicons name="options-outline" size={24} color="#ccff00" />
-              </TouchableOpacity>
-            )}
+          <View className={`px-6 py-4 border-b border-fdm-fg/10 ${!isLandscape ? 'pt-8' : ''}`}>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              showFilterButton={!isLandscape}
+              onPressFilter={() => setShowMobileSidebar(true)}
+            />
           </View>
 
           {/* Results list */}
