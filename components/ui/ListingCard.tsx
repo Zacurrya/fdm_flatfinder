@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { forwardRef, useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, TouchableOpacityProps, View } from "react-native";
+import { formatCurrencyWithSymbol } from "@/utils/currency";
 
 // listing card component
 
@@ -196,7 +197,7 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
                     </View>
                     <View className="bg-fdm-accent/10 border border-fdm-accent/20 px-3 py-1 rounded-xl">
                         <Text className="text-fdm-accent font-bold text-sm">
-                            £{listing.price}/{rentLabel}
+                            {formatCurrencyWithSymbol(listing.price)}/{rentLabel}
                         </Text>
                     </View>
                 </View>

@@ -1,11 +1,18 @@
+import {
+    fetchAndMapConversationMessages,
+    mapConversationMessage,
+    MappedChatMessage,
+} from "@/utils/mapMessages";
+import ChatComposer from "@components/Chat/ChatComposer";
 import ContactActionButtons from "@components/Chat/ContactActionButtons";
+import MessageAvatar from "@components/Chat/MessageAvatar";
+import MessageBubble from "@components/Chat/MessageBubble";
+import { formatCurrencyWithSymbol } from "@/utils/currency";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import {
     getConversationDetails,
-    getMessages,
     ListingSnippet,
-    Message,
     OtherUserProfile,
     sendMessage,
     subscribeToMessages,
@@ -20,7 +27,6 @@ import {
     KeyboardAvoidingView,
     Platform,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
@@ -39,7 +45,7 @@ export default function ChatScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<MappedChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
@@ -55,7 +61,7 @@ export default function ChatScreen() {
       setLoading(true);
       try {
         const [messagesResult, detailsResult] = await Promise.all([
-          getMessages({ conversationId }),
+          fetchAndMapConversationMessages({ conversationId }),
           getConversationDetails({ conversationId, currentUserId: user.userId }),
         ]);
 
@@ -94,11 +100,12 @@ export default function ChatScreen() {
       conversationId,
       onNewMessage: (newMessage) => {
         setMessages((prev) => {
-          if (prev.find((m) => m.id === newMessage.id)) {
+          const mappedMessage = mapConversationMessage(newMessage);
+          if (prev.find((m) => m.id === mappedMessage.id)) {
             return prev;
           }
 
-          return [...prev, newMessage];
+          return [...prev, mappedMessage];
         });
 
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -124,12 +131,11 @@ export default function ChatScreen() {
     setInputText("");
     setSending(true);
 
-    const tempMessage: Message = {
+    const tempMessage: MappedChatMessage = {
       id: `temp-${Date.now()}`,
-      conversation_id: conversationId,
-      sender_id: user.userId,
       content,
-      created_at: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      senderId: user.userId,
     };
 
     setMessages((prev) => [...prev, tempMessage]);
@@ -146,7 +152,8 @@ export default function ChatScreen() {
         throw new Error(savedResult.error ?? "Failed to send message.");
       }
 
-      setMessages((prev) => prev.map((m) => (m.id === tempMessage.id ? savedResult.data! : m)));
+      const mappedSavedMessage = mapConversationMessage(savedResult.data);
+      setMessages((prev) => prev.map((m) => (m.id === tempMessage.id ? mappedSavedMessage : m)));
     } catch (error) {
       console.error("Failed to send message:", error);
       setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
@@ -176,19 +183,19 @@ export default function ChatScreen() {
     .toUpperCase()
     .slice(0, 2);
 
-  const renderMessage = ({ item, index }: { item: Message; index: number }) => {
-    const isMe = item.sender_id === user?.userId;
+  const renderMessage = ({ item, index }: { item: MappedChatMessage; index: number }) => {
+    const isMe = item.senderId === user?.userId;
     const previous = messages[index - 1];
     const showDateSeparator =
       !previous ||
-      new Date(item.created_at).toDateString() !== new Date(previous.created_at).toDateString();
+      new Date(item.createdAt).toDateString() !== new Date(previous.createdAt).toDateString();
 
     return (
       <>
         {showDateSeparator && (
           <View className="items-center my-3">
             <Text className="text-fdm-fg/30 text-xs bg-fdm-fg/5 px-3 py-1 rounded-full">
-              {new Date(item.created_at).toLocaleDateString([], {
+              {new Date(item.createdAt).toLocaleDateString([], {
                 weekday: "short",
                 day: "numeric",
                 month: "short",
@@ -202,28 +209,18 @@ export default function ChatScreen() {
             isMe ? "justify-end" : "justify-start"
           }`}
         >
-          {!isMe && (
-            <View className="w-7 h-7 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center mr-2 mb-1 overflow-hidden">
-              {otherUser?.profilePicture ? (
-                <Image source={{ uri: otherUser.profilePicture }} style={{ width: 28, height: 28 }} />
-              ) : (
-                <Text className="text-fdm-accent font-bold text-xs">{initials}</Text>
-              )}
-            </View>
-          )}
+          {!isMe ? (
+            <MessageAvatar
+              profilePicture={otherUser?.profilePicture}
+              initials={initials}
+            />
+          ) : null}
 
-          <View
-            className={`max-w-[75%] px-4 py-2.5 rounded-2xl ${
-              isMe
-                ? "bg-fdm-accent rounded-tr-sm"
-                : "bg-fdm-fg/10 border border-fdm-fg/10 rounded-tl-sm"
-            }`}
-          >
-            <Text className={isMe ? "text-fdm-bg font-medium" : "text-fdm-fg"}>{item.content}</Text>
-            <Text className={`text-xs mt-1 ${isMe ? "text-fdm-bg/60 text-right" : "text-fdm-fg/40"}`}>
-              {formatTime(item.created_at)}
-            </Text>
-          </View>
+          <MessageBubble
+            content={item.content}
+            timeLabel={formatTime(item.createdAt)}
+            isMe={isMe}
+          />
         </View>
       </>
     );
@@ -239,7 +236,7 @@ export default function ChatScreen() {
       >
         <View className="flex-row items-center">
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.replace("/(tabs)/messages")}
             className="w-10 h-10 rounded-full bg-fdm-fg/10 items-center justify-center mr-3"
           >
             <Ionicons name="arrow-back" size={20} color="white" />
@@ -290,7 +287,7 @@ export default function ChatScreen() {
             <Text className="text-fdm-fg font-semibold text-sm" numberOfLines={1}>
               {listing.title}
             </Text>
-            <View className="flex-row items-center mt-1 gap-1">
+            <View className="flex-row items-center mt-1">
               <Ionicons name="location-outline" size={11} color="#ffffff50" />
               <Text className="text-fdm-fg/50 text-xs flex-1" numberOfLines={1}>
                 {listing.location}
@@ -303,7 +300,7 @@ export default function ChatScreen() {
           </View>
 
           <View className="px-3 justify-center items-end border-l border-fdm-fg/10">
-            <Text className="text-fdm-accent font-bold text-base">GBP {listing.price}</Text>
+            <Text className="text-fdm-accent font-bold text-base">{formatCurrencyWithSymbol(listing.price)}</Text>
             <Text className="text-fdm-fg/40 text-xs">{getRentLabel(listing.rentPeriod)}</Text>
             <Ionicons name="chevron-forward" size={14} color="#ffffff20" style={{ marginTop: 4 }} />
           </View>
@@ -335,34 +332,15 @@ export default function ChatScreen() {
             }
           />
 
-          <View
-            className="flex-row items-end px-4 py-3 border-t border-fdm-fg/10 bg-fdm-bg"
-            style={{ paddingBottom: Math.max(insets.bottom, 12) }}
-          >
-            <TextInput
+          <View style={{ paddingBottom: Math.max(insets.bottom, 12) }}>
+            <ChatComposer
               value={inputText}
               onChangeText={setInputText}
               placeholder="Message..."
-              placeholderTextColor="#ffffff40"
-              multiline
-              maxLength={1000}
-              className="flex-1 bg-fdm-fg/10 text-fdm-fg border border-fdm-fg/10 rounded-2xl px-4 py-3 mr-3 text-base"
-              style={{ maxHeight: 120 }}
-              onSubmitEditing={handleSend}
+              onSend={handleSend}
+              sendDisabled={!inputText.trim() || sending}
+              showActions={false}
             />
-            <TouchableOpacity
-              onPress={handleSend}
-              disabled={!inputText.trim() || sending}
-              className={`w-11 h-11 rounded-full items-center justify-center ${
-                inputText.trim() ? "bg-fdm-accent" : "bg-fdm-fg/10"
-              }`}
-            >
-              <Ionicons
-                name="send"
-                size={18}
-                color={inputText.trim() ? "#1a1a1a" : "#ffffff30"}
-              />
-            </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       )}

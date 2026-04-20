@@ -1,7 +1,10 @@
 import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
+import CityImage from "@/components/ui/CityImage";
+import { formatCurrencyWithSymbol } from "@/utils/currency";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { ConversationWithUser, getConversations } from "@services/chat/chatController";
+import { CityChat, fetchCityChats, getOrCreateCityChatByCity } from "@services/cityChat/cityChatController";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
@@ -18,6 +21,7 @@ export default function MessagesScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [conversations, setConversations] = useState<ConversationWithUser[]>([]);
+  const [cityChats, setCityChats] = useState<CityChat[]>([]);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -28,12 +32,31 @@ export default function MessagesScreen() {
       const load = async () => {
         setLoading(true);
         try {
-          const result = await getConversations({ userId: user.userId });
-          if (!result.success || !result.data) {
-            throw new Error(result.error ?? "Failed to load conversations.");
+          const conversationsResult = await getConversations({ userId: user.userId });
+
+          if (!conversationsResult.success || !conversationsResult.data) {
+            throw new Error(conversationsResult.error ?? "Failed to load conversations.");
           }
 
-          if (active) setConversations(result.data);
+          const cityChatsResult =
+            user.role === "ADMIN"
+              ? await fetchCityChats()
+              : user.officeLocation?.trim()
+                ? await getOrCreateCityChatByCity({ city: user.officeLocation })
+                : { success: true, data: null };
+
+          if (active) {
+            setConversations(conversationsResult.data);
+            if (!cityChatsResult.success) {
+              setCityChats([]);
+            } else if (Array.isArray(cityChatsResult.data)) {
+              setCityChats(cityChatsResult.data);
+            } else if (cityChatsResult.data) {
+              setCityChats([cityChatsResult.data]);
+            } else {
+              setCityChats([]);
+            }
+          }
         } catch (e) {
           console.error("Failed to load conversations:", e);
         } finally {
@@ -45,7 +68,7 @@ export default function MessagesScreen() {
       return () => {
         active = false;
       };
-    }, [user?.userId])
+    }, [user?.userId, user?.officeLocation, user?.role])
   );
 
   if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
@@ -86,7 +109,7 @@ export default function MessagesScreen() {
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#ccff00" />
         </View>
-      ) : conversations.length === 0 ? (
+      ) : conversations.length === 0 && cityChats.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <Ionicons name="chatbubbles-outline" size={56} color="#ffffff20" />
           <Text className="text-fdm-fg/40 text-base text-center mt-4">No messages yet.</Text>
@@ -96,6 +119,46 @@ export default function MessagesScreen() {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
+          {cityChats.map((cityChat) => (
+            <TouchableOpacity
+              key={`city-chat-${cityChat.id}`}
+              onPress={() =>
+                router.push(
+                  `/(tabs)/messages/city/${cityChat.id}?city=${encodeURIComponent(cityChat.city)}` as any
+                )
+              }
+              className="flex-row items-center px-6 py-4 border-b border-fdm-fg/5 active:bg-fdm-fg/5"
+            >
+              <View className="w-12 h-12 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center overflow-hidden">
+                <View className="h-8 w-8">
+                  <CityImage officeLocation={cityChat.city} fitContainer />
+                </View>
+              </View>
+
+              <View className="flex-1 ml-4">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-fdm-fg font-semibold text-base" numberOfLines={1}>
+                    {cityChat.city} Group Chat
+                  </Text>
+                  {cityChat.last_message_at ? (
+                    <Text className="text-fdm-fg/40 text-xs">{formatTime(cityChat.last_message_at)}</Text>
+                  ) : null}
+                </View>
+
+                <Text className="text-fdm-fg/50 text-sm mt-0.5" numberOfLines={1}>
+                  {cityChat.last_message ?? "Start chatting with your city group"}
+                </Text>
+              </View>
+
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color="#ffffff30"
+                style={{ marginLeft: 8 }}
+              />
+            </TouchableOpacity>
+          ))}
+
           {conversations.map((conv) => {
             const name =
               [conv.otherUser.firstName, conv.otherUser.lastName]
@@ -139,7 +202,7 @@ export default function MessagesScreen() {
                     <View className="flex-row items-center mt-1.5 gap-1">
                       <Ionicons name="home-outline" size={11} color="#ccff0070" />
                       <Text className="text-fdm-accent/70 text-xs flex-1" numberOfLines={1}>
-                        {conv.listing.title} - GBP {conv.listing.price}/
+                        {conv.listing.title} - {formatCurrencyWithSymbol(conv.listing.price)}/
                         {conv.listing.rentPeriod === "WEEKLY"
                           ? "pw"
                           : conv.listing.rentPeriod === "BIWEEKLY"

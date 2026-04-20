@@ -1,6 +1,9 @@
+import { encodeListingShareMessage } from "@/utils/chatListingShare";
+import { formatCurrencyWithSymbol } from "@/utils/currency";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { getMessages, getOrCreateConversation, sendMessage } from "@services/chat/chatController";
+import { getOrCreateCityChatByCity, sendCityChatMessage } from "@services/cityChat/cityChatController";
 import { deleteListing, fetchListingById, Listing } from "@services/listings/listingController";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -86,11 +89,6 @@ export default function ListingDetailScreen() {
     );
   }
 
-  // format the price with the pound sign
-  const formatPrice = (price: number | string) => {
-    return `£${price}`;
-  };
-
   // convert rent period to a short label for display
   const getRentLabel = (period: string | undefined): string => {
     if (period === "WEEKLY") return "pw";
@@ -100,6 +98,50 @@ export default function ListingDetailScreen() {
   };
 
   const windowWidth = Dimensions.get('window').width;
+
+  const handleShareToGroupChat = async () => {
+    if (!user?.userId || !listing) {
+      return;
+    }
+
+    const cityForChat = listing.ListingLocations?.city?.trim() || user.officeLocation?.trim();
+    if (!cityForChat) {
+      Alert.alert("Share Failed", "No city found for this listing.");
+      return;
+    }
+
+    try {
+      const cityChatResult = await getOrCreateCityChatByCity({ city: cityForChat });
+      if (!cityChatResult.success || !cityChatResult.data) {
+        throw new Error(cityChatResult.error ?? "Could not open city chat.");
+      }
+
+      const encodedMessage = encodeListingShareMessage(Number(listing.id));
+      const sendResult = await sendCityChatMessage({
+        cityChatId: cityChatResult.data.id,
+        senderId: user.userId,
+        content: encodedMessage,
+      });
+
+      if (!sendResult.success) {
+        throw new Error(sendResult.error ?? "Could not share listing.");
+      }
+
+      Alert.alert("Shared", "Listing shared to group chat.", [
+        {
+          text: "Open Chat",
+          onPress: () =>
+            router.push(
+              `/(tabs)/messages/city/${cityChatResult.data!.id}?city=${encodeURIComponent(cityChatResult.data!.city)}` as any
+            ),
+        },
+        { text: "OK" },
+      ]);
+    } catch (error) {
+      console.error("Failed to share listing to group chat", error);
+      Alert.alert("Share Failed", "Could not share listing to group chat.");
+    }
+  };
 
   return (
     <View className="flex-1 bg-fdm-bg">
@@ -149,6 +191,16 @@ export default function ListingDetailScreen() {
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
+
+          {user?.userId ? (
+            <TouchableOpacity
+              className="absolute right-6 h-12 w-12 bg-black/40 rounded-full items-center justify-center backdrop-blur-md border border-white/10"
+              style={{ top: insets.top || 48 }}
+              onPress={handleShareToGroupChat}
+            >
+              <Ionicons name="share-social-outline" size={22} color="white" />
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* content body */}
@@ -162,7 +214,7 @@ export default function ListingDetailScreen() {
             </View>
             <View className="bg-fdm-accent/20 px-4 py-2 rounded-full border border-fdm-accent/30 shadow-lg shadow-fdm-accent/20">
               <Text className="text-fdm-accent font-bold text-lg">
-                {formatPrice(listing.price)}<Text className="text-sm font-medium">/{getRentLabel(listing.rentPeriod)}</Text>
+                {formatCurrencyWithSymbol(listing.price)}<Text className="text-sm font-medium">/{getRentLabel(listing.rentPeriod)}</Text>
               </Text>
             </View>
           </View>
@@ -233,7 +285,7 @@ export default function ListingDetailScreen() {
                     const greetingResult = await sendMessage({
                       conversationId: conversation.id,
                       senderId: user.userId,
-                      content: `Hi! I'm interested in your listing: "${listing.title}" - GBP ${listing.price}/${rentLabel} in ${locationLabel}.`,
+                      content: `Hi! I'm interested in your listing: "${listing.title}" - ${formatCurrencyWithSymbol(listing.price)}/${rentLabel} in ${locationLabel}.`,
                     });
 
                     if (!greetingResult.success) {
@@ -253,7 +305,7 @@ export default function ListingDetailScreen() {
               <Text className="text-fdm-bg font-bold ml-2">Message Seller</Text>
             </TouchableOpacity>
           )}
-          
+
           {user?.userId === listing.userId && (
             <TouchableOpacity 
                onPress={async () => {
