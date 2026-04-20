@@ -10,7 +10,6 @@ import {
   getCityChatParticipantCount,
   getCityChatSenderProfile,
   sendCityChatMessage,
-  subscribeToCityChatMessages,
 } from "@services/cityChat/cityChatController";
 import { uploadListingPhoto } from "@services/listings/listingController";
 import { formatTime, getInitials } from "@utils/formatters";
@@ -19,6 +18,7 @@ import {
   mapCityChatMessage,
   MappedChatMessage,
 } from "@utils/mapMessages";
+import { subscribeToCityChatMessages } from "@utils/realtime";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -73,52 +73,45 @@ export default function CityChatScreen() {
     void loadData();
   }, [isValidId, parsedCityChatId, user?.userId]);
 
-  // ── Real-time subscription ────────────────────────────────────────────────
+  // Real-time subscription
   useEffect(() => {
     if (!isValidId) return;
 
-    const subscriptionResult = subscribeToCityChatMessages({
-      cityChatId: parsedCityChatId,
-      onNewMessage: (newMessage) => {
-        setMessages((prev) => {
-          const mappedMessage = mapCityChatMessage(newMessage);
-          if (prev.find((m) => m.id === mappedMessage.id)) return prev;
-          return [...prev, mappedMessage];
+    const channel = subscribeToCityChatMessages(parsedCityChatId, (raw) => {
+      const newMessage = raw as Parameters<typeof mapCityChatMessage>[0];
+      setMessages((prev) => {
+        const mappedMessage = mapCityChatMessage(newMessage);
+        if (prev.find((m) => m.id === mappedMessage.id)) return prev;
+        return [...prev, mappedMessage];
+      });
+      flatListRef.current?.scrollToEnd({ animated: true });
+
+      if (newMessage.senderId !== user?.userId) {
+        void getCityChatSenderProfile({ senderId: newMessage.senderId }).then((profileResult) => {
+          if (!profileResult.success) return;
+
+          setMessages((prev) =>
+            prev.map((message) =>
+              message.id === String(newMessage.id)
+                ? {
+                  ...message,
+                  senderName: profileResult.data
+                    ? [profileResult.data.firstName, profileResult.data.lastName]
+                      .filter(Boolean)
+                      .join(" ") || "Consultant"
+                    : message.senderName,
+                  senderProfilePicture: profileResult.data?.profilePicture ?? null,
+                }
+                : message
+            )
+          );
         });
-        flatListRef.current?.scrollToEnd({ animated: true });
-
-        if (newMessage.senderId !== user?.userId) {
-          void getCityChatSenderProfile({ senderId: newMessage.senderId }).then((profileResult) => {
-            if (!profileResult.success) return;
-
-            setMessages((prev) =>
-              prev.map((message) =>
-                message.id === String(newMessage.id)
-                  ? {
-                    ...message,
-                    senderName: profileResult.data
-                      ? [profileResult.data.firstName, profileResult.data.lastName]
-                        .filter(Boolean)
-                        .join(" ") || "Consultant"
-                      : message.senderName,
-                    senderProfilePicture: profileResult.data?.profilePicture ?? null,
-                  }
-                  : message
-              )
-            );
-          });
-        }
-      },
+      }
     });
 
-    if (!subscriptionResult.success || !subscriptionResult.data) {
-      console.error("Failed to subscribe to city chat:", subscriptionResult.error);
-      return;
-    }
-
-    const channel = subscriptionResult.data;
     return () => { supabase.removeChannel(channel); };
   }, [isValidId, parsedCityChatId, user?.userId]);
+
 
   // Send text
   const handleSend = async () => {
@@ -129,24 +122,9 @@ export default function CityChatScreen() {
     setAttachment(null);
     setSending(true);
 
-    // Optimistic UI for local rendering
-    const tempId = `temp-${Date.now()}`;
-    const tempMessageContent = attachment ? (content ? `${attachment.uri} ${content}` : attachment.uri) : content;
-
-    const tempMessage: MappedChatMessage = {
-      id: tempId,
-      content: tempMessageContent,
-      createdAt: new Date().toISOString(),
-      senderId: user.userId,
-    };
-
-    setMessages((prev) => [...prev, tempMessage]);
-    flatListRef.current?.scrollToEnd({ animated: true });
-
     try {
       let finalContent = content;
 
-      // Handle image upload if attached
       if (attachment) {
         setUploadingImage(true);
         try {
@@ -166,14 +144,9 @@ export default function CityChatScreen() {
       if (!result.success || !result.data) {
         throw new Error(result.error ?? "Failed to send city chat message.");
       }
-
-      const mappedSavedMessage = mapCityChatMessage(result.data);
-      setMessages((prev) => prev.map((m) => (m.id === tempId ? mappedSavedMessage : m)));
     } catch (error) {
       console.error("Failed to send city chat message:", error);
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInputText(content);
-      // We don't restore the attachment for simplicity, as it's usually safer
     } finally {
       setSending(false);
     }

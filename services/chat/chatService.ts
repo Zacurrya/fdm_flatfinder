@@ -1,5 +1,5 @@
 import { supabase } from "@lib/supabase";
-import { Database } from "@types/database.types";
+import { Database } from "@/types/database.types";
 import { isNonEmptyString, isPositiveInteger } from "@utils/validation";
 
 export type Conversation = Database["public"]["Tables"]["Conversations"]["Row"];
@@ -353,27 +353,4 @@ export const sendMessage = async (
   }
 
   return data;
-};
-
-export const subscribeToMessages = (
-  conversationId: string,
-  onNewMessage: (message: Message) => void
-) => {
-  const channel = supabase
-    .channel(`messages:${conversationId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "Messages",
-        filter: `conversation_id=eq.${conversationId}`,
-      },
-      (payload) => {
-        onNewMessage(payload.new as Message);
-      }
-    )
-    .subscribe();
-
-  return channel;
 };

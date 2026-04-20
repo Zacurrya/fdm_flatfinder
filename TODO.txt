@@ -21,3 +21,4 @@ social:
 CONSIDER: 
 - Move cities to a separate table, grouping them by region
     - Moves towards a standard of keeping all data within the database
+- GraphQL to allow for more efficient data fetching 

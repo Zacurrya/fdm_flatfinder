@@ -10,7 +10,6 @@ import {
   getOrCreateCityChatByCity as getOrCreateCityChatByCityService,
   getCityChatSenderProfile as getCityChatSenderProfileService,
   sendCityChatMessage as sendCityChatMessageService,
-  subscribeToCityChatMessages as subscribeToCityChatMessagesService,
   validateGetCityChatByCityRequest,
   validateGetCityChatMessagesRequest,
   validateGetCityChatSenderProfileRequest,
@@ -37,11 +36,6 @@ export type SendCityChatMessageDTO = {
   cityChatId: number;
   senderId: string;
   content: string;
-};
-
-export type SubscribeToCityChatMessagesDTO = {
-  cityChatId: number;
-  onNewMessage: (message: CityChatMessage) => void;
 };
 
 export type GetCityChatSenderProfileDTO = {
@@ -149,29 +143,5 @@ export const getCityChatSenderProfile = async (
     return { success: true, data: profile };
   } catch (error) {
     return { success: false, error: (error as Error)?.message ?? "Failed to fetch sender profile." };
-  }
-};
-
-export const subscribeToCityChatMessages = (
-  request: SubscribeToCityChatMessagesDTO
-): CityChatResponse<RealtimeChannel> => {
-  const validation = validateGetCityChatMessagesRequest({ cityChatId: request.cityChatId });
-  if (!validation.valid) {
-    return { success: false, error: validation.error };
-  }
-
-  if (typeof request.onNewMessage !== "function") {
-    return { success: false, error: "onNewMessage callback is required." };
-  }
-
-  try {
-    const channel = subscribeToCityChatMessagesService(
-      request.cityChatId,
-      request.onNewMessage
-    );
-
-    return { success: true, data: channel };
-  } catch (error) {
-    return { success: false, error: (error as Error)?.message ?? "Failed to subscribe to city chat messages." };
   }
 };

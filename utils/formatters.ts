@@ -1,5 +1,5 @@
 /**
- * Extracts the first two initials from a full name string, capitalized.
+ * Extracts the first two initials from a full name string, capitalised.
  * Useful for user avatars.
  * @param name The full name string (e.g., "John Doe")
  * @returns 1-2 character initials (e.g., "JD")
@@ -21,9 +21,10 @@ export const getInitials = (name: string): string => {
  * @returns Localized time, e.g., "14:35"
  */
 export const formatTime = (isoString: string): string => {
-  return new Date(isoString).toLocaleTimeString([], {
+  return new Date(isoString).toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 };
 
@@ -39,9 +40,12 @@ export const formatRelativeDate = (isoString: string): string => {
   const date = new Date(isoString);
   const now = new Date();
 
-  const diffDays = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  // Create date objects with time set to midnight for calendar day comparison
+  const d1 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const d2 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const diffTime = d2.getTime() - d1.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) {
     return formatTime(isoString);
@@ -50,5 +54,5 @@ export const formatRelativeDate = (isoString: string): string => {
     return "Yesterday";
   }
 
-  return date.toLocaleDateString([], { day: "numeric", month: "short" });
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 };

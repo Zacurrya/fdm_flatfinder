@@ -10,7 +10,6 @@ import {
   ListingSnippet,
   OtherUserProfile,
   sendMessage,
-  subscribeToMessages,
 } from "@services/chat/chatController";
 import { formatCurrencyWithSymbol } from "@utils/currency";
 import { formatTime, getInitials } from "@utils/formatters";
@@ -19,6 +18,7 @@ import {
   mapConversationMessage,
   MappedChatMessage,
 } from "@utils/mapMessages";
+import { subscribeToConversationMessages } from "@utils/realtime";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
@@ -85,24 +85,16 @@ export default function ChatScreen() {
   useEffect(() => {
     if (!conversationId) return;
 
-    const subscriptionResult = subscribeToMessages({
-      conversationId,
-      onNewMessage: (newMessage) => {
-        setMessages((prev) => {
-          const mappedMessage = mapConversationMessage(newMessage);
-          if (prev.find((m) => m.id === mappedMessage.id)) return prev;
-          return [...prev, mappedMessage];
-        });
-        flatListRef.current?.scrollToEnd({ animated: true });
-      },
+    const channel = subscribeToConversationMessages(conversationId, (raw) => {
+      const newMessage = raw as Parameters<typeof mapConversationMessage>[0];
+      setMessages((prev) => {
+        const mappedMessage = mapConversationMessage(newMessage);
+        if (prev.find((m) => m.id === mappedMessage.id)) return prev;
+        return [...prev, mappedMessage];
+      });
+      flatListRef.current?.scrollToEnd({ animated: true });
     });
 
-    if (!subscriptionResult.success || !subscriptionResult.data) {
-      console.error("Failed to subscribe to messages:", subscriptionResult.error);
-      return;
-    }
-
-    const channel = subscriptionResult.data;
     return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
 
@@ -114,28 +106,14 @@ export default function ChatScreen() {
     setInputText("");
     setSending(true);
 
-    const tempMessage: MappedChatMessage = {
-      id: `temp-${Date.now()}`,
-      content,
-      createdAt: new Date().toISOString(),
-      senderId: user.userId,
-    };
-
-    setMessages((prev) => [...prev, tempMessage]);
-    flatListRef.current?.scrollToEnd({ animated: true });
-
     try {
       const savedResult = await sendMessage({ conversationId, senderId: user.userId, content });
 
       if (!savedResult.success || !savedResult.data) {
         throw new Error(savedResult.error ?? "Failed to send message.");
       }
-
-      const mappedSavedMessage = mapConversationMessage(savedResult.data);
-      setMessages((prev) => prev.map((m) => (m.id === tempMessage.id ? mappedSavedMessage : m)));
     } catch (error) {
       console.error("Failed to send message:", error);
-      setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
       setInputText(content);
     } finally {
       setSending(false);

@@ -302,26 +302,3 @@ export const getCityChatSenderProfile = async (
 
   return result.data;
 };
-
-export const subscribeToCityChatMessages = (
-  cityChatId: number,
-  onNewMessage: (message: CityChatMessage) => void
-): RealtimeChannel => {
-  const channel = supabase
-    .channel(`city-chat:${cityChatId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "CityChatMessages",
-        filter: `CityChatId=eq.${cityChatId}`,
-      },
-      (payload) => {
-        onNewMessage(payload.new as CityChatMessage);
-      }
-    )
-    .subscribe();
-
-  return channel;
-};

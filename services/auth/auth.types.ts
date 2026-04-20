@@ -1,4 +1,4 @@
-import { Enums } from "@types/database.types";
+import { Enums } from "@/types/database.types";
 
 // Enums
 

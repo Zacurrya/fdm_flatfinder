@@ -1,5 +1,5 @@
 import { supabase } from "@lib/supabase";
-import { Database } from "@types/database.types";
+import { Database } from "@/types/database.types";
 import { File as ExpoFile } from 'expo-file-system';
 import * as RequestController from "../requests/requestController";
 
