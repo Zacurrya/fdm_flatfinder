@@ -1,18 +1,18 @@
 import AwaitingApprovalView from "@/components/ui/AwaitingApprovalView";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { ConversationWithUser, getConversations } from "@services/chat/chatController";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { ConversationWithUser, getConversations } from "../../../services/chat/chatService";
 
 export default function MessagesScreen() {
   const { user } = useAuth();
@@ -28,8 +28,12 @@ export default function MessagesScreen() {
       const load = async () => {
         setLoading(true);
         try {
-          const data = await getConversations(user.userId);
-          if (active) setConversations(data);
+          const result = await getConversations({ userId: user.userId });
+          if (!result.success || !result.data) {
+            throw new Error(result.error ?? "Failed to load conversations.");
+          }
+
+          if (active) setConversations(result.data);
         } catch (e) {
           console.error("Failed to load conversations:", e);
         } finally {

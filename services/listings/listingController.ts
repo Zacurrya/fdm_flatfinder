@@ -1,12 +1,14 @@
 import {
-  createListing as createListingService,
-  deleteListing as deleteListingService,
-  fetchListingById as fetchListingByIdService,
-  fetchListings as fetchListingsService,
-  InsertListing,
-  Listing,
-  uploadListingPhoto as uploadListingPhotoService,
+    createListing as createListingService,
+    deleteListing as deleteListingService,
+    fetchListingById as fetchListingByIdService,
+    fetchListings as fetchListingsService,
+    InsertListing,
+    Listing,
+    uploadListingPhoto as uploadListingPhotoService,
 } from "./listingsService";
+
+export type { InsertListing, Listing };
 
 export type CreateListingDTO = {
   listing: InsertListing;

@@ -1,8 +1,7 @@
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { createListing, uploadListingPhoto } from "@services/listings/listingController";
-import { InsertListing } from "@services/listings/listingsService";
+import { createListing, InsertListing, uploadListingPhoto } from "@services/listings/listingController";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";

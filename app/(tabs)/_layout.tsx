@@ -86,12 +86,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="search/listing"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
         name="messages/[conversationId]"
         options={{
           href: null,

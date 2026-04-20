@@ -8,7 +8,7 @@ import { Image, Text, TouchableOpacity, TouchableOpacityProps, View } from "reac
 // shows the photo, price, location, beds and baths
 
 // data we need from the listing to display on the card
-import { Listing } from "@services/listings/listingsService";
+import { Listing } from "@services/listings/listingController";
 
 export type ListingCardData = Listing;
 

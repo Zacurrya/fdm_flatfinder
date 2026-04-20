@@ -3,8 +3,8 @@ import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import ListingCard from "@components/ui/ListingCard";
 import { useAuth } from "@context/AuthContext";
-import { fetchListings, Listing } from "@services/listings/listingsService";
-import { getUserFavourites } from "@services/user/userService";
+import { fetchListings, Listing } from "@services/listings/listingController";
+import { getUserFavourites, removeFavourite } from "@services/user/userController";
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
@@ -126,7 +126,6 @@ export default function HomeScreen() {
                       setFavIds(prev => prev.filter(id => id !== lId));
                       setListings(prev => prev.filter(l => Number(l.id) !== lId));
                       
-                      const { removeFavourite } = await import("../../services/user/userService");
                       const res = await removeFavourite(user.userId, lId);
                       
                       if (!res.success) {

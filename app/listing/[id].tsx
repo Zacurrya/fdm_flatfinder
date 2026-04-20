@@ -1,13 +1,12 @@
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { getMessages, getOrCreateConversation, sendMessage } from "@services/chat/chatController";
+import { deleteListing, fetchListingById, Listing } from "@services/listings/listingController";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getMessages, getOrCreateConversation, sendMessage } from "../../services/chat/chatService";
-import { deleteListing, fetchListingById } from "../../services/listings/listingController";
-import { Listing } from "../../services/listings/listingsService";
 
 // listing detail screen
 
@@ -207,25 +206,39 @@ export default function ListingDetailScreen() {
                 if (!user?.userId) return;
 
                 try {
-                  const conversation = await getOrCreateConversation(
-                    user.userId,
-                    listing.userId,
-                    listing.id as number
-                  );
+                  const conversationResult = await getOrCreateConversation({
+                    currentUserId: user.userId,
+                    otherUserId: listing.userId,
+                    listingId: listing.id as number,
+                  });
 
-                  const existingMessages = await getMessages(conversation.id);
-                  if (existingMessages.length === 0) {
+                  if (!conversationResult.success || !conversationResult.data) {
+                    throw new Error(conversationResult.error ?? "Could not open conversation.");
+                  }
+
+                  const conversation = conversationResult.data;
+
+                  const existingMessagesResult = await getMessages({ conversationId: conversation.id });
+                  if (!existingMessagesResult.success || !existingMessagesResult.data) {
+                    throw new Error(existingMessagesResult.error ?? "Could not load messages.");
+                  }
+
+                  if (existingMessagesResult.data.length === 0) {
                     const rentLabel = getRentLabel(listing.rentPeriod);
                     const locationLabel =
                       listing.ListingLocations?.address ??
                       listing.ListingLocations?.city ??
                       "your area";
 
-                    await sendMessage(
-                      conversation.id,
-                      user.userId,
-                      `Hi! I'm interested in your listing: "${listing.title}" - GBP ${listing.price}/${rentLabel} in ${locationLabel}.`
-                    );
+                    const greetingResult = await sendMessage({
+                      conversationId: conversation.id,
+                      senderId: user.userId,
+                      content: `Hi! I'm interested in your listing: "${listing.title}" - GBP ${listing.price}/${rentLabel} in ${locationLabel}.`,
+                    });
+
+                    if (!greetingResult.success) {
+                      throw new Error(greetingResult.error ?? "Could not send initial message.");
+                    }
                   }
 
                   router.push(`/(tabs)/messages/${conversation.id}` as any);

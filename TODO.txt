@@ -4,6 +4,7 @@
     - Zoopla
     - PropertyGuru (Singapore)
 - Create Group Chats for each city
+- Componentise the chat screen
 
 CONSIDER: 
 - Move cities to a separate table, grouping them by region

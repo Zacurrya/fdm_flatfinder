@@ -1,6 +1,11 @@
 import { jest } from "@jest/globals";
 import { supabase } from "@lib/supabase";
 
+/*
+// This file provides helper functions to create consistent mocks for Supabase interactions across tests, 
+// as well as specific mocks for common scenarios like authentication and database calls. 
+// It also includes a utility to reset all mocks before each test to ensure test isolation.
+*/
 type AsyncMockFn<T> = (...args: unknown[]) => Promise<T>;
 
 export const createResolvedMock = <T>(resolvedValue: T): jest.MockedFunction<AsyncMockFn<T>> => {

@@ -1,22 +1,6 @@
+import ContactActionButtons from "@components/Chat/ContactActionButtons";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef, useState } from "react";
-import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    KeyboardAvoidingView,
-    Linking,
-    Platform,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { supabase } from "../../../lib/supabase";
 import {
     getConversationDetails,
     getMessages,
@@ -25,7 +9,23 @@ import {
     OtherUserProfile,
     sendMessage,
     subscribeToMessages,
-} from "../../../services/chat/chatService";
+} from "@services/chat/chatController";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useRef, useState } from "react";
+import {
+    ActivityIndicator,
+    FlatList,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { supabase } from "../../../lib/supabase";
 
 function getFirstPhotoUrl(photos: string[] | null | undefined): string | null {
   if (!photos || photos.length === 0) return null;
@@ -54,41 +54,63 @@ export default function ChatScreen() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [msgs, details] = await Promise.all([
-          getMessages(conversationId),
-          getConversationDetails(conversationId, user.userId),
+        const [messagesResult, detailsResult] = await Promise.all([
+          getMessages({ conversationId }),
+          getConversationDetails({ conversationId, currentUserId: user.userId }),
         ]);
 
-        setMessages(msgs);
-        setOtherUser(details.otherUser);
-        setListing(details.listing);
-
-        if (details.listing?.photos) {
-          const raw = getFirstPhotoUrl(details.listing.photos);
-          if (raw) {
-            setListingPhotoUrl(raw);
-          }
+        if (!messagesResult.success || !messagesResult.data) {
+          throw new Error(messagesResult.error ?? "Failed to load messages.");
         }
-      } catch (e) {
-        console.error("Failed to load chat:", e);
+
+        if (!detailsResult.success || !detailsResult.data) {
+          throw new Error(detailsResult.error ?? "Failed to load conversation details.");
+        }
+
+        setMessages(messagesResult.data);
+        setOtherUser(detailsResult.data.otherUser);
+        setListing(detailsResult.data.listing);
+
+        if (detailsResult.data.listing?.photos) {
+          const firstPhotoUrl = getFirstPhotoUrl(detailsResult.data.listing.photos);
+          setListingPhotoUrl(firstPhotoUrl);
+        } else {
+          setListingPhotoUrl(null);
+        }
+      } catch (error) {
+        console.error("Failed to load chat:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
+    void loadData();
   }, [conversationId, user?.userId]);
 
   useEffect(() => {
     if (!conversationId) return;
 
-    const channel = subscribeToMessages(conversationId, (newMessage) => {
-      setMessages((prev) => {
-        if (prev.find((m) => m.id === newMessage.id)) return prev;
-        return [...prev, newMessage];
-      });
-      flatListRef.current?.scrollToEnd({ animated: true });
+    const subscriptionResult = subscribeToMessages({
+      conversationId,
+      onNewMessage: (newMessage) => {
+        setMessages((prev) => {
+          if (prev.find((m) => m.id === newMessage.id)) {
+            return prev;
+          }
+
+          return [...prev, newMessage];
+        });
+
+        flatListRef.current?.scrollToEnd({ animated: true });
+      },
     });
+
+    if (!subscriptionResult.success || !subscriptionResult.data) {
+      console.error("Failed to subscribe to messages:", subscriptionResult.error);
+      return;
+    }
+
+    const channel = subscriptionResult.data;
 
     return () => {
       supabase.removeChannel(channel);
@@ -114,10 +136,19 @@ export default function ChatScreen() {
     flatListRef.current?.scrollToEnd({ animated: true });
 
     try {
-      const saved = await sendMessage(conversationId, user.userId, content);
-      setMessages((prev) => prev.map((m) => (m.id === tempMessage.id ? saved : m)));
-    } catch (e) {
-      console.error("Failed to send message:", e);
+      const savedResult = await sendMessage({
+        conversationId,
+        senderId: user.userId,
+        content,
+      });
+
+      if (!savedResult.success || !savedResult.data) {
+        throw new Error(savedResult.error ?? "Failed to send message.");
+      }
+
+      setMessages((prev) => prev.map((m) => (m.id === tempMessage.id ? savedResult.data! : m)));
+    } catch (error) {
+      console.error("Failed to send message:", error);
       setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
       setInputText(content);
     } finally {
@@ -235,24 +266,10 @@ export default function ChatScreen() {
             ) : null}
           </View>
 
-          <View className="flex-row gap-2">
-            {otherUser?.phoneNumber && (
-              <TouchableOpacity
-                onPress={() => Linking.openURL(`tel:${otherUser.phoneNumber}`)}
-                className="w-9 h-9 rounded-full bg-fdm-accent/10 border border-fdm-accent/20 items-center justify-center"
-              >
-                <Ionicons name="call-outline" size={16} color="#ccff00" />
-              </TouchableOpacity>
-            )}
-            {otherUser?.email && (
-              <TouchableOpacity
-                onPress={() => Linking.openURL(`mailto:${otherUser.email}`)}
-                className="w-9 h-9 rounded-full bg-fdm-accent/10 border border-fdm-accent/20 items-center justify-center"
-              >
-                <Ionicons name="mail-outline" size={16} color="#ccff00" />
-              </TouchableOpacity>
-            )}
-          </View>
+          <ContactActionButtons
+            phoneNumber={otherUser?.phoneNumber}
+            email={otherUser?.email}
+          />
         </View>
       </View>
 

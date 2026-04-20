@@ -3,7 +3,7 @@ import {
   getFallbackProfilePictureInitials,
   getFallbackProfilePictureUrl,
   getProfilePictureUrl,
-} from "@services/user/userService";
+} from "@services/user/userController";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";

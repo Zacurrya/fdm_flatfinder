@@ -14,7 +14,11 @@ import {
   validateGetMessagesRequest,
   validateGetOrCreateConversationRequest,
   validateSendMessageRequest,
+  subscribeToMessages as subscribeToMessagesService,
 } from "./chatService";
+import { RealtimeChannel } from "@supabase/supabase-js";
+
+export type { Conversation, ConversationWithUser, Message, OtherUserProfile, ListingSnippet };
 
 export type ChatResponse<T = void> = {
   success: boolean;
@@ -45,6 +49,11 @@ export type SendMessageDTO = {
   conversationId: string;
   senderId: string;
   content: string;
+};
+
+export type SubscribeToMessagesDTO = {
+  conversationId: string;
+  onNewMessage: (message: Message) => void;
 };
 
 export const getOrCreateConversation = async (
@@ -137,5 +146,25 @@ export const sendMessage = async (
     return { success: true, data: message };
   } catch (error) {
     return { success: false, error: (error as Error)?.message ?? "Failed to send message." };
+  }
+};
+
+export const subscribeToMessages = (
+  request: SubscribeToMessagesDTO
+): ChatResponse<RealtimeChannel> => {
+  const validation = validateGetMessagesRequest({ conversationId: request.conversationId });
+  if (!validation.valid) {
+    return { success: false, error: validation.error };
+  }
+
+  if (typeof request.onNewMessage !== "function") {
+    return { success: false, error: "onNewMessage callback is required." };
+  }
+
+  try {
+    const channel = subscribeToMessagesService(request.conversationId, request.onNewMessage);
+    return { success: true, data: channel };
+  } catch (error) {
+    return { success: false, error: (error as Error)?.message ?? "Failed to subscribe to messages." };
   }
 };
