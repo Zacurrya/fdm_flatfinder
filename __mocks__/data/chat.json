@@ -1,0 +1,18 @@
+{
+  "mockConversation": {
+    "id": "conv-123",
+    "user1_id": "user-123",
+    "user2_id": "user-456",
+    "listing_id": 1,
+    "last_message": "Hello",
+    "last_message_at": "2026-04-20T00:00:00.000Z",
+    "created_at": "2026-04-20T00:00:00.000Z"
+  },
+  "mockMessage": {
+    "id": "msg-123",
+    "conversation_id": "conv-123",
+    "sender_id": "user-123",
+    "content": "Hello",
+    "created_at": "2026-04-20T00:00:00.000Z"
+  }
+}

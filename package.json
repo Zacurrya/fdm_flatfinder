@@ -10,7 +10,21 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "update-types": "npx supabase gen types typescript --project-id cpsijfnxawfrjyydurxw > types/database.types.ts",
-    "seed": "node ./scripts/seedListings.mjs"
+    "seed": "node ./scripts/seedListings.mjs",
+    "test": "jest"
+  },
+  "compilerOptions": {
+    "types": ["jest"]
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "testMatch": [
+      "**/__tests__/**/*.test.ts",
+      "**/__tests__/**/*.test.tsx"
+    ],
+    "transformIgnorePatterns": [
+        "node_modules/(?!(?:.pnpm/)?((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg))"
+      ]
   },
   "dependencies": {
     "@expo-google-fonts/michroma": "^0.4.2",
@@ -35,6 +49,8 @@
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.10",
+    "jest": "~29.7.0",
+    "jest-expo": "~54.0.17",
     "nativewind": "4.2.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -52,6 +68,7 @@
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "jest": "^30.3.0",
     "tailwindcss": "3.4.19",
     "typescript": "~5.9.2"
   },

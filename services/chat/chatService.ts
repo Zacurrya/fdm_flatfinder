@@ -1,5 +1,5 @@
-import { supabase } from "../../lib/supabase";
-import { Database } from "../../types/database.types";
+import { supabase } from "@lib/supabase";
+import { Database } from "@/types/database.types";
 
 export type Conversation = Database["public"]["Tables"]["Conversations"]["Row"];
 export type Message = Database["public"]["Tables"]["Messages"]["Row"];
@@ -25,6 +25,115 @@ export type ListingSnippet = {
 export type ConversationWithUser = Conversation & {
   otherUser: OtherUserProfile;
   listing: ListingSnippet | null;
+};
+
+export type ChatValidationResult =
+  | { valid: true }
+  | { valid: false; error: string };
+
+type GetOrCreateConversationRequest = {
+  currentUserId: string;
+  otherUserId: string;
+  listingId?: number;
+};
+
+type GetConversationsRequest = {
+  userId: string;
+};
+
+type GetConversationDetailsRequest = {
+  conversationId: string;
+  currentUserId: string;
+};
+
+type GetMessagesRequest = {
+  conversationId: string;
+};
+
+type SendMessageRequest = {
+  conversationId: string;
+  senderId: string;
+  content: string;
+};
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+const isPositiveInteger = (value: unknown): value is number =>
+  typeof value === "number" && Number.isInteger(value) && value > 0;
+
+export const validateGetOrCreateConversationRequest = (
+  request: GetOrCreateConversationRequest
+): ChatValidationResult => {
+  if (!isNonEmptyString(request.currentUserId)) {
+    return { valid: false, error: "Current user ID is required." };
+  }
+
+  if (!isNonEmptyString(request.otherUserId)) {
+    return { valid: false, error: "Other user ID is required." };
+  }
+
+  if (request.currentUserId === request.otherUserId) {
+    return { valid: false, error: "You cannot start a conversation with yourself." };
+  }
+
+  if (typeof request.listingId !== "undefined" && !isPositiveInteger(request.listingId)) {
+    return { valid: false, error: "Listing ID must be a positive integer." };
+  }
+
+  return { valid: true };
+};
+
+export const validateGetConversationsRequest = (
+  request: GetConversationsRequest
+): ChatValidationResult => {
+  if (!isNonEmptyString(request.userId)) {
+    return { valid: false, error: "User ID is required." };
+  }
+
+  return { valid: true };
+};
+
+export const validateGetConversationDetailsRequest = (
+  request: GetConversationDetailsRequest
+): ChatValidationResult => {
+  if (!isNonEmptyString(request.conversationId)) {
+    return { valid: false, error: "Conversation ID is required." };
+  }
+
+  if (!isNonEmptyString(request.currentUserId)) {
+    return { valid: false, error: "Current user ID is required." };
+  }
+
+  return { valid: true };
+};
+
+export const validateGetMessagesRequest = (
+  request: GetMessagesRequest
+): ChatValidationResult => {
+  if (!isNonEmptyString(request.conversationId)) {
+    return { valid: false, error: "Conversation ID is required." };
+  }
+
+  return { valid: true };
+};
+
+export const validateSendMessageRequest = (
+  request: SendMessageRequest
+): ChatValidationResult => {
+  if (!isNonEmptyString(request.conversationId)) {
+    return { valid: false, error: "Conversation ID is required." };
+  }
+
+  if (!isNonEmptyString(request.senderId)) {
+    return { valid: false, error: "Sender ID is required." };
+  }
+
+  if (!isNonEmptyString(request.content)) {
+    return { valid: false, error: "Message content cannot be empty." };
+  }
+
+  return { valid: true };
 };
 
 const toListingSnippet = (row: any): ListingSnippet | null => {
@@ -218,12 +327,14 @@ export const sendMessage = async (
   senderId: string,
   content: string
 ): Promise<Message> => {
+  const normalizedContent = content.trim();
+
   const { data, error } = await supabase
     .from("Messages")
     .insert({
       conversation_id: conversationId,
       sender_id: senderId,
-      content,
+      content: normalizedContent,
     })
     .select()
     .single();
@@ -236,7 +347,7 @@ export const sendMessage = async (
   const { error: updateError } = await supabase
     .from("Conversations")
     .update({
-      last_message: content,
+      last_message: normalizedContent,
       last_message_at: new Date().toISOString(),
     })
     .eq("id", conversationId);

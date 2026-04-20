@@ -1,0 +1,26 @@
+{
+  "mockUser": {
+    "userId": "user-123",
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "test@fdmgroup.com",
+    "profilePicture": null,
+    "phoneNumber": "+441234567890",
+    "officeLocation": "London",
+    "role": "CONSULTANT",
+    "approvalStatus": "APPROVED",
+    "created_at": "2026-04-20T00:00:00.000Z"
+  },
+  "mockAdminUser": {
+    "userId": "admin-123",
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "admin@fdmgroup.com",
+    "profilePicture": null,
+    "phoneNumber": "+441234567890",
+    "officeLocation": "London",
+    "role": "ADMIN",
+    "approvalStatus": "APPROVED",
+    "created_at": "2026-04-20T00:00:00.000Z"
+  }
+}

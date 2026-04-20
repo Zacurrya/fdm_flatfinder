@@ -21,6 +21,12 @@
       "@assets/*": [
         "./assets/*"
       ],
+      "@types/*": [
+        "./types/*"
+      ],
+      "@mocks/*": [
+        "./__mocks__/*"
+      ]
     }
   },
   "include": [

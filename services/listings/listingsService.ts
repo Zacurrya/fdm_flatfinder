@@ -1,5 +1,5 @@
-import { supabase } from "../../lib/supabase";
-import { Database } from "../../types/database.types";
+import { supabase } from "@lib/supabase";
+import { Database } from "@/types/database.types";
 import * as RequestController from "../requests/requestController";
 
 export type ListingLocationRow = Database["public"]["Tables"]["ListingLocations"]["Row"];
