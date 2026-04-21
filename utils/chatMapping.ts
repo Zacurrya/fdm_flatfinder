@@ -1,13 +1,16 @@
-import { ChatResponse, getMessages, GetMessagesDTO, Message } from "@services/chat/chatController";
-import { CityChatResponse, getCityChatMessages, GetCityChatMessagesDTO } from "@services/cityChat/cityChatController";
-import { CityChatMessage, CityChatMessageWithSender } from "@services/cityChat/cityChatService";
-
-type CityChatRealtimeMessageRow = {
-  id: string | number;
-  content: string;
-  created_at: string;
-  sender_id: string;
-};
+import {
+  ChatResponse,
+  getMessages,
+  GetMessagesDTO,
+  Message,
+} from "@services/chat/chatController";
+import {
+  CityChatMessage,
+  CityChatMessageWithSender,
+  CityChatResponse,
+  getCityChatMessages,
+  GetCityChatMessagesDTO,
+} from "@services/cityChat/cityChatController";
 
 export type MappedChatMessage = {
   id: string;
@@ -16,6 +19,13 @@ export type MappedChatMessage = {
   senderId: string;
   senderName?: string;
   senderProfilePicture?: string | null;
+};
+
+export type CityChatRealtimeMessageRow = {
+  id: string | number;
+  content: string;
+  created_at: string;
+  sender_id: string;
 };
 
 export const mapConversationMessage = (message: Message): MappedChatMessage => ({

@@ -7,14 +7,19 @@ import {
   mapCityChatMessage,
   mapConversationMessage,
   MappedChatMessage,
-} from "@utils/mapMessages";
+} from "@utils/chatMapping";
 import {
   subscribeToCityChatMessages,
   subscribeToConversationMessages,
 } from "@utils/realtime";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export type ChatSource = "PRIVATE" | "CITY";
+
+export type DecoratedChatMessage = MappedChatMessage & {
+  showDateSeparator: boolean;
+  isPreviousFromSameSender: boolean;
+};
 
 export function useChatMessages(chatId: string | number, source: ChatSource) {
   const { user } = useAuth();
@@ -54,45 +59,34 @@ export function useChatMessages(chatId: string | number, source: ChatSource) {
   useEffect(() => {
     if (!chatId) return;
 
-    const onNewMessage = (raw: any) => {
+    const onNewMessage = async (raw: any) => {
+      let senderInfo = null;
+
+      // If it's a City Chat and from someone else, fetch their profile first
+      if (source === "CITY" && raw.sender_id !== user?.userId) {
+        const profileResult = await getCityChatSenderProfile({
+          senderId: raw.sender_id,
+        });
+        if (profileResult.success && profileResult.data) {
+          senderInfo = profileResult.data;
+        }
+      }
+
+      // Map the message, potentially with the newly fetched sender info
+      // Note: for City Chat realtime payload, we need to manually inject the sender object
+      // if we have it, so mapCityChatMessage can use it.
       const mappedMessage =
         source === "PRIVATE"
           ? mapConversationMessage(raw)
-          : mapCityChatMessage(raw);
+          : mapCityChatMessage({
+              ...raw,
+              sender: senderInfo,
+            });
 
       setMessages((prev) => {
         if (prev.find((m) => m.id === mappedMessage.id)) return prev;
         return [...prev, mappedMessage];
       });
-
-      // Special case for City Chats: Fetch sender profile if missing
-      if (
-        source === "CITY" &&
-        mappedMessage.senderId !== user?.userId &&
-        (!mappedMessage.senderName || !mappedMessage.senderProfilePicture)
-      ) {
-        void getCityChatSenderProfile({
-          senderId: mappedMessage.senderId,
-        }).then((profileResult) => {
-          if (!profileResult.success || !profileResult.data) return;
-
-          const profile = profileResult.data;
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === mappedMessage.id
-                ? {
-                  ...msg,
-                  senderName:
-                    [profile.firstName, profile.lastName]
-                      .filter(Boolean)
-                      .join(" ") || "Consultant",
-                  senderProfilePicture: profile.profilePicture,
-                }
-                : msg
-            )
-          );
-        });
-      }
     };
 
     const channel =
@@ -105,5 +99,23 @@ export function useChatMessages(chatId: string | number, source: ChatSource) {
     };
   }, [chatId, source, user?.userId]);
 
-  return { messages, loading, setMessages };
+  const decoratedMessages = useMemo(() => {
+    return messages.map((msg, index) => {
+      const previous = messages[index - 1];
+      const showDateSeparator =
+        !previous ||
+        new Date(msg.createdAt).toDateString() !==
+        new Date(previous.createdAt).toDateString();
+
+      const isPreviousFromSameSender = previous?.senderId === msg.senderId;
+
+      return {
+        ...msg,
+        showDateSeparator,
+        isPreviousFromSameSender,
+      };
+    });
+  }, [messages]);
+
+  return { messages: decoratedMessages, loading, setMessages };
 }

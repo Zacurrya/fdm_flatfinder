@@ -1,8 +1,7 @@
 import ComposerActionsModal from "@components/Chat/ComposerActionsModal";
 import MessageInputBox from "@components/Chat/MessageInputBox";
 import { Ionicons } from "@expo/vector-icons";
-import { useChatMessages } from "@hooks/useChatMessages";
-import { MappedChatMessage } from "@utils/mapMessages";
+import { DecoratedChatMessage, useChatMessages } from "@hooks/useChatMessages";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ReactNode, RefObject, useState } from "react";
@@ -18,20 +17,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type MessageInputProps = {
-    value: string;
-    onChangeText: (text: string) => void;
-    placeholder?: string;
-    onSend: () => void;
-    sendDisabled: boolean;
-    editable?: boolean;
-    showActions?: boolean;
-    onPressPlus?: () => void;
-    onPressImage?: () => void;
-    actionsDisabled?: boolean;
-    attachment?: { uri: string; type: "image" } | null;
-    onClearAttachment?: () => void;
-};
+// Use the props type from MessageInputBox directly
+type MessageInputProps = React.ComponentProps<typeof MessageInputBox>;
 
 type ChatScreenLayoutProps = {
     chatId: string | number;
@@ -43,12 +30,7 @@ type ChatScreenLayoutProps = {
     /* Extra node rendered after the KeyboardAvoidingView (e.g. modals) */
     footerExtra?: ReactNode;
     flatListRef: RefObject<FlatList | null>;
-    renderMessage: (
-        item: MappedChatMessage,
-        index: number,
-        showDateSeparator: boolean,
-        isPreviousFromSameSender: boolean
-    ) => ReactNode;
+    renderMessage: (item: DecoratedChatMessage, index: number) => ReactNode;
     listEmptyIcon?: ReactNode;
     listEmptyText?: string;
     inputProps: MessageInputProps;
@@ -81,15 +63,7 @@ export default function ChatScreenLayout({
         setActionsVisible(true);
     };
 
-    const renderItem: ListRenderItem<MappedChatMessage> = ({ item, index }) => {
-        const previous = messages[index - 1];
-        const showDateSeparator =
-            !previous ||
-            new Date(item.createdAt).toDateString() !==
-                new Date(previous.createdAt).toDateString();
-
-        const isPreviousFromSameSender = previous?.senderId === item.senderId;
-
+    const renderItem: ListRenderItem<DecoratedChatMessage> = ({ item, index }) => {
         return (
             <View
                 style={{
@@ -99,12 +73,7 @@ export default function ChatScreenLayout({
                             : undefined,
                 }}
             >
-                {renderMessage(
-                    item,
-                    index,
-                    showDateSeparator,
-                    isPreviousFromSameSender
-                )}
+                {renderMessage(item, index)}
             </View>
         );
     };

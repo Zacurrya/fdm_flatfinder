@@ -1,6 +1,18 @@
+export * from "./types";
 import {
+  fetchCityChats as fetchCityChatsService,
+  getCityChatMessages as getCityChatMessagesService,
+  getCityChatParticipantCount as getCityChatParticipantCountService,
+  getCityChatSenderProfile as getCityChatSenderProfileService,
+  getOrCreateCityChatByCity as getOrCreateCityChatByCityService,
+  sendCityChatMessage as sendCityChatMessageService,
+  validateGetCityChatByCityRequest,
+  validateGetCityChatMessagesRequest,
+  validateGetCityChatSenderProfileRequest,
+  validateSendCityChatMessageRequest,
+} from "./cityChatService";
+import type {
   CityChat,
-  CityChatMessage,
   CityChatMessageWithSender,
   CityChatResponse,
   CityChatSenderProfile,
@@ -9,18 +21,6 @@ import {
   GetCityChatSenderProfileDTO,
   SendCityChatMessageDTO,
 } from "./types";
-import {
-  fetchCityChats as fetchCityChatsService,
-  getCityChatMessages as getCityChatMessagesService,
-  getCityChatParticipantCount as getCityChatParticipantCountService,
-  getOrCreateCityChatByCity as getOrCreateCityChatByCityService,
-  getCityChatSenderProfile as getCityChatSenderProfileService,
-  sendCityChatMessage as sendCityChatMessageService,
-  validateGetCityChatByCityRequest,
-  validateGetCityChatMessagesRequest,
-  validateGetCityChatSenderProfileRequest,
-  validateSendCityChatMessageRequest,
-} from "./cityChatService";
 
 export const getOrCreateCityChatByCity = async (
   request: GetCityChatByCityDTO

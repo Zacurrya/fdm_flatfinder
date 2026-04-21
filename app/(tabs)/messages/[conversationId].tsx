@@ -1,11 +1,9 @@
-import {
-  MappedChatMessage,
-} from "@/utils/mapMessages";
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import ContactActionButtons from "@components/Chat/ContactActionButtons";
 import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { DecoratedChatMessage } from "@hooks/useChatMessages";
 import {
   getConversationDetails,
   ListingSnippet,
@@ -48,9 +46,9 @@ export default function ChatScreen() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const detailsResult = await getConversationDetails({ 
-          conversationId, 
-          currentUserId: user.userId 
+        const detailsResult = await getConversationDetails({
+          conversationId,
+          currentUserId: user.userId
         });
 
         if (!detailsResult.success || !detailsResult.data) {
@@ -150,7 +148,7 @@ export default function ChatScreen() {
     .slice(0, 2);
 
   // Render helpers
-  const renderMessage = (item: MappedChatMessage, _index: number, showDateSeparator: boolean, isPreviousFromSameSender: boolean) => {
+  const renderMessage = (item: DecoratedChatMessage, _index: number) => {
     const isMe = item.senderId === user?.userId;
 
     return (
@@ -161,10 +159,10 @@ export default function ChatScreen() {
         senderName={otherUserName}
         showSenderName={false}
         createdAt={item.createdAt}
-        showDateSeparator={showDateSeparator}
+        showDateSeparator={item.showDateSeparator}
         avatarProfilePicture={otherUser?.profilePicture}
         avatarInitials={initials}
-        avatarVisible={!isMe && !isPreviousFromSameSender}
+        avatarVisible={!isMe && !item.isPreviousFromSameSender}
       />
     );
   };

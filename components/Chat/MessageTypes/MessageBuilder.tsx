@@ -62,7 +62,7 @@ export default function MessageBuilder(props: MessageProps) {
         {!isMe ? (
           <MessageAvatar
             profilePicture={avatarProfilePicture}
-            initials={avatarInitials}
+            initials={avatarInitials || ""}
             visible={avatarVisible}
           />
         ) : null}

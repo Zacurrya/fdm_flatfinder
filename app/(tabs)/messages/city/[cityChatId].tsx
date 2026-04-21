@@ -3,15 +3,13 @@ import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import CityImage from "@components/ui/CityImage";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { DecoratedChatMessage } from "@hooks/useChatMessages";
 import {
   getCityChatParticipantCount,
   sendCityChatMessage,
 } from "@services/cityChat/cityChatController";
 import { uploadListingPhoto } from "@services/listings/listingController";
 import { formatTime, getInitials } from "@utils/formatters";
-import {
-  MappedChatMessage,
-} from "@utils/mapMessages";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -118,11 +116,11 @@ export default function CityChatScreen() {
   };
 
   // Render message 
-  const renderMessage = (item: MappedChatMessage, _index: number, showDateSeparator: boolean, isPreviousFromSameSender: boolean) => {
+  const renderMessage = (item: DecoratedChatMessage, _index: number) => {
     const isMe = item.senderId === user?.userId;
     const senderName = item.senderName || "Consultant";
     const senderInitials = getInitials(senderName);
-    const showSenderMeta = !isMe && !isPreviousFromSameSender;
+    const showSenderMeta = !isMe && !item.isPreviousFromSameSender;
 
     return (
       <MessageBuilder
@@ -132,7 +130,7 @@ export default function CityChatScreen() {
         senderName={senderName}
         showSenderName={showSenderMeta}
         createdAt={item.createdAt}
-        showDateSeparator={showDateSeparator}
+        showDateSeparator={item.showDateSeparator}
         avatarProfilePicture={item.senderProfilePicture}
         avatarInitials={senderInitials}
         avatarVisible={showSenderMeta}
