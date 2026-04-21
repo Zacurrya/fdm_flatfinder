@@ -1,4 +1,5 @@
 import { supabase } from "@lib/supabase";
+import { Listing } from "@services/listings/listingController";
 import { isNonEmptyString, isPositiveInteger } from "@utils/validation";
 import {
   ChatValidationResult,
@@ -8,7 +9,6 @@ import {
   GetConversationsDTO,
   GetMessagesDTO,
   GetOrCreateConversationDTO,
-  ListingSnippet,
   Message,
   OtherUserProfile,
   SendMessageDTO,
@@ -89,23 +89,6 @@ export const validateSendMessageRequest = (
   return { valid: true };
 };
 
-const toListingSnippet = (row: any): ListingSnippet | null => {
-  if (!row) return null;
-
-  const listingLocation = Array.isArray(row.ListingLocations)
-    ? row.ListingLocations[0]
-    : row.ListingLocations;
-
-  return {
-    id: row.id,
-    title: row.title,
-    price: row.price,
-    rentPeriod: row.rentPeriod,
-    location: listingLocation?.address ?? listingLocation?.city ?? "Location unavailable",
-    photos: Array.isArray(row.photos) ? row.photos : null,
-  };
-};
-
 // Get or create a conversation between two users, optionally linked to a listing.
 export const getOrCreateConversation = async (
   currentUserId: string,
@@ -154,7 +137,7 @@ export const getOrCreateConversation = async (
   return data;
 };
 
-// Get all conversations for the current user with counterparty profile and listing snippet.
+// Get all conversations for the current user with counterparty profile and full listing.
 export const getConversations = async (userId: string): Promise<ConversationWithUser[]> => {
   const { data, error } = await supabase
     .from("Conversations")
@@ -182,7 +165,7 @@ export const getConversations = async (userId: string): Promise<ConversationWith
         conv.listing_id
           ? supabase
             .from("Listings")
-            .select("id, title, price, rentPeriod, photos, ListingLocations(address, city)")
+            .select("*, ListingLocations(*)")
             .eq("id", conv.listing_id)
             .single()
           : Promise.resolve({ data: null, error: null }),
@@ -193,7 +176,7 @@ export const getConversations = async (userId: string): Promise<ConversationWith
       }
 
       if ((listingResult as any).error) {
-        console.warn("Could not load listing snippet for conversation", conv.id, (listingResult as any).error);
+        console.warn("Could not load listing for conversation", conv.id, (listingResult as any).error);
       }
 
       return {
@@ -206,7 +189,7 @@ export const getConversations = async (userId: string): Promise<ConversationWith
           phoneNumber: null,
           email: null,
         },
-        listing: toListingSnippet((listingResult as any).data),
+        listing: (listingResult as any).data as Listing | null,
       };
     })
   );
@@ -218,7 +201,7 @@ export const getConversations = async (userId: string): Promise<ConversationWith
 export const getConversationDetails = async (
   conversationId: string,
   currentUserId: string
-): Promise<{ otherUser: OtherUserProfile; listing: ListingSnippet | null }> => {
+): Promise<{ otherUser: OtherUserProfile; listing: Listing | null }> => {
   const { data: conv, error } = await supabase
     .from("Conversations")
     .select("user1_id, user2_id, listing_id")
@@ -241,7 +224,7 @@ export const getConversationDetails = async (
     conv.listing_id
       ? supabase
         .from("Listings")
-        .select("id, title, price, rentPeriod, photos, ListingLocations(address, city)")
+        .select("*, ListingLocations(*)")
         .eq("id", conv.listing_id)
         .single()
       : Promise.resolve({ data: null, error: null }),
@@ -256,7 +239,7 @@ export const getConversationDetails = async (
       phoneNumber: null,
       email: null,
     },
-    listing: toListingSnippet((listingResult as any).data),
+    listing: (listingResult as any).data as Listing | null,
   };
 };
 

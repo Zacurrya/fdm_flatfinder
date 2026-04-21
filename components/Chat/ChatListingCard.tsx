@@ -1,60 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
-import { fetchListingById, Listing } from "@services/listings/listingController";
-import { formatCurrencyWithSymbol } from "@utils/currency";
+import { useListing } from "@hooks/useListing";
+import { formatListingPrice } from "@utils/currency";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";
 
 type ChatListingCardProps = {
   listingId: number;
 };
 
-function getFirstPhotoUrl(photos: string[] | null | undefined): string | null {
-  if (!photos || photos.length === 0) {
-    return null;
-  }
-
-  const valid = photos.map((url) => url.trim()).filter((url) => url.startsWith("http"));
-  return valid[0] ?? null;
-}
-
-function getRentLabel(period: string | null | undefined): string {
-  if (period === "WEEKLY") return "pw";
-  if (period === "BIWEEKLY") return "biwk";
-  return "pcm";
-}
-
 export default function ChatListingCard({ listingId }: ChatListingCardProps) {
   const router = useRouter();
-  const [listing, setListing] = useState<Listing | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-
-    const load = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchListingById({ id: listingId });
-        if (active) {
-          setListing(data);
-        }
-      } catch {
-        if (active) {
-          setListing(null);
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
-
-    void load();
-    return () => {
-      active = false;
-    };
-  }, [listingId]);
+  const { listing, loading, firstPhotoUrl, locationLabel } = useListing(listingId);
 
   if (loading) {
     return (
@@ -72,17 +28,14 @@ export default function ChatListingCard({ listingId }: ChatListingCardProps) {
     );
   }
 
-  const listingPhoto = getFirstPhotoUrl(Array.isArray(listing.photos) ? listing.photos : null);
-  const locationLabel = listing.ListingLocations?.address ?? listing.ListingLocations?.city ?? "Location unavailable";
-
   return (
     <TouchableOpacity
       onPress={() => router.push(`/listing/${listing.id}` as any)}
       className="w-72 flex-row bg-fdm-fg/5 border border-fdm-fg/10 rounded-2xl overflow-hidden active:opacity-70"
     >
       <View className="w-[72px] h-[72px] bg-fdm-fg/10 items-center justify-center overflow-hidden">
-        {listingPhoto ? (
-          <Image source={{ uri: listingPhoto }} style={{ width: 72, height: 72 }} resizeMode="cover" />
+        {firstPhotoUrl ? (
+          <Image source={{ uri: firstPhotoUrl }} style={{ width: 72, height: 72 }} resizeMode="cover" />
         ) : (
           <Ionicons name="home" size={24} color="#9ca3af66" />
         )}
@@ -101,8 +54,9 @@ export default function ChatListingCard({ listingId }: ChatListingCardProps) {
       </View>
 
       <View className="px-3 justify-center items-end border-l border-fdm-fg/10">
-        <Text className="text-fdm-fg/80 font-bold text-sm">{formatCurrencyWithSymbol(listing.price)}</Text>
-        <Text className="text-fdm-fg/40 text-xs">{getRentLabel(listing.rentPeriod)}</Text>
+        <Text className="text-fdm-fg/80 font-bold text-sm">
+          {formatListingPrice(listing.price, (listing as any).rentPeriod)}
+        </Text>
         <Ionicons name="chevron-forward" size={14} color="#ffffff20" style={{ marginTop: 4 }} />
       </View>
     </TouchableOpacity>

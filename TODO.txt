@@ -25,6 +25,10 @@ social:
 settings:
 - Implement currency conversion
 
+logic:
+- UseAudit hook (commonly used in most screens)
+- UseRequests hook (commonly used in most screens)
+
 CONSIDER: 
 - Move cities to a separate table, grouping them by region
     - Moves towards a standard of keeping all data within the database

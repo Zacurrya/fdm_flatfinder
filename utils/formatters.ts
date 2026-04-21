@@ -56,3 +56,31 @@ export const formatRelativeDate = (isoString: string): string => {
 
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 };
+
+/**
+ * Handles the extraction and cleaning of photo URLs from legacy string/JSON data
+ * or standard arrays.
+ * @param photos Raw photos data (could be string, JSON, or array)
+ * @returns Cleaned array of URL strings
+ */
+export const parsePhotoUrls = (photos: any): string[] => {
+  if (!photos) return [];
+  
+  let rawPhotos: string[] = [];
+  
+  if (Array.isArray(photos)) {
+    rawPhotos = photos;
+  } else if (typeof photos === 'string') {
+    try {
+      rawPhotos = JSON.parse(photos);
+    } catch {
+      // Handle legacy string format with regex if JSON parsing fails
+      const matches = photos.match(/https?:\/\/[^,}\]]+/g);
+      if (matches) rawPhotos = matches;
+    }
+  }
+
+  return rawPhotos
+    .map(url => url ? String(url).replace(/^"|"$/g, '').trim() : '')
+    .filter(url => url.startsWith('http'));
+};

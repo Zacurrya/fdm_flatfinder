@@ -1,12 +1,12 @@
+import ChatListingSubHeader from "@components/Chat/ChatListingSubHeader";
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import ContactActionButtons from "@components/Chat/ContactActionButtons";
 import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
+import FDMLoader from "@components/ui/FDMLoader";
 import { useAuth } from "@context/AuthContext";
-import { Ionicons } from "@expo/vector-icons";
 import { DecoratedChatMessage } from "@hooks/useChatMessages";
 import {
   getConversationDetails,
-  ListingSnippet,
   OtherUserProfile,
   sendMessage,
 } from "@services/chat/chatController";
@@ -17,12 +17,6 @@ import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Alert, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
-
-function getFirstPhotoUrl(photos: string[] | null | undefined): string | null {
-  if (!photos || photos.length === 0) return null;
-  const valid = photos.map((u) => u.trim()).filter((u) => u.startsWith("http"));
-  return valid[0] ?? null;
-}
 
 export default function ChatScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
@@ -35,8 +29,8 @@ export default function ChatScreen() {
   const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [otherUser, setOtherUser] = useState<OtherUserProfile | null>(null);
-  const [listing, setListing] = useState<ListingSnippet | null>(null);
-  const [listingPhotoUrl, setListingPhotoUrl] = useState<string | null>(null);
+  const [listingData, setListingData] = useState<any>(null);
+  
   const flatListRef = useRef<FlatList>(null);
 
   // Load conversation details (Other user & Listing metadata)
@@ -56,12 +50,7 @@ export default function ChatScreen() {
         }
 
         setOtherUser(detailsResult.data.otherUser);
-        setListing(detailsResult.data.listing);
-        setListingPhotoUrl(
-          detailsResult.data.listing?.photos
-            ? getFirstPhotoUrl(detailsResult.data.listing.photos)
-            : null
-        );
+        setListingData(detailsResult.data.listing);
       } catch (error) {
         console.error("Failed to load conversation details:", error);
       } finally {
@@ -130,12 +119,6 @@ export default function ChatScreen() {
 
   // Helpers
 
-  const getRentLabel = (period: string | null | undefined) => {
-    if (period === "WEEKLY") return "pw";
-    if (period === "BIWEEKLY") return "biwk";
-    return "pcm";
-  };
-
   const otherUserName = otherUser
     ? [otherUser.firstName, otherUser.lastName].filter(Boolean).join(" ") || "User"
     : "Chat";
@@ -197,57 +180,16 @@ export default function ChatScreen() {
       />
     </>
   );
-
-  // Listing card
-  const subHeader = listing ? (
-    <TouchableOpacity
-      onPress={() => router.push(`/listing/${listing.id}` as any)}
-      className="mx-4 mt-3 flex-row bg-fdm-fg/5 border border-fdm-fg/10 rounded-2xl overflow-hidden active:opacity-70"
-    >
-      <View className="w-[72px] h-[72px] bg-fdm-fg/10 items-center justify-center overflow-hidden">
-        {listingPhotoUrl ? (
-          <Image
-            source={{ uri: listingPhotoUrl }}
-            style={{ width: 72, height: 72 }}
-            resizeMode="cover"
-          />
-        ) : (
-          <Ionicons name="home" size={26} color="#ccff0040" />
-        )}
-      </View>
-
-      <View className="flex-1 px-3 py-2 justify-center">
-        <Text className="text-fdm-fg font-semibold text-sm" numberOfLines={1}>
-          {listing.title}
-        </Text>
-        <View className="flex-row items-center mt-1">
-          <Ionicons name="location-outline" size={11} color="#ffffff50" />
-          <Text className="text-fdm-fg/50 text-xs flex-1" numberOfLines={1}>
-            {listing.location}
-          </Text>
-        </View>
-        <View className="flex-row items-center mt-1 gap-1">
-          <Ionicons name="home-outline" size={11} color="#ccff0060" />
-          <Text className="text-fdm-accent/70 text-xs">View listing</Text>
-        </View>
-      </View>
-
-      <View className="px-3 justify-center items-end border-l border-fdm-fg/10">
-        <Text className="text-fdm-accent font-bold text-base">
-          {formatCurrencyWithSymbol(listing.price)}
-        </Text>
-        <Text className="text-fdm-fg/40 text-xs">{getRentLabel(listing.rentPeriod)}</Text>
-        <Ionicons name="chevron-forward" size={14} color="#ffffff20" style={{ marginTop: 4 }} />
-      </View>
-    </TouchableOpacity>
-  ) : undefined;
+  if (loading) {
+    return <FDMLoader />;
+  }
 
   return (
     <ChatScreenLayout
       chatId={conversationId}
       source="PRIVATE"
       headerContent={headerContent}
-      subHeader={subHeader}
+      subHeader={<ChatListingSubHeader initialData={listingData} />}
       flatListRef={flatListRef}
       renderMessage={renderMessage}
       listEmptyText="Send a message to get started"

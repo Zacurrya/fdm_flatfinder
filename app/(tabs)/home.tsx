@@ -1,3 +1,4 @@
+import FDMLoader from "@components/ui/FDMLoader";
 import HomeHeader from "@components/home/HomeHeader";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
@@ -8,7 +9,7 @@ import { getUserFavourites, removeFavourite } from "@services/user/userControlle
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 // Home Screen
 
@@ -99,14 +100,11 @@ export default function HomeScreen() {
         <View className="px-6 mb-2">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-fdm-fg text-lg font-bold tracking-tight">Saved Listings</Text>
-            <TouchableOpacity>
-              <Text className="text-fdm-accent text-sm font-semibold">See all</Text>
-            </TouchableOpacity>
           </View>
 
           <View className="gap-4">
             {loading ? (
-              <Text className="text-fdm-fg/50 text-center py-4">Loading listings...</Text>
+              <FDMLoader />
             ) : listings.length === 0 ? (
               <Text className="text-fdm-fg/50 text-center py-4">No saved listings yet.</Text>
             ) : (
@@ -125,13 +123,13 @@ export default function HomeScreen() {
                       // Optimistically update UI instantly
                       setFavIds(prev => prev.filter(id => id !== lId));
                       setListings(prev => prev.filter(l => Number(l.id) !== lId));
-                      
+
                       const res = await removeFavourite(user.userId, lId);
-                      
+
                       if (!res.success) {
-                         console.error("Unfavourite failed on Home:", res.error);
+                        console.error("Unfavourite failed on Home:", res.error);
                       }
-                      
+
                       // Explicitly refresh the entire home page as requested
                       setLoading(true);
                       loadListings(true);

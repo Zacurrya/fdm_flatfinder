@@ -1,78 +1,29 @@
+import FDMLoader from "@components/ui/FDMLoader";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { getMessages, getOrCreateConversation, sendMessage } from "@services/chat/chatController";
-import { getOrCreateCityChatByCity, sendCityChatMessage } from "@services/cityChat/cityChatController";
-import { deleteListing, fetchListingById, Listing } from "@services/listings/listingController";
-import { encodeListingShareMessage } from "@utils/chatListingShare";
-import { formatCurrencyWithSymbol } from "@utils/currency";
+import { useListing } from "@hooks/useListing";
+import { formatListingPrice } from "@utils/currency";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// listing detail screen
-
-// opens up a single listing so the user can see all the details
-// also lets the owner delete their own listing
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
-  const [listing, setListing] = useState<Listing | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const [signedPhotos, setSignedPhotos] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (!id) return;
-
-    // load the listing data when the page opens
-    const loadData = async () => {
-      try {
-        const data = await fetchListingById({ id: Number(id) });
-        setListing(data);
-
-        // make sure urls work and get signed ones if the bucket is private
-        let rawPhotos: string[] = [];
-        if (data.photos) {
-          if (Array.isArray(data.photos)) {
-            rawPhotos = data.photos;
-          } else if (typeof data.photos === 'string') {
-            try {
-              rawPhotos = JSON.parse(data.photos);
-            } catch {
-              const matches = (data.photos as string).match(/https?:\/\/[^,}\]]+/g);
-              if (matches) rawPhotos = matches;
-            }
-          }
-        }
-
-        const cleaned = rawPhotos
-          .map(url => url ? url.replace(/^"|"$/g, '').trim() : '')
-          .filter(url => url.startsWith('http'));
-
-        if (cleaned.length > 0) {
-          setSignedPhotos(cleaned);
-        }
-      } catch (err) {
-        console.error("Failed to fetch flat details", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [id]);
+  const {
+    listing,
+    loading,
+    signedPhotos,
+    actions,
+    isOwner,
+  } = useListing(id as string);
 
   if (loading) {
-    return (
-      <View className="flex-1 bg-fdm-bg items-center justify-center">
-        <ActivityIndicator size="large" color="#ccff00" />
-      </View>
-    );
+    return <FDMLoader />;
   }
 
   if (!listing) {
@@ -89,7 +40,6 @@ export default function ListingDetailScreen() {
     );
   }
 
-  // convert rent period to a short label for display
   const getRentLabel = (period: string | undefined): string => {
     if (period === "WEEKLY") return "pw";
     if (period === "BIWEEKLY") return "biwk";
@@ -98,50 +48,6 @@ export default function ListingDetailScreen() {
   };
 
   const windowWidth = Dimensions.get('window').width;
-
-  const handleShareToGroupChat = async () => {
-    if (!user?.userId || !listing) {
-      return;
-    }
-
-    const cityForChat = listing.ListingLocations?.city?.trim() || user.officeLocation?.trim();
-    if (!cityForChat) {
-      Alert.alert("Share Failed", "No city found for this listing.");
-      return;
-    }
-
-    try {
-      const cityChatResult = await getOrCreateCityChatByCity({ city: cityForChat });
-      if (!cityChatResult.success || !cityChatResult.data) {
-        throw new Error(cityChatResult.error ?? "Could not open city chat.");
-      }
-
-      const encodedMessage = encodeListingShareMessage(Number(listing.id));
-      const sendResult = await sendCityChatMessage({
-        cityChatId: cityChatResult.data.id,
-        senderId: user.userId,
-        content: encodedMessage,
-      });
-
-      if (!sendResult.success) {
-        throw new Error(sendResult.error ?? "Could not share listing.");
-      }
-
-      Alert.alert("Shared", "Listing shared to group chat.", [
-        {
-          text: "Open Chat",
-          onPress: () =>
-            router.push(
-              `/(tabs)/messages/city/${cityChatResult.data!.id}?city=${encodeURIComponent(cityChatResult.data!.city)}` as any
-            ),
-        },
-        { text: "OK" },
-      ]);
-    } catch (error) {
-      console.error("Failed to share listing to group chat", error);
-      Alert.alert("Share Failed", "Could not share listing to group chat.");
-    }
-  };
 
   return (
     <View className="flex-1 bg-fdm-bg">
@@ -196,7 +102,7 @@ export default function ListingDetailScreen() {
             <TouchableOpacity
               className="absolute right-6 h-12 w-12 bg-black/40 rounded-full items-center justify-center backdrop-blur-md border border-white/10"
               style={{ top: insets.top || 48 }}
-              onPress={handleShareToGroupChat}
+              onPress={actions.shareToGroupChat}
             >
               <Ionicons name="share-social-outline" size={22} color="white" />
             </TouchableOpacity>
@@ -214,7 +120,7 @@ export default function ListingDetailScreen() {
             </View>
             <View className="bg-fdm-accent/20 px-4 py-2 rounded-full border border-fdm-accent/30 shadow-lg shadow-fdm-accent/20">
               <Text className="text-fdm-accent font-bold text-lg">
-                {formatCurrencyWithSymbol(listing.price)}<Text className="text-sm font-medium">/{getRentLabel(listing.rentPeriod)}</Text>
+                {formatListingPrice(listing.price, listing.rentPeriod)}
               </Text>
             </View>
           </View>
@@ -252,70 +158,19 @@ export default function ListingDetailScreen() {
             </View>
           ) : null}
 
-          {user?.userId !== listing.userId && (
+          {!isOwner && (
             <TouchableOpacity
-              onPress={async () => {
-                if (!user?.userId) return;
-
-                try {
-                  const conversationResult = await getOrCreateConversation({
-                    currentUserId: user.userId,
-                    otherUserId: listing.userId,
-                    listingId: listing.id as number,
-                  });
-
-                  if (!conversationResult.success || !conversationResult.data) {
-                    throw new Error(conversationResult.error ?? "Could not open conversation.");
-                  }
-
-                  const conversation = conversationResult.data;
-
-                  const existingMessagesResult = await getMessages({ conversationId: conversation.id });
-                  if (!existingMessagesResult.success || !existingMessagesResult.data) {
-                    throw new Error(existingMessagesResult.error ?? "Could not load messages.");
-                  }
-
-                  if (existingMessagesResult.data.length === 0) {
-                    const rentLabel = getRentLabel(listing.rentPeriod);
-                    const locationLabel =
-                      listing.ListingLocations?.address ??
-                      listing.ListingLocations?.city ??
-                      "your area";
-
-                    const greetingResult = await sendMessage({
-                      conversationId: conversation.id,
-                      senderId: user.userId,
-                      content: `Hi! I'm interested in your listing: "${listing.title}" - ${formatCurrencyWithSymbol(listing.price)}/${rentLabel} in ${locationLabel}.`,
-                    });
-
-                    if (!greetingResult.success) {
-                      throw new Error(greetingResult.error ?? "Could not send initial message.");
-                    }
-                  }
-
-                  router.push(`/(tabs)/messages/${conversation.id}` as any);
-                } catch (error) {
-                  console.error("Failed to open conversation", error);
-                  Alert.alert("Error", "Could not open chat. Please try again.");
-                }
-              }}
+              onPress={actions.openConversation}
               className="bg-fdm-accent py-4 rounded-2xl flex-row justify-center items-center mt-2"
             >
               <Ionicons name="chatbubble-outline" size={20} color="#1a1a1a" />
-              <Text className="text-fdm-bg font-bold ml-2">Message Seller</Text>
+              <Text className="text-fdm-bg font-bold px-10">Message Seller</Text>
             </TouchableOpacity>
           )}
 
-          {user?.userId === listing.userId && (
+          {isOwner && (
             <TouchableOpacity
-              onPress={async () => {
-                try {
-                  await deleteListing({ id: listing.id as number });
-                  router.back();
-                } catch (e) {
-                  console.error("Failed to delete", e);
-                }
-              }}
+              onPress={actions.deleteListing}
               className="bg-red-500/20 py-4 rounded-2xl flex-row justify-center items-center mt-2 border border-red-500/30"
             >
               <Ionicons name="trash-outline" size={20} color="#ef4444" className="mr-2" />

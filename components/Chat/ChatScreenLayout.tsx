@@ -1,5 +1,6 @@
 import ComposerActionsModal from "@components/Chat/ComposerActionsModal";
 import MessageInputBox from "@components/Chat/MessageInputBox";
+import FDMLoader from "@components/ui/FDMLoader";
 import { Ionicons } from "@expo/vector-icons";
 import { DecoratedChatMessage, useChatMessages } from "@hooks/useChatMessages";
 import { useRouter } from "expo-router";
@@ -108,9 +109,7 @@ export default function ChatScreenLayout({
 
             {/* -- Body -- */}
             {loading ? (
-                <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator size="large" color="#ccff00" />
-                </View>
+                <FDMLoader />
             ) : (
                 <KeyboardAvoidingView
                     className="flex-1"

@@ -1,5 +1,6 @@
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import CityImage from "@components/ui/CityImage";
+import FDMLoader from "@components/ui/FDMLoader";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { ConversationWithUser, getConversations } from "@services/chat/chatController";
@@ -94,9 +95,7 @@ export default function MessagesScreen() {
       </View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#ccff00" />
-        </View>
+        <FDMLoader />
       ) : conversations.length === 0 && cityChats.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <Ionicons name="chatbubbles-outline" size={56} color="#ffffff20" />

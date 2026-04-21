@@ -1,4 +1,5 @@
 import { Database } from "@/types/database.types";
+import { Listing } from "@services/listings/listingController";
 
 export type Conversation = Database["public"]["Tables"]["Conversations"]["Row"];
 export type Message = Database["public"]["Tables"]["Messages"]["Row"];
@@ -12,18 +13,9 @@ export type OtherUserProfile = {
   email: string | null;
 };
 
-export type ListingSnippet = {
-  id: number;
-  title: string;
-  price: number;
-  rentPeriod: string;
-  location: string;
-  photos: string[] | null;
-};
-
 export type ConversationWithUser = Conversation & {
   otherUser: OtherUserProfile;
-  listing: ListingSnippet | null;
+  listing: Listing | null;
 };
 
 export type ChatValidationResult =

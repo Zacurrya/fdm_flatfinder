@@ -1,14 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { formatCurrencyWithSymbol } from "@utils/currency";
+import { formatListingPrice } from "@utils/currency";
+import { parsePhotoUrls } from "@utils/formatters";
 import { forwardRef, useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, TouchableOpacityProps, View } from "react-native";
 
 // listing card component
-
-// this is the card that shows up on the home page for each flat
 // shows the photo, price, location, beds and baths
-
-// data we need from the listing to display on the card
 import { Listing } from "@services/listings/listingController";
 
 export type ListingCardData = Listing;
@@ -18,8 +15,6 @@ type ListingCardProps = {
     isFavourite?: boolean;
     onToggleFavourite?: () => void;
 } & TouchableOpacityProps;
-
-
 
 // colour + label config for each listing source
 const SOURCE_CONFIG: Record<
@@ -56,43 +51,12 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        let parsedPhotos: string[] = [];
-        if (listing.photos) {
-            if (Array.isArray(listing.photos)) {
-                parsedPhotos = listing.photos;
-            } else if (typeof listing.photos === 'string') {
-                try {
-                    parsedPhotos = JSON.parse(listing.photos);
-                } catch {
-                    const matches = (listing.photos as string).match(/https?:\/\/[^,}\]]+/g);
-                    if (matches) parsedPhotos = matches;
-                }
-            }
-
-            if (parsedPhotos.length > 0) {
-                const validUrls = parsedPhotos
-                    .map((url) => (url ? url.replace(/^"|"$/g, '').trim() : ''))
-                    .filter((url) => url.startsWith('http'));
-
-                if (validUrls.length > 0) {
-                    setPhotoUrl(validUrls[0]);
-                    return;
-                }
-            }
-        }
-
-        setPhotoUrl(null);
+        const photos = parsePhotoUrls(listing.photos);
+        setPhotoUrl(photos.length > 0 ? photos[0] : null);
     }, [listing.photos]);
 
     const src = listing.source ?? "FDM";
     const sourceConfig = SOURCE_CONFIG[src] ?? SOURCE_CONFIG.FDM;
-
-    const rentLabel =
-        listing.rentPeriod === "WEEKLY"
-            ? "wk"
-            : listing.rentPeriod === "BIWEEKLY"
-                ? "biwk"
-                : "mo";
 
     return (
         <View>
@@ -197,7 +161,7 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
                         </View>
                         <View className="bg-fdm-accent/10 border border-fdm-accent/20 px-3 py-1 rounded-xl">
                             <Text className="text-fdm-accent font-bold text-sm">
-                                {formatCurrencyWithSymbol(listing.price)}/{rentLabel}
+                                {formatListingPrice(listing.price, listing.rentPeriod)}
                             </Text>
                         </View>
                     </View>

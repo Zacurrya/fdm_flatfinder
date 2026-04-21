@@ -25,3 +25,24 @@ export const formatCurrencyWithSymbol = (
 ): string => {
   return `${getCurrencySymbol(currency)}${amount}`;
 };
+
+/**
+ * Centrally formats listing prices with currency symbol and period suffix.
+ * Ensures consistent styling across all screens.
+ */
+export const formatListingPrice = (
+  price: number | string,
+  period?: string | null,
+  currency: SupportedCurrency | null | undefined = "GBP"
+): string => {
+  const amount = formatCurrencyWithSymbol(price, currency);
+  let suffix = "/pcm"; // default to pcm
+
+  if (period === "WEEKLY") {
+    suffix = "/pw";
+  } else if (period === "BIWEEKLY") {
+    suffix = "/biwk";
+  }
+
+  return `${amount}${suffix}`;
+};
