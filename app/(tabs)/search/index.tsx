@@ -1,3 +1,4 @@
+import BackgroundCircle from "@components/ui/BackgroundCircle";
 import FilterSidebar from "@components/search/FilterSidebar";
 import SearchBar from "@components/search/SearchBar";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
@@ -88,6 +89,7 @@ export default function SearchScreen() {
 
   return (
     <View className="flex-1 bg-fdm-bg">
+      <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
       {loading && <FDMLoader />}
       <View className="flex-1 flex-row">
         {/* Landscape Sidebar */}

@@ -3,6 +3,8 @@ import ProfilePicModal from "@components/profile/ProfilePicModal";
 import SettingsModal from "@components/profile/SettingsModal";
 import SignOutButton from "@components/profile/SignOutButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
+import AppTrademark from "@components/ui/AppTrademark";
+import ScreenHeader from "@components/ui/ScreenHeader";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { File } from "expo-file-system";
@@ -109,21 +111,18 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className={`${width > height ? "pt-6" : "pt-16"} pb-4 px-6 z-10 flex-row items-center justify-between`}>
-          <Text
-            className="text-fdm-fg text-2xl tracking-tighter"
-            style={{ fontFamily: "Michroma_400Regular" }}
-          >
-            Your <Text className="text-fdm-accent">Profile</Text>
-          </Text>
-          <TouchableOpacity
-            className="w-11 h-11 items-center justify-center rounded-full bg-fdm-fg/10 active:bg-fdm-fg/20 border border-fdm-fg/10"
-            onPress={() => setIsSettingsVisible(true)}
-            accessibilityLabel="Open settings"
-          >
-            <Ionicons name="settings-outline" size={20} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
+        <ScreenHeader
+          title="Profile"
+          rightElement={
+            <TouchableOpacity
+              className="w-12 h-12 items-center justify-center rounded-2xl bg-white/5 active:bg-white/10 border border-white/5"
+              onPress={() => setIsSettingsVisible(true)}
+              accessibilityLabel="Open settings"
+            >
+              <Ionicons name="settings-sharp" size={22} color="#ccff00" />
+            </TouchableOpacity>
+          }
+        />
 
         {/* Profile Card */}
         <View className="px-6">
@@ -134,10 +133,22 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Sign Out Button */}
-        <View className="items-center mt-8">
-          <SignOutButton />
+        {/* Account Actions Section Label */}
+        <View className="px-6 mt-10 mb-4 flex-row items-center gap-2">
+          <Ionicons name="key-outline" size={16} color="#ccff00" />
+          <Text className="text-white/40 text-xs font-bold uppercase tracking-widest">Account Security</Text>
         </View>
+
+        <View className="px-6">
+          <View className="bg-white/5 border border-white/5 rounded-3xl p-6 items-center">
+            <Text className="text-white/50 text-sm text-center mb-6 leading-relaxed">
+              You are currently signed in as {user?.email}.
+            </Text>
+            <SignOutButton />
+          </View>
+        </View>
+
+        <AppTrademark />
       </ScrollView>
 
       <SettingsModal

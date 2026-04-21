@@ -1,3 +1,6 @@
+import AppTrademark from "@components/ui/AppTrademark";
+import BackgroundCircle from "@components/ui/BackgroundCircle";
+import ScreenHeader from "@components/ui/ScreenHeader";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -116,8 +119,11 @@ export default function AddListingScreen() {
   return (
     <View className="flex-1 bg-fdm-bg">
       <StatusBar style="light" />
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 60, paddingTop: 60 }}>
-        <Text className="text-3xl font-bold text-fdm-fg mb-6 text-center">Add Listing</Text>
+      <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
+      
+      <ScreenHeader title="Add" highlightedTitle="Listing" />
+
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 60, paddingTop: 0 }}>
 
         <View className="gap-4">
           <View>
@@ -268,6 +274,7 @@ export default function AddListingScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+        <AppTrademark />
       </ScrollView>
     </View>
   );

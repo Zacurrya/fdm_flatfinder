@@ -1,6 +1,7 @@
 import FDMLoader from "@components/ui/FDMLoader";
 import HomeHeader from "@components/home/HomeHeader";
 import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
+import AppTrademark from "@components/ui/AppTrademark";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import ListingCard from "@components/ui/ListingCard";
 import { useAuth } from "@context/AuthContext";
@@ -140,6 +141,7 @@ export default function HomeScreen() {
             )}
           </View>
         </View>
+        <AppTrademark />
       </ScrollView>
     </View>
   );

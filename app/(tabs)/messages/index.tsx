@@ -7,6 +7,9 @@ import { ConversationWithUser, getConversations } from "@services/chat/chatContr
 import { CityChat, fetchCityChats, getOrCreateCityChatByCity } from "@services/cityChat/cityChatController";
 import { formatCurrencyWithSymbol } from "@utils/currency";
 import { formatRelativeDate, getInitials } from "@utils/formatters";
+import AppTrademark from "@components/ui/AppTrademark";
+import BackgroundCircle from "@components/ui/BackgroundCircle";
+import ScreenHeader from "@components/ui/ScreenHeader";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
@@ -89,10 +92,9 @@ export default function MessagesScreen() {
   return (
     <View className="flex-1 bg-fdm-bg">
       <StatusBar style="light" />
+      <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
 
-      <View className="pt-14 pb-4 px-6">
-        <Text className="text-fdm-fg text-3xl font-bold tracking-tight">Messages</Text>
-      </View>
+      <ScreenHeader title="Messages" />
 
       {loading ? (
         <FDMLoader />
@@ -204,6 +206,7 @@ export default function MessagesScreen() {
               </TouchableOpacity>
             );
           })}
+          <AppTrademark />
         </ScrollView>
       )}
     </View>

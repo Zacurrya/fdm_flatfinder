@@ -1,3 +1,4 @@
+import ScreenHeader from "@components/ui/ScreenHeader";
 import AdminRequestsTable from "@components/admin/AdminRequestsTable";
 import AdminTabs from "@components/admin/AdminTabs";
 import AuditTable from "@components/admin/AuditTable";
@@ -138,14 +139,13 @@ export default function AdminScreen() {
 
       <BackgroundCircle top={0} right={0} size={256} color="#CCFF001A" opacity={0.5} />
 
-      {!isAuditLandscape ? (
-        <View className={`${isLandscape ? "pt-6" : "pt-16"} pb-4 px-6 z-10`}>
-          <Text className="text-fdm-fg text-2xl tracking-tighter" style={{ fontFamily: "Michroma_400Regular" }}>
-            Admin <Text className="text-fdm-accent">Panel</Text>
-          </Text>
-          <Text className="text-fdm-fg/50 text-sm mt-1">{subtitle}</Text>
-        </View>
-      ) : null}
+      {!isAuditLandscape && (
+        <ScreenHeader
+          title="Admin"
+          highlightedTitle="Panel"
+          subtitle={subtitle}
+        />
+      )}
 
       {!isAuditLandscape ? (
         <View className="px-6 pb-3 z-10">
