@@ -1,7 +1,7 @@
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
-import ComposerActionsModal from "@components/Chat/ComposerActionsModal";
 import MessageAvatar from "@components/Chat/MessageAvatar";
-import MessageBuilder from "@components/MessageTypes/MessageBuilder";
+import DateMessage from "@components/Chat/MessageTypes/DateMessage";
+import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import CityImage from "@components/ui/CityImage";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -38,7 +38,6 @@ export default function CityChatScreen() {
   const [attachment, setAttachment] = useState<{ uri: string; type: "image" } | null>(null);
   const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [isComposerModalVisible, setIsComposerModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const isValidId = Number.isFinite(parsedCityChatId) && parsedCityChatId > 0;
@@ -79,20 +78,20 @@ export default function CityChatScreen() {
 
     const channel = subscribeToCityChatMessages(parsedCityChatId, (raw) => {
       const newMessage = raw as Parameters<typeof mapCityChatMessage>[0];
+      const mappedMessage = mapCityChatMessage(newMessage);
       setMessages((prev) => {
-        const mappedMessage = mapCityChatMessage(newMessage);
         if (prev.find((m) => m.id === mappedMessage.id)) return prev;
         return [...prev, mappedMessage];
       });
       flatListRef.current?.scrollToEnd({ animated: true });
 
-      if (newMessage.senderId !== user?.userId) {
-        void getCityChatSenderProfile({ senderId: newMessage.senderId }).then((profileResult) => {
+      if (mappedMessage.senderId !== user?.userId) {
+        void getCityChatSenderProfile({ senderId: mappedMessage.senderId }).then((profileResult) => {
           if (!profileResult.success) return;
 
           setMessages((prev) =>
             prev.map((message) =>
-              message.id === String(newMessage.id)
+              message.id === mappedMessage.id
                 ? {
                   ...message,
                   senderName: profileResult.data
@@ -188,19 +187,9 @@ export default function CityChatScreen() {
 
     return (
       <>
-        {showDateSeparator && (
-          <View className="items-center my-3">
-            <Text className="text-fdm-fg/30 text-xs bg-fdm-fg/5 px-3 py-1 rounded-full">
-              {new Date(item.createdAt).toLocaleDateString([], {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-              })}
-            </Text>
-          </View>
-        )}
+        {showDateSeparator && <DateMessage date={item.createdAt} />}
 
-        <View className={`flex-row px-4 items-start ${isMe ? "justify-end" : "justify-start"}`}>
+        <View className={`flex-row mb-1 px-4 items-start ${isMe ? "justify-end" : "justify-start"}`}>
           {!isMe ? (
             <MessageAvatar
               profilePicture={item.senderProfilePicture}
@@ -221,7 +210,7 @@ export default function CityChatScreen() {
     );
   };
 
-  // ── Slot: header avatar + title ───────────────────────────────────────────
+  // Header avatar + title
   const headerContent = (
     <>
       <View className="w-12 h-12 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center mr-3 overflow-hidden">
@@ -258,18 +247,11 @@ export default function CityChatScreen() {
         onSend: handleSend,
         sendDisabled: (!inputText.trim() && !attachment) || sending || uploadingImage,
         showActions: true,
-        onPressPlus: () => setIsComposerModalVisible(true),
         onPressImage: handleUploadImage,
         actionsDisabled: uploadingImage || sending,
         attachment: attachment,
         onClearAttachment: () => setAttachment(null),
       }}
-      footerExtra={
-        <ComposerActionsModal
-          visible={isComposerModalVisible}
-          onClose={() => setIsComposerModalVisible(false)}
-        />
-      }
     />
   );
 }

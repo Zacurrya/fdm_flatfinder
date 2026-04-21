@@ -1,4 +1,4 @@
-import { AuthResponse } from "@services/auth/auth.types";
+import { AuthResponse } from "@services/auth/types";
 
 export type SupportedCurrency = "GBP" | "USD" | "EUR" | "CAD" | "AUD" | "SGD";
 

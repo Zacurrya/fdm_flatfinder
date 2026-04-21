@@ -1,4 +1,4 @@
-import { User } from "@services/auth/auth.types";
+import { User } from "@services/auth/types";
 import * as AuthController from "@services/auth/authController";
 import * as AuditController from "@services/audit/auditController";
 import { useCallback, useState } from "react";

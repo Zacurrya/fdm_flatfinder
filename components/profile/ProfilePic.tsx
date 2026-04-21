@@ -1,4 +1,4 @@
-import { User } from "@services/auth/auth.types";
+import { User } from "@services/auth/types";
 import {
   getFallbackProfilePictureInitials,
   getFallbackProfilePictureUrl,

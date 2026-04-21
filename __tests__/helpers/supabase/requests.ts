@@ -1,10 +1,6 @@
 import { createChainableSupabaseMock, createResolvedMock } from "./base";
 
-// Request and Audit Table Mocking
-
-/**
- * Creates a standard mock for the Requests table
- */
+// Creates a standard mock for the Requests table
 export const mockRequestsTable = (data: any | any[] = []) => {
   const resolved = { data: data, error: null };
   return {
@@ -14,9 +10,7 @@ export const mockRequestsTable = (data: any | any[] = []) => {
   };
 };
 
-/**
- * Creates a standard mock for the AuditLogs table
- */
+// Creates a standard mock for the AuditLogs table
 export const mockAuditLogsTable = (data: any | any[] = []) => {
   const resolved = { data: data, error: null };
   return {

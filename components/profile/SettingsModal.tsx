@@ -3,7 +3,7 @@ import OfficeLocationSelector from "@components/ui/OfficeLocationSelector";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { OfficeCity, findOfficeCityByName } from "@lib/office-cities";
-import { SupportedCurrency } from "@services/settings/settings.types";
+import { SupportedCurrency } from "@services/settings/types";
 import * as SettingsController from "@services/settings/settingsController";
 import * as UserController from "@services/user/userController";
 import React, { useEffect, useState } from "react";

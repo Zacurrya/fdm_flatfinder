@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { AuditLog } from "@services/audit/auditTypes";
+import { AuditLog } from "@services/audit/types";
 import { useState } from "react";
 import {
     ActivityIndicator,

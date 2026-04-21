@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { afterEach, describe, expect, test } from "@jest/globals";
 import { formatRelativeDate, formatTime, getInitials } from "@utils/formatters";
+import { mockSystemTime, restoreRealTime } from "../helpers/formatters";
 
 describe("getInitials", () => {
     test("should return initials for a full name", () => {
@@ -25,17 +26,12 @@ describe("formatTime", () => {
 })
 
 describe("formatRelativeDate", () => {
-    // Mock the system time for each test
-    beforeEach(() => {
-        jest.useFakeTimers();
-    });
-
     afterEach(() => {
-        jest.useRealTimers();
+        restoreRealTime();
     });
 
     test("returns time if same day", () => {
-        jest.setSystemTime(new Date("2026-04-20T16:00:00Z"));
+        mockSystemTime("2026-04-20T16:00:00Z");
         const result = formatRelativeDate("2026-04-20T14:35:00Z");
 
         // Format should be HH:MM
@@ -43,14 +39,14 @@ describe("formatRelativeDate", () => {
     });
 
     test("returns 'Yesterday' for yesterday's date", () => {
-        jest.setSystemTime(new Date("2026-04-21T10:00:00Z")); // today is April 21
+        mockSystemTime("2026-04-21T10:00:00Z"); // today is April 21
         const result = formatRelativeDate("2026-04-20T14:35:00Z"); // yesterday is April 20
 
         expect(result).toBe("Yesterday");
     });
 
     test("returns day and month for older dates", () => {
-        jest.setSystemTime(new Date("2026-04-20T16:00:00Z")); // today
+        mockSystemTime("2026-04-20T16:00:00Z"); // today
         const result = formatRelativeDate("2026-04-10T14:35:00Z"); // 10 days ago
 
         // Format is "10 Apr" (en-GB format: day + short month)
@@ -58,7 +54,7 @@ describe("formatRelativeDate", () => {
     });
 
     test("handles dates from different months", () => {
-        jest.setSystemTime(new Date("2026-04-20T16:00:00Z"));
+        mockSystemTime("2026-04-20T16:00:00Z");
         const result = formatRelativeDate("2026-03-15T14:35:00Z");
 
         expect(result).toBe("15 Mar");

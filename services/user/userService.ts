@@ -1,18 +1,16 @@
-import { supabase } from "@lib/supabase";
 import {
     AuthResponse,
+    GetProfilePictureUrlOptions,
+    ProfilePictureFallbackOptions,
     ProfilePictureUploadDTO,
+    ResolvedProfilePictureSource,
     User,
-} from "@services/auth/auth.types";
+    UserEmailMapResult,
+} from "./types";
 import { File } from "expo-file-system";
+import { supabase } from "@lib/supabase";
 
 const PROFILE_PICTURE_BUCKET = "profile-pictures";
-
-type UserEmailMapResult = {
-    success: boolean;
-    data?: Record<string, string>;
-    error?: string;
-};
 
 type CachedProfilePictureUrl = {
     url: string;
@@ -41,23 +39,6 @@ function setCachedProfilePictureUrl(path: string, url: string, expiresInSeconds:
         expiresAtMs: Date.now() + expiresInSeconds * 1000,
     });
 }
-
-export type ResolvedProfilePictureSource = {
-    path: string | null;
-    directUrl: string | null;
-};
-
-export type ProfilePictureFallbackOptions = {
-    firstName?: string | null;
-    lastName?: string | null;
-    email?: string | null;
-    size?: number;
-};
-
-export type GetProfilePictureUrlOptions = ProfilePictureFallbackOptions & {
-    profilePicture?: string | null;
-    expiresInSeconds?: number;
-};
 
 function getFallbackProfilePictureName(options: ProfilePictureFallbackOptions = {}): string {
     const fullName = `${options.firstName ?? ""} ${options.lastName ?? ""}`.trim();
@@ -387,10 +368,6 @@ export const requestOfficeLocationChange = async (
 
     const oldCity = profile.officeLocation ?? "";
     const role = profile.role;
-
-    if (oldCity.toLowerCase() === officeLocation.toLowerCase()) {
-        return { success: false, error: "New city must be different from your current city." };
-    }
 
     if (role === "ADMIN") {
         // Admins bypass approval: update city immediately

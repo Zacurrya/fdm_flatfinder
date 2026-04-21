@@ -5,7 +5,7 @@ import { RealtimeChannel } from "@supabase/supabase-js";
  * Subscribes to new Postgres inserts on a specified table given a filter string.
  * This abstracts away the boilerplate of the Supabase Realtime Channels API.
  * 
- * @param tableName The table to listen to (e.g., 'Messages', 'CityChatMessages')
+ * @param tableName The table to listen to (e.g., 'Messages')
  * @param filterString The eq filter (e.g., 'conversation_id=eq.123')
  * @param channelName Unique label for this channel connection instance
  * @param onNewMessage Callback invoked whenever a new row is inserted
@@ -56,8 +56,8 @@ export function subscribeToCityChatMessages(
   onNewMessage: (message: Record<string, unknown>) => void
 ): RealtimeChannel {
   return subscribeToTableMessages(
-    "CityChatMessages",
-    `CityChatId=eq.${cityChatId}`,
+    "Messages",
+    `city_chat_id=eq.${cityChatId}`,
     `city-chat:${cityChatId}`,
     onNewMessage
   );

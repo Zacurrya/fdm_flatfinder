@@ -1,14 +1,15 @@
+import ComposerActionsModal from "@components/Chat/ComposerActionsModal";
 import MessageInputBox from "@components/Chat/MessageInputBox";
 import { Ionicons } from "@expo/vector-icons";
 import { MappedChatMessage } from "@utils/mapMessages";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ReactNode, RefObject } from "react";
-import { ListRenderItem } from "react-native";
+import { ReactNode, RefObject, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
     KeyboardAvoidingView,
+    ListRenderItem,
     Platform,
     Text,
     TouchableOpacity,
@@ -32,11 +33,11 @@ type MessageInputProps = {
 };
 
 type ChatScreenLayoutProps = {
-    /** Left-side avatar + title/subtitle block inside the header row */
+    /* Left-side avatar + title/subtitle block inside the header row */
     headerContent: ReactNode;
-    /** Optional card shown beneath the header (e.g. the listing card) */
+    /* Optional card shown beneath the header (e.g. the listing card) */
     subHeader?: ReactNode;
-    /** extra node rendered after the KeyboardAvoidingView (e.g. modals) */
+    /* Extra node rendered after the KeyboardAvoidingView (e.g. modals) */
     footerExtra?: ReactNode;
     messages: MappedChatMessage[];
     loading: boolean;
@@ -45,14 +46,13 @@ type ChatScreenLayoutProps = {
     listEmptyIcon?: ReactNode;
     listEmptyText?: string;
     inputProps: MessageInputProps;
-    /** spacing between messages (Tailwind scale, e.g. 2 for mb-2). Defaults to 2.5. */
+    /* Spacing between messages. */
     messageGap?: number | string;
 };
 
 export default function ChatScreenLayout({
     headerContent,
     subHeader,
-    footerExtra,
     messages,
     loading,
     flatListRef,
@@ -64,6 +64,14 @@ export default function ChatScreenLayout({
 }: ChatScreenLayoutProps) {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const [actionsVisible, setActionsVisible] = useState(false);
+
+    const handlePressPlus = () => {
+        if (inputProps.onPressPlus) {
+            inputProps.onPressPlus();
+        }
+        setActionsVisible(true);
+    };
 
     return (
         <View className="flex-1 bg-fdm-bg">
@@ -128,18 +136,23 @@ export default function ChatScreenLayout({
                             </View>
                         }
                     />
-
+                    {/* Input box */}
                     <View
                         className="flex-row items-end px-2 py-2 bg-fdm-bg"
                         style={{ paddingBottom: Math.max(insets.bottom, 12) }}
                     >
-                        <MessageInputBox {...inputProps} />
+                        <MessageInputBox
+                            {...inputProps}
+                            onPressPlus={handlePressPlus}
+                        />
                     </View>
+                    <ComposerActionsModal
+                        visible={actionsVisible}
+                        onClose={() => setActionsVisible(false)}
+                        onSelectImage={inputProps.onPressImage}
+                    />
                 </KeyboardAvoidingView>
             )}
-
-            {/* -- Optional footer extras (e.g. modals) -- */}
-            {footerExtra}
         </View>
     );
 }

@@ -7,16 +7,23 @@ listings:
     - OpenRent
     - Zoopla
     - PropertyGuru (Singapore)
+- Map API to show a minimap of a listing's location
 
 chats:
 - Componentise the chat screen
 - Users should be able to caption their images
+- Read receipts
 - Audit messages should notice if a new person is in the city, subscribe to audits for user approvals,
   creating an audit message in the appropriate city chat, informing that they have joined (by default when they are approved)
+- Consolidate city chat and chat into one service, using an array maybe to store the member ids in a chat
+- Modal will allow users to send favourited listings easily
 
 social:
 - Send friend requests to other users, allowing you to dm them even if unrelated to a listing
+- Events page to allow FDM to share invites to events, this will consolidate more features surrounding FDM communications in this app
 
+settings:
+- Implement currency conversion
 
 CONSIDER: 
 - Move cities to a separate table, grouping them by region

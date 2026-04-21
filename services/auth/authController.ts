@@ -1,4 +1,3 @@
-import { Session } from "@supabase/supabase-js";
 import {
     ApprovalDTO,
     AuthResponse,
@@ -7,105 +6,123 @@ import {
     PasswordResetDTO,
     RegistrationDTO,
     User,
-} from "./auth.types";
+} from "./types";
+import { Session } from "@supabase/supabase-js";
 import * as AuthService from "./authService";
 
-// Register
+function normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+}
+
+function requireNonEmpty(value: string | undefined | null, fieldName: string): string | null {
+    const normalized = value?.trim() ?? "";
+    if (!normalized) {
+        return `${fieldName} is required.`;
+    }
+
+    return null;
+}
+
+function validateUserIdDto(dto: ApprovalDTO | DeletionDTO): string | null {
+    return requireNonEmpty(dto?.userId, "User ID");
+}
 
 export const register = async (
-    request: RegistrationDTO
+    dto: RegistrationDTO
 ): Promise<AuthResponse> => {
-    const trimmedPhoneNumber = request.phoneNumber?.trim() ?? "";
-    const internationalPhonePattern = /^\+[1-9]\d{0,3}(?:[\s().-]*\d)+$/;
-
-    if (!request.email || !request.password) {
-        return { success: false, error: "Email and password are required." };
-    }
-    if (!request.email.toLowerCase().endsWith("@fdmgroup.com")) {
-        return { success: false, error: "Only @fdmgroup.com email addresses can sign up." };
-    }
-    if (!request.firstName || !request.lastName) {
-        return { success: false, error: "First and last name are required." };
-    }
-    if (!trimmedPhoneNumber) {
-        return { success: false, error: "Phone number is required." };
-    }
-    if (!internationalPhonePattern.test(trimmedPhoneNumber)) {
-        return {
-            success: false,
-            error: "Phone number must include a country code, e.g. +44 7700 900123.",
-        };
-    }
-    if (!request.officeLocation) {
-        return { success: false, error: "Office location is required." };
+    if (!dto) {
+        return { success: false, error: "Registration payload is required." };
     }
 
-    return AuthService.register(request);
+    const validationError =
+        requireNonEmpty(dto.firstName, "First name") ??
+        requireNonEmpty(dto.lastName, "Last name") ??
+        requireNonEmpty(dto.email, "Email") ??
+        requireNonEmpty(dto.password, "Password") ??
+        requireNonEmpty(dto.phoneNumber, "Phone number") ??
+        requireNonEmpty(dto.officeLocation, "Office location");
+
+    if (validationError) {
+        return { success: false, error: validationError };
+    }
+
+    return AuthService.register({
+        ...dto,
+        firstName: dto.firstName.trim(),
+        lastName: dto.lastName.trim(),
+        email: normalizeEmail(dto.email),
+        password: dto.password,
+        phoneNumber: dto.phoneNumber.trim(),
+        officeLocation: dto.officeLocation.trim(),
+    });
 };
-
-// Login
 
 export const login = async (
-    request: LoginDTO
+    dto: LoginDTO
 ): Promise<AuthResponse<{ session: Session; user: User }>> => {
-    if (!request.email || !request.password) {
-        return { success: false, error: "Email and password are required." };
+    if (!dto) {
+        return { success: false, error: "Login payload is required." };
     }
 
-    return AuthService.login(request.email, request.password);
-};
+    const validationError =
+        requireNonEmpty(dto.email, "Email") ??
+        requireNonEmpty(dto.password, "Password");
 
-// Logout 
+    if (validationError) {
+        return { success: false, error: validationError };
+    }
+
+    return AuthService.login(normalizeEmail(dto.email), dto.password);
+};
 
 export const logout = async (): Promise<AuthResponse> => {
     return AuthService.logout();
 };
 
-// Password Reset 
-
 export const resetPassword = async (
-    request: PasswordResetDTO
+    dto: PasswordResetDTO
 ): Promise<AuthResponse> => {
-    if (!request.email) {
-        return { success: false, error: "Email is required." };
+    if (!dto) {
+        return { success: false, error: "Password reset payload is required." };
     }
 
-    return AuthService.resetPassword(request);
-};
+    const validationError = requireNonEmpty(dto.email, "Email");
+    if (validationError) {
+        return { success: false, error: validationError };
+    }
 
-// Approve User (Admin)
+    return AuthService.resetPassword({ email: normalizeEmail(dto.email) });
+};
 
 export const approveUser = async (
-    request: ApprovalDTO
+    dto: ApprovalDTO
 ): Promise<AuthResponse> => {
-    if (!request.userId) {
-        return { success: false, error: "User ID is required." };
+    const validationError = validateUserIdDto(dto);
+    if (validationError) {
+        return { success: false, error: validationError };
     }
 
-    return AuthService.approveUser(request);
+    return AuthService.approveUser({ userId: dto.userId.trim() });
 };
-
-// Reject User (Admin) 
 
 export const rejectUser = async (
-    request: ApprovalDTO
+    dto: ApprovalDTO
 ): Promise<AuthResponse> => {
-    if (!request.userId) {
-        return { success: false, error: "User ID is required." };
+    const validationError = validateUserIdDto(dto);
+    if (validationError) {
+        return { success: false, error: validationError };
     }
 
-    return AuthService.rejectUser(request);
+    return AuthService.rejectUser({ userId: dto.userId.trim() });
 };
-
-// Delete User (Admin)
 
 export const deleteUser = async (
-    request: DeletionDTO
+    dto: DeletionDTO
 ): Promise<AuthResponse> => {
-    if (!request.userId) {
-        return { success: false, error: "User ID is required." };
+    const validationError = validateUserIdDto(dto);
+    if (validationError) {
+        return { success: false, error: validationError };
     }
 
-    return AuthService.deleteUser(request);
+    return AuthService.deleteUser({ userId: dto.userId.trim() });
 };
-

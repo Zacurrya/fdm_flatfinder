@@ -3,11 +3,7 @@ import { createChainableSupabaseMock, createResolvedMock } from "./base";
 
 export { asAsyncMock } from "./base";
 
-// User Table Mocking
-
-/**
- * Creates a standard mock for the Users table
- */
+// Creates a standard mock for the Users table
 export const mockUsersTable = (data: any | any[] = mockUser) => {
   const resolved = { data: data, error: null };
   return {
@@ -17,9 +13,7 @@ export const mockUsersTable = (data: any | any[] = mockUser) => {
   };
 };
 
-/**
- * Creates a standard mock for the UserFavourites table
- */
+// Creates a standard mock for the UserFavourites table
 export const mockUserFavouritesTable = (data: any | any[] = []) => {
   const resolved = { data: data, error: null };
   return {

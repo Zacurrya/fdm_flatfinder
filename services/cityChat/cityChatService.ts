@@ -1,60 +1,22 @@
+import { Database } from "@/types/database.types";
 import { supabase } from "@lib/supabase";
-import { RealtimeChannel } from "@supabase/supabase-js";
 import { isNonEmptyString, isPositiveInteger, SupabaseErrorLike } from "@utils/validation";
+import {
+  CityChat,
+  CityChatMessage,
+  CityChatMessageWithSender,
+  CityChatSenderProfile,
+  CityChatValidationResult,
+  GetCityChatByCityDTO,
+  GetCityChatMessagesDTO,
+  GetCityChatSenderProfileDTO,
+  SendCityChatMessageDTO,
+} from "./types";
 
-export type CityChat = {
-  id: number;
-  city: string;
-  created_at: string;
-  last_message: string | null;
-  last_message_at: string | null;
-};
-
-export type CityChatMessage = {
-  id: number;
-  CityChatId: number;
-  senderId: string;
-  content: string;
-  created_at: string;
-};
-
-export type CityChatSenderProfile = {
-  userId: string;
-  firstName: string | null;
-  lastName: string | null;
-  profilePicture: string | null;
-};
-
-export type CityChatMessageWithSender = CityChatMessage & {
-  sender: CityChatSenderProfile | null;
-};
-
-export type CityChatValidationResult =
-  | { valid: true }
-  | { valid: false; error: string };
-
-
-type GetCityChatByCityRequest = {
-  city: string;
-};
-
-type GetCityChatMessagesRequest = {
-  cityChatId: number;
-};
-
-type SendCityChatMessageRequest = {
-  cityChatId: number;
-  senderId: string;
-  content: string;
-};
-
-type GetCityChatSenderProfileRequest = {
-  senderId: string;
-};
-
+type UnifiedMessageRow = Database["public"]["Tables"]["Messages"]["Row"];
 
 export const validateGetCityChatByCityRequest = (
-  request: GetCityChatByCityRequest
+  request: GetCityChatByCityDTO
 ): CityChatValidationResult => {
   if (!isNonEmptyString(request.city)) {
     return { valid: false, error: "City is required." };
@@ -64,7 +26,7 @@ export const validateGetCityChatByCityRequest = (
 };
 
 export const validateGetCityChatMessagesRequest = (
-  request: GetCityChatMessagesRequest
+  request: GetCityChatMessagesDTO
 ): CityChatValidationResult => {
   if (!isPositiveInteger(request.cityChatId)) {
     return { valid: false, error: "City chat ID must be a positive integer." };
@@ -74,7 +36,7 @@ export const validateGetCityChatMessagesRequest = (
 };
 
 export const validateSendCityChatMessageRequest = (
-  request: SendCityChatMessageRequest
+  request: SendCityChatMessageDTO
 ): CityChatValidationResult => {
   if (!isPositiveInteger(request.cityChatId)) {
     return { valid: false, error: "City chat ID must be a positive integer." };
@@ -92,7 +54,7 @@ export const validateSendCityChatMessageRequest = (
 };
 
 export const validateGetCityChatSenderProfileRequest = (
-  request: GetCityChatSenderProfileRequest
+  request: GetCityChatSenderProfileDTO
 ): CityChatValidationResult => {
   if (!isNonEmptyString(request.senderId)) {
     return { valid: false, error: "Sender ID is required." };
@@ -127,6 +89,15 @@ const getCityChatSenderProfiles = async (
     return acc;
   }, {});
 };
+
+const mapRowToCityChatMessage = (row: UnifiedMessageRow): CityChatMessage => ({
+  id: String(row.id),
+  cityChatId: Number(row.city_chat_id ?? 0),
+  senderId: row.sender_id,
+  content: row.content,
+  created_at: row.created_at,
+  read_at: row.read_at ?? null,
+});
 
 // Gets one city chat by city name, creating it if needed.
 export const getOrCreateCityChatByCity = async (city: string): Promise<CityChat> => {
@@ -188,11 +159,11 @@ export const fetchCityChats = async (): Promise<CityChat[]> => {
 
 export const getCityChatMessages = async (cityChatId: number): Promise<CityChatMessageWithSender[]> => {
   const result = (await supabase
-    .from("CityChatMessages" as any)
-    .select("*")
-    .eq("CityChatId", cityChatId)
+    .from("Messages")
+    .select("id, city_chat_id, sender_id, content, created_at, read_at")
+    .eq("city_chat_id", cityChatId)
     .order("created_at", { ascending: true })) as {
-      data: CityChatMessage[] | null;
+      data: UnifiedMessageRow[] | null;
       error: SupabaseErrorLike | null;
     };
 
@@ -201,7 +172,7 @@ export const getCityChatMessages = async (cityChatId: number): Promise<CityChatM
     throw result.error;
   }
 
-  const messages = result.data ?? [];
+  const messages = (result.data ?? []).map(mapRowToCityChatMessage);
   const profilesBySenderId = await getCityChatSenderProfiles(messages.map((message) => message.senderId));
 
   return messages.map((message) => ({
@@ -212,9 +183,9 @@ export const getCityChatMessages = async (cityChatId: number): Promise<CityChatM
 
 export const getCityChatParticipantCount = async (cityChatId: number): Promise<number> => {
   const result = await supabase
-    .from("CityChatMessages" as any)
-    .select("senderId", { count: "exact", head: true })
-    .eq("CityChatId", cityChatId);
+    .from("Messages")
+    .select("sender_id", { count: "exact", head: true })
+    .eq("city_chat_id", cityChatId);
 
   if (result.error) {
     console.error("Error fetching city chat participant count:", result.error);
@@ -224,15 +195,15 @@ export const getCityChatParticipantCount = async (cityChatId: number): Promise<n
   // To get UNIQUE participants, the above count: "exact" on a select head: true might just count messages.
   // Better way:
   const uniqueResult = await supabase
-    .from("CityChatMessages" as any)
-    .select("senderId")
-    .eq("CityChatId", cityChatId);
+    .from("Messages")
+    .select("sender_id")
+    .eq("city_chat_id", cityChatId);
 
   if (uniqueResult.error || !uniqueResult.data) {
     return 0;
   }
 
-  const distinctSenders = new Set(uniqueResult.data.map((m: any) => m.senderId));
+  const distinctSenders = new Set(uniqueResult.data.map((m: any) => m.sender_id));
   return distinctSenders.size;
 };
 
@@ -244,15 +215,16 @@ export const sendCityChatMessage = async (
   const normalizedContent = content.trim();
 
   const insertResult = (await supabase
-    .from("CityChatMessages" as any)
+    .from("Messages")
     .insert({
-      CityChatId: cityChatId,
-      senderId,
+      conversation_id: null,
+      city_chat_id: cityChatId,
+      sender_id: senderId,
       content: normalizedContent,
     })
     .select()
     .single()) as {
-      data: CityChatMessage | null;
+      data: UnifiedMessageRow | null;
       error: SupabaseErrorLike | null;
     };
 
@@ -278,7 +250,7 @@ export const sendCityChatMessage = async (
   const senderProfile = await getCityChatSenderProfile(senderId);
 
   return {
-    ...insertResult.data,
+    ...mapRowToCityChatMessage(insertResult.data),
     sender: senderProfile,
   };
 };

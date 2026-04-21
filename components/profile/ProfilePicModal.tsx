@@ -1,6 +1,6 @@
 import ProfilePic from "@components/profile/ProfilePic";
 import { Ionicons } from "@expo/vector-icons";
-import { User } from "@services/auth/auth.types";
+import { User } from "@services/auth/types";
 import { Modal, Pressable, Text, TouchableOpacity } from "react-native";
 
 type ProfilePicModalProps = {

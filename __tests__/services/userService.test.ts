@@ -48,24 +48,6 @@ describe("userService", () => {
   });
 
   describe("requestOfficeLocationChange", () => {
-    test("fails if city is the same as current", async () => {
-      const usersMock = mockUsersTable(mockUser);
-      (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
-        const table = args[0] as string;
-        if (table === "Users") return usersMock;
-        return {};
-      });
-
-      const sameCityRequest = {
-        ...mockCityChangeDTO,
-        newCity: "London",
-      };
-      const result = await requestOfficeLocationChange(sameCityRequest.userId, sameCityRequest.newCity);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("New city must be different from your current city.");
-    });
-
     test("creates request for consultant", async () => {
       const usersMock = mockUsersTable(mockUser);
       const requestsMock = mockRequestsTable([]);

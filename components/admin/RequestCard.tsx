@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { RequestRecord } from "@services/requests/requestTypes";
+import { RequestRecord } from "@services/requests/types";
 import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";
 
 type RequestCardProps = {

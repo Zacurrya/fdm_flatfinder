@@ -1,12 +1,14 @@
 import { supabase } from "@lib/supabase";
 import { getUserEmailMapByIds } from "@services/user/userService";
-import { ActionType, AuditLog, AuditResponse } from "./auditTypes";
+import { ActionType, AuditLog, AuditResponse } from "./types";
 
 const TABLE = "AuditLogs";
+
 
 /**
  * Logs an audit entry.
  */
+
 export const logAudit = async (
 	action: ActionType,
 	targetId: string

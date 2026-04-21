@@ -1,36 +1,24 @@
 import {
-    createListing as createListingService,
-    deleteListing as deleteListingService,
-    fetchListingById as fetchListingByIdService,
-    fetchListings as fetchListingsService,
-    InsertListing,
-    Listing,
-    uploadListingPhoto as uploadListingPhotoService,
+  CreateListingDTO,
+  InsertListing,
+  Listing,
+  ListingIdDTO,
+  UploadListingPhotoDTO,
+} from "./types";
+import {
+  createListing as createListingService,
+  deleteListing as deleteListingService,
+  fetchListingById as fetchListingByIdService,
+  fetchListings as fetchListingsService,
+  uploadListingPhoto as uploadListingPhotoService,
 } from "./listingsService";
 
-export type { InsertListing, Listing };
-
-export type CreateListingDTO = {
-  listing: InsertListing;
-  city: string;
-  address: string;
-};
-
-export type ListingIdDTO = {
-  id: number | string;
-};
-
-export type UploadListingPhotoDTO = {
-  uri: string;
-};
-
 function ensureValidListingId(id: number | string): number {
-  const listingId = Number(id);
-  if (!Number.isFinite(listingId) || listingId <= 0) {
-    throw new Error("Listing ID must be a positive number.");
+  const num = Number(id);
+  if (!Number.isFinite(num) || num <= 0) {
+    throw new Error("Invalid listing ID.");
   }
-
-  return listingId;
+  return num;
 }
 
 function ensureNonEmpty(value: string, fieldName: string): string {

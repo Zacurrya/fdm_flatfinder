@@ -3,7 +3,7 @@ import {
     SettingsResponse,
     SupportedCurrency,
     UserCurrencyResponse,
-} from "@services/settings/settings.types";
+} from "./types";
 
 export const getUserCurrency = async (userId: string): Promise<SettingsResponse<UserCurrencyResponse>> => {
   const { data, error } = await supabase

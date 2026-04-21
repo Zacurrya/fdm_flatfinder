@@ -1,13 +1,11 @@
+import {
+  InsertListing,
+  Listing,
+} from "./types";
 import { supabase } from "@lib/supabase";
-import { Database } from "@/types/database.types";
 import { File as ExpoFile } from 'expo-file-system';
-import * as RequestController from "../requests/requestController";
-
-export type ListingLocationRow = Database["public"]["Tables"]["ListingLocations"]["Row"];
-export type Listing = Database["public"]["Tables"]["Listings"]["Row"] & {
-  ListingLocations?: ListingLocationRow | null;
-};
-export type InsertListing = Database["public"]["Tables"]["Listings"]["Insert"];
+import * as RequestService from "@services/requests/requestService";
+import { Database } from "@/types/database.types";
 
 // fetch listings
 
@@ -104,7 +102,7 @@ export const createListing = async (listing: InsertListing, city: string, addres
     throw locError;
   }
 
-  const requestResult = await RequestController.createRequest({
+  const requestResult = await RequestService.createRequest({
     userId: data.userId,
     requestType: "LISTING_UPLOAD",
     listingId: data.id,

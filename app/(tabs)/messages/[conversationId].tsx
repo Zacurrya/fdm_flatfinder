@@ -1,7 +1,13 @@
+import {
+  fetchAndMapConversationMessages,
+  mapConversationMessage,
+  MappedChatMessage,
+} from "@/utils/mapMessages";
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import ContactActionButtons from "@components/Chat/ContactActionButtons";
 import MessageAvatar from "@components/Chat/MessageAvatar";
-import MessageBuilder from "@components/MessageTypes/MessageBuilder";
+import DateMessage from "@components/Chat/MessageTypes/DateMessage";
+import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@lib/supabase";
@@ -11,17 +17,14 @@ import {
   OtherUserProfile,
   sendMessage,
 } from "@services/chat/chatController";
+import { uploadListingPhoto } from "@services/listings/listingController";
 import { formatCurrencyWithSymbol } from "@utils/currency";
-import { formatTime, getInitials } from "@utils/formatters";
-import {
-  fetchAndMapConversationMessages,
-  mapConversationMessage,
-  MappedChatMessage,
-} from "@utils/mapMessages";
+import { formatTime } from "@utils/formatters";
 import { subscribeToConversationMessages } from "@utils/realtime";
+import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 
 function getFirstPhotoUrl(photos: string[] | null | undefined): string | null {
   if (!photos || photos.length === 0) return null;
@@ -37,7 +40,9 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<MappedChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState("");
+  const [attachment, setAttachment] = useState<{ uri: string; type: "image" } | null>(null);
   const [sending, setSending] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [otherUser, setOtherUser] = useState<OtherUserProfile | null>(null);
   const [listing, setListing] = useState<ListingSnippet | null>(null);
   const [listingPhotoUrl, setListingPhotoUrl] = useState<string | null>(null);
@@ -87,8 +92,8 @@ export default function ChatScreen() {
 
     const channel = subscribeToConversationMessages(conversationId, (raw) => {
       const newMessage = raw as Parameters<typeof mapConversationMessage>[0];
+      const mappedMessage = mapConversationMessage(newMessage);
       setMessages((prev) => {
-        const mappedMessage = mapConversationMessage(newMessage);
         if (prev.find((m) => m.id === mappedMessage.id)) return prev;
         return [...prev, mappedMessage];
       });
@@ -98,16 +103,29 @@ export default function ChatScreen() {
     return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
 
-  // Send 
+  // Send
   const handleSend = async () => {
     const content = inputText.trim();
-    if (!content || !user?.userId || !conversationId || sending) return;
+    if ((!content && !attachment) || !user?.userId || !conversationId || sending) return;
 
     setInputText("");
+    setAttachment(null);
     setSending(true);
 
     try {
-      const savedResult = await sendMessage({ conversationId, senderId: user.userId, content });
+      let finalContent = content;
+
+      if (attachment) {
+        setUploadingImage(true);
+        try {
+          const uploadedUrl = await uploadListingPhoto({ uri: attachment.uri });
+          finalContent = content ? `${uploadedUrl} ${content}` : uploadedUrl;
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+
+      const savedResult = await sendMessage({ conversationId, senderId: user.userId, content: finalContent });
 
       if (!savedResult.success || !savedResult.data) {
         throw new Error(savedResult.error ?? "Failed to send message.");
@@ -120,8 +138,30 @@ export default function ChatScreen() {
     }
   };
 
-  // Helpers 
-  const getRentLabel = (period: string | null | undefined): string => {
+  const handleUploadImage = async () => {
+    if (!user?.userId || !conversationId || uploadingImage) return;
+
+    try {
+      const pickerResult = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsMultipleSelection: false,
+        quality: 0.8,
+      });
+
+      if (pickerResult.canceled || pickerResult.assets.length === 0) return;
+
+      const imageUri = pickerResult.assets[0].uri;
+      setAttachment({ uri: imageUri, type: "image" });
+    } catch (error) {
+      console.error("Failed to select image:", error);
+      Alert.alert("Selection Failed", "We couldn't select your image.");
+    }
+  };
+
+
+  // Helpers
+
+  const getRentLabel = (period: string | null | undefined) => {
     if (period === "WEEKLY") return "pw";
     if (period === "BIWEEKLY") return "biwk";
     return "pcm";
@@ -131,7 +171,12 @@ export default function ChatScreen() {
     ? [otherUser.firstName, otherUser.lastName].filter(Boolean).join(" ") || "User"
     : "Chat";
 
-  const initials = getInitials(otherUserName);
+  const initials = otherUserName
+    .split(" ")
+    .map((name) => name[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   // Render helpers
   const renderMessage = ({ item, index }: { item: MappedChatMessage; index: number }) => {
@@ -143,20 +188,10 @@ export default function ChatScreen() {
 
     return (
       <>
-        {showDateSeparator && (
-          <View className="items-center my-3">
-            <Text className="text-fdm-fg/30 text-xs bg-fdm-fg/5 px-3 py-1 rounded-full">
-              {new Date(item.createdAt).toLocaleDateString([], {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-              })}
-            </Text>
-          </View>
-        )}
+        {showDateSeparator && <DateMessage date={item.createdAt} />}
 
         <View
-          className={`flex-row px-4 items-start ${isMe ? "justify-end" : "justify-start"}`}
+          className={`flex-row mb-1 px-4 items-end ${isMe ? "justify-end" : "justify-start"}`}
         >
           {!isMe ? (
             <MessageAvatar profilePicture={otherUser?.profilePicture} initials={initials} />
@@ -166,13 +201,15 @@ export default function ChatScreen() {
             content={item.content}
             timeLabel={formatTime(item.createdAt)}
             isMe={isMe}
+            senderName={otherUserName}
+            showSenderName={false}
           />
         </View>
       </>
     );
   };
 
-  // Slot: header avatar + title
+  // Header avatar + title
   const headerContent = (
     <>
       <View className="w-10 h-10 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center mr-3 overflow-hidden">
@@ -203,7 +240,7 @@ export default function ChatScreen() {
     </>
   );
 
-  // ── Slot: listing card ────────────────────────────────────────────────────
+  // Listing card
   const subHeader = listing ? (
     <TouchableOpacity
       onPress={() => router.push(`/listing/${listing.id}` as any)}
@@ -259,10 +296,15 @@ export default function ChatScreen() {
       inputProps={{
         value: inputText,
         onChangeText: setInputText,
-        placeholder: "Message...",
+        placeholder: attachment ? "Add a caption..." : "Message...",
+        editable: !uploadingImage,
         onSend: handleSend,
-        sendDisabled: !inputText.trim() || sending,
-        showActions: false,
+        sendDisabled: (!inputText.trim() && !attachment) || sending || uploadingImage,
+        showActions: true,
+        onPressImage: handleUploadImage,
+        actionsDisabled: uploadingImage || sending,
+        attachment: attachment,
+        onClearAttachment: () => setAttachment(null),
       }}
     />
   );

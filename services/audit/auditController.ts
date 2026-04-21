@@ -1,26 +1,34 @@
+import { Constants } from "@/types/database.types";
 import * as AuditService from "./auditService";
-import {
-    ActionType,
-    AuditLog,
-    AuditResponse,
-} from "./auditTypes";
+import { ActionType, AuditLog, AuditResponse } from "./types";
 
-// Logs an audit entry for a specific action and target.
+const ACTION_TYPES = Constants.public.Enums.ActionType;
+
+function requireNonEmpty(value: string | undefined | null, fieldName: string): string | null {
+    const normalized = value?.trim() ?? "";
+    if (!normalized) {
+        return `${fieldName} is required.`;
+    }
+
+    return null;
+}
+
 export const logAudit = async (
-	actionType: ActionType,
-	targetId: string
+    action: ActionType,
+    targetId: string
 ): Promise<AuditResponse<AuditLog>> => {
-	if (!targetId) {
-		return { success: false, error: "Target ID is required." };
-	}
-	if (!actionType) {
-		return { success: false, error: "Action type is required." };
-	}
+    if (!ACTION_TYPES.includes(action)) {
+        return { success: false, error: "Action type is invalid." };
+    }
 
-	return AuditService.logAudit(actionType, targetId);
+    const targetIdError = requireNonEmpty(targetId, "Target ID");
+    if (targetIdError) {
+        return { success: false, error: targetIdError };
+    }
+
+    return AuditService.logAudit(action, targetId.trim());
 };
 
-// Gets all audit history.
 export const getHistory = async (): Promise<AuditResponse<AuditLog[]>> => {
-	return AuditService.getHistory();
+    return AuditService.getHistory();
 };

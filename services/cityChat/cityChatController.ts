@@ -1,9 +1,15 @@
-import { RealtimeChannel } from "@supabase/supabase-js";
 import {
   CityChat,
   CityChatMessage,
   CityChatMessageWithSender,
+  CityChatResponse,
   CityChatSenderProfile,
+  GetCityChatByCityDTO,
+  GetCityChatMessagesDTO,
+  GetCityChatSenderProfileDTO,
+  SendCityChatMessageDTO,
+} from "./types";
+import {
   fetchCityChats as fetchCityChatsService,
   getCityChatMessages as getCityChatMessagesService,
   getCityChatParticipantCount as getCityChatParticipantCountService,
@@ -15,32 +21,6 @@ import {
   validateGetCityChatSenderProfileRequest,
   validateSendCityChatMessageRequest,
 } from "./cityChatService";
-
-export type { CityChat, CityChatMessage, CityChatMessageWithSender, CityChatSenderProfile };
-
-export type CityChatResponse<T = void> = {
-  success: boolean;
-  data?: T;
-  error?: string;
-};
-
-export type GetCityChatByCityDTO = {
-  city: string;
-};
-
-export type GetCityChatMessagesDTO = {
-  cityChatId: number;
-};
-
-export type SendCityChatMessageDTO = {
-  cityChatId: number;
-  senderId: string;
-  content: string;
-};
-
-export type GetCityChatSenderProfileDTO = {
-  senderId: string;
-};
 
 export const getOrCreateCityChatByCity = async (
   request: GetCityChatByCityDTO

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { SupportedCurrency, supportedCurrencies } from "@services/settings/settings.types";
+import { SupportedCurrency, supportedCurrencies } from "@services/settings/types";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 

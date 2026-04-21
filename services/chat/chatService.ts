@@ -1,65 +1,22 @@
 import { supabase } from "@lib/supabase";
-import { Database } from "@/types/database.types";
 import { isNonEmptyString, isPositiveInteger } from "@utils/validation";
-
-export type Conversation = Database["public"]["Tables"]["Conversations"]["Row"];
-export type Message = Database["public"]["Tables"]["Messages"]["Row"];
-
-export type OtherUserProfile = {
-  userId: string;
-  firstName: string | null;
-  lastName: string | null;
-  profilePicture: string | null;
-  phoneNumber: string | null;
-  email: string | null;
-};
-
-export type ListingSnippet = {
-  id: number;
-  title: string;
-  price: number;
-  rentPeriod: string;
-  location: string;
-  photos: string[] | null;
-};
-
-export type ConversationWithUser = Conversation & {
-  otherUser: OtherUserProfile;
-  listing: ListingSnippet | null;
-};
-
-export type ChatValidationResult =
-  | { valid: true }
-  | { valid: false; error: string };
-
-type GetOrCreateConversationRequest = {
-  currentUserId: string;
-  otherUserId: string;
-  listingId?: number;
-};
-
-type GetConversationsRequest = {
-  userId: string;
-};
-
-type GetConversationDetailsRequest = {
-  conversationId: string;
-  currentUserId: string;
-};
-
-type GetMessagesRequest = {
-  conversationId: string;
-};
-
-type SendMessageRequest = {
-  conversationId: string;
-  senderId: string;
-  content: string;
-};
+import {
+  ChatValidationResult,
+  Conversation,
+  ConversationWithUser,
+  GetConversationDetailsDTO,
+  GetConversationsDTO,
+  GetMessagesDTO,
+  GetOrCreateConversationDTO,
+  ListingSnippet,
+  Message,
+  OtherUserProfile,
+  SendMessageDTO,
+} from "./types";
 
 
 export const validateGetOrCreateConversationRequest = (
-  request: GetOrCreateConversationRequest
+  request: GetOrCreateConversationDTO
 ): ChatValidationResult => {
   if (!isNonEmptyString(request.currentUserId)) {
     return { valid: false, error: "Current user ID is required." };
@@ -81,7 +38,7 @@ export const validateGetOrCreateConversationRequest = (
 };
 
 export const validateGetConversationsRequest = (
-  request: GetConversationsRequest
+  request: GetConversationsDTO
 ): ChatValidationResult => {
   if (!isNonEmptyString(request.userId)) {
     return { valid: false, error: "User ID is required." };
@@ -91,7 +48,7 @@ export const validateGetConversationsRequest = (
 };
 
 export const validateGetConversationDetailsRequest = (
-  request: GetConversationDetailsRequest
+  request: GetConversationDetailsDTO
 ): ChatValidationResult => {
   if (!isNonEmptyString(request.conversationId)) {
     return { valid: false, error: "Conversation ID is required." };
@@ -105,7 +62,7 @@ export const validateGetConversationDetailsRequest = (
 };
 
 export const validateGetMessagesRequest = (
-  request: GetMessagesRequest
+  request: GetMessagesDTO
 ): ChatValidationResult => {
   if (!isNonEmptyString(request.conversationId)) {
     return { valid: false, error: "Conversation ID is required." };
@@ -115,7 +72,7 @@ export const validateGetMessagesRequest = (
 };
 
 export const validateSendMessageRequest = (
-  request: SendMessageRequest
+  request: SendMessageDTO
 ): ChatValidationResult => {
   if (!isNonEmptyString(request.conversationId)) {
     return { valid: false, error: "Conversation ID is required." };

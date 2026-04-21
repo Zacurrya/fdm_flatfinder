@@ -6,7 +6,7 @@ import {
     RequestStatus,
     RequestType,
     ReviewRequestDTO,
-} from "./requestTypes";
+} from "./types";
 
 const REQUESTS_TABLE = "Requests";
 

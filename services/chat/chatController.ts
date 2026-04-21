@@ -1,9 +1,17 @@
 import {
+  ChatResponse,
   Conversation,
   ConversationWithUser,
+  GetConversationDetailsDTO,
+  GetConversationsDTO,
+  GetMessagesDTO,
+  GetOrCreateConversationDTO,
+  ListingSnippet,
   Message,
   OtherUserProfile,
-  ListingSnippet,
+  SendMessageDTO,
+} from "./types";
+import {
   getConversationDetails as getConversationDetailsService,
   getConversations as getConversationsService,
   getMessages as getMessagesService,
@@ -15,45 +23,6 @@ import {
   validateGetOrCreateConversationRequest,
   validateSendMessageRequest,
 } from "./chatService";
-import { RealtimeChannel } from "@supabase/supabase-js";
-
-export type { Conversation, ConversationWithUser, Message, OtherUserProfile, ListingSnippet };
-
-export type ChatResponse<T = void> = {
-  success: boolean;
-  data?: T;
-  error?: string;
-};
-
-export type GetOrCreateConversationDTO = {
-  currentUserId: string;
-  otherUserId: string;
-  listingId?: number;
-};
-
-export type GetConversationsDTO = {
-  userId: string;
-};
-
-export type GetConversationDetailsDTO = {
-  conversationId: string;
-  currentUserId: string;
-};
-
-export type GetMessagesDTO = {
-  conversationId: string;
-};
-
-export type SendMessageDTO = {
-  conversationId: string;
-  senderId: string;
-  content: string;
-};
-
-export type SubscribeToMessagesDTO = {
-  conversationId: string;
-  onNewMessage: (message: Message) => void;
-};
 
 export const getOrCreateConversation = async (
   request: GetOrCreateConversationDTO

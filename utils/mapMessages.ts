@@ -2,6 +2,13 @@ import { ChatResponse, getMessages, GetMessagesDTO, Message } from "@services/ch
 import { CityChatResponse, getCityChatMessages, GetCityChatMessagesDTO } from "@services/cityChat/cityChatController";
 import { CityChatMessage, CityChatMessageWithSender } from "@services/cityChat/cityChatService";
 
+type CityChatRealtimeMessageRow = {
+  id: string | number;
+  content: string;
+  created_at: string;
+  sender_id: string;
+};
+
 export type MappedChatMessage = {
   id: string;
   content: string;
@@ -19,12 +26,12 @@ export const mapConversationMessage = (message: Message): MappedChatMessage => (
 });
 
 export const mapCityChatMessage = (
-  message: CityChatMessageWithSender | CityChatMessage
+  message: CityChatMessageWithSender | CityChatMessage | CityChatRealtimeMessageRow
 ): MappedChatMessage => ({
   id: String(message.id),
   content: message.content,
   createdAt: message.created_at,
-  senderId: message.senderId,
+  senderId: "senderId" in message ? message.senderId : message.sender_id,
   senderName:
     "sender" in message && message.sender
       ? [message.sender.firstName, message.sender.lastName].filter(Boolean).join(" ") || "Consultant"

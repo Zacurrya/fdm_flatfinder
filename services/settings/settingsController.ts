@@ -2,7 +2,7 @@ import {
     SettingsResponse,
     SupportedCurrency,
     UserCurrencyResponse,
-} from "@services/settings/settings.types";
+} from "./types";
 import * as SettingsService from "./settingsService";
 
 export const getUserCurrency = async (

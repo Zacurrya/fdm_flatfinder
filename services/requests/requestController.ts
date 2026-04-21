@@ -4,83 +4,133 @@ import {
     RequestRecord,
     RequestResponse,
     RequestStatus,
+    RequestType,
     ReviewRequestDTO,
-} from "./requestTypes";
+} from "./types";
 
-// Create a new request (sign-up or city change).
+const REQUEST_TYPES: RequestType[] = ["SIGN_UP", "CITY_CHANGE", "LISTING_UPLOAD"];
+const REQUEST_STATUSES: RequestStatus[] = ["PENDING", "APPROVED", "REJECTED"];
+const REVIEW_DECISIONS: ReviewRequestDTO["decision"][] = ["APPROVED", "REJECTED"];
+
+function requireNonEmpty(value: string | undefined | null, fieldName: string): string | null {
+    const normalized = value?.trim() ?? "";
+    if (!normalized) {
+        return `${fieldName} is required.`;
+    }
+
+    return null;
+}
+
+function ensurePositiveNumber(value: unknown, fieldName: string): string | null {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        return `${fieldName} must be a positive number.`;
+    }
+
+    return null;
+}
+
 export const createRequest = async (
     dto: CreateRequestDTO
 ): Promise<RequestResponse<RequestRecord>> => {
-    if (!dto.userId) {
-        return { success: false, error: "User ID is required." };
+    if (!dto) {
+        return { success: false, error: "Request payload is required." };
     }
 
-    if (!dto.requestType) {
-        return { success: false, error: "Request type is required." };
+    const userIdError = requireNonEmpty(dto.userId, "User ID");
+    if (userIdError) {
+        return { success: false, error: userIdError };
     }
 
-    if (dto.requestType === "CITY_CHANGE") {
-        if (!dto.newCity?.trim()) {
-            return { success: false, error: "New city is required for a city change request." };
-        }
+    if (!REQUEST_TYPES.includes(dto.requestType)) {
+        return { success: false, error: "Request type is invalid." };
     }
 
     if (dto.requestType === "LISTING_UPLOAD") {
-        if (!dto.listingId || Number(dto.listingId) <= 0) {
-            return { success: false, error: "Listing ID is required for a listing upload request." };
+        const listingIdError = ensurePositiveNumber(dto.listingId, "Listing ID");
+        if (listingIdError) {
+            return { success: false, error: listingIdError };
         }
     }
 
-    // Check for existing pending request.
-    const pendingCheck = await RequestService.hasPendingRequest(
-        dto.userId,
-        dto.requestType,
-        dto.requestType === "LISTING_UPLOAD" ? Number(dto.listingId) : undefined
-    );
-    if (pendingCheck.success && pendingCheck.data) {
-        return {
-            success: false,
-            error:
-                dto.requestType === "CITY_CHANGE"
-                    ? "You already have a pending city change request."
-                    : dto.requestType === "LISTING_UPLOAD"
-                        ? "This listing already has a pending upload request."
-                        : "You already have a pending sign-up request.",
-        };
+    if (dto.requestType === "CITY_CHANGE") {
+        const newCityError = requireNonEmpty(dto.newCity, "New city");
+        if (newCityError) {
+            return { success: false, error: newCityError };
+        }
     }
 
-    return RequestService.createRequest(dto);
+    return RequestService.createRequest({
+        ...dto,
+        userId: dto.userId.trim(),
+        oldCity: dto.oldCity?.trim() ?? dto.oldCity,
+        newCity: dto.newCity?.trim() ?? dto.newCity,
+    });
 };
 
-// Fetch all requests for admin view.
 export const getAllRequests = async (
     statusFilter?: RequestStatus
 ): Promise<RequestResponse<RequestRecord[]>> => {
+    if (statusFilter && !REQUEST_STATUSES.includes(statusFilter)) {
+        return { success: false, error: "Status filter is invalid." };
+    }
+
     return RequestService.getAllRequests(statusFilter);
 };
 
-// Fetch requests for a specific user.
 export const getUserRequests = async (
     userId: string
 ): Promise<RequestResponse<RequestRecord[]>> => {
-    if (!userId) {
-        return { success: false, error: "User ID is required." };
+    const userIdError = requireNonEmpty(userId, "User ID");
+    if (userIdError) {
+        return { success: false, error: userIdError };
     }
 
-    return RequestService.getUserRequests(userId);
+    return RequestService.getUserRequests(userId.trim());
 };
 
-// Review (approve/reject) a request.
 export const reviewRequest = async (
     dto: ReviewRequestDTO
 ): Promise<RequestResponse<RequestRecord>> => {
-    if (!dto.requestId) {
-        return { success: false, error: "Request ID is required." };
+    if (!dto) {
+        return { success: false, error: "Review payload is required." };
     }
 
-    if (!dto.decision || !["APPROVED", "REJECTED"].includes(dto.decision)) {
-        return { success: false, error: "Decision must be APPROVED or REJECTED." };
+    const requestIdError = ensurePositiveNumber(dto.requestId, "Request ID");
+    if (requestIdError) {
+        return { success: false, error: requestIdError };
     }
 
-    return RequestService.reviewRequest(dto);
+    if (!REVIEW_DECISIONS.includes(dto.decision)) {
+        return { success: false, error: "Decision is invalid." };
+    }
+
+    return RequestService.reviewRequest({
+        requestId: Number(dto.requestId),
+        decision: dto.decision,
+    });
+};
+
+export const hasPendingRequest = async (
+    userId: string,
+    requestType: RequestType,
+    listingId?: number
+): Promise<RequestResponse<boolean>> => {
+    const userIdError = requireNonEmpty(userId, "User ID");
+    if (userIdError) {
+        return { success: false, error: userIdError };
+    }
+
+    if (!REQUEST_TYPES.includes(requestType)) {
+        return { success: false, error: "Request type is invalid." };
+    }
+
+    if (requestType === "LISTING_UPLOAD") {
+        const listingIdError = ensurePositiveNumber(listingId, "Listing ID");
+        if (listingIdError) {
+            return { success: false, error: listingIdError };
+        }
+    }
+
+    return RequestService.hasPendingRequest(userId.trim(), requestType, listingId);
 };

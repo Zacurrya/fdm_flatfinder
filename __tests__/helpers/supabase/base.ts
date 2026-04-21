@@ -1,8 +1,8 @@
 import { jest } from "@jest/globals";
 import { supabase } from "@lib/supabase";
 
-// This file contains the base mocking engine for Supabase
-// Provides fundamental logic for creating chainable, thenable mocks that mimic Supabase
+// Core Mocking Engine
+// These functions provide the fundamental logic for creating chainable, thenable mocks that mimic Supabase
 
 export type AsyncMockFn<T> = (...args: unknown[]) => Promise<T>;
 

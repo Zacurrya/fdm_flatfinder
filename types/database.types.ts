@@ -107,26 +107,39 @@ export type Database = {
       Messages: {
         Row: {
           id: string
-          conversation_id: string
+          city_chat_id: number | null
+          conversation_id: string | null
           sender_id: string
           content: string
           created_at: string
+          read_at: string | null
         }
         Insert: {
           id?: string
-          conversation_id: string
+          city_chat_id?: number | null
+          conversation_id?: string | null
           sender_id: string
           content: string
           created_at?: string
+          read_at?: string | null
         }
         Update: {
           id?: string
-          conversation_id?: string
+          city_chat_id?: number | null
+          conversation_id?: string | null
           sender_id?: string
           content?: string
           created_at?: string
+          read_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "Messages_city_chat_id_fkey"
+            columns: ["city_chat_id"]
+            isOneToOne: false
+            referencedRelation: "CityChats"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "Messages_conversation_id_fkey"
             columns: ["conversation_id"]

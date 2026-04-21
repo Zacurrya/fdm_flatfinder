@@ -1,6 +1,6 @@
 import ProfileAvatar from "@components/profile/ProfilePic";
 import { Ionicons } from "@expo/vector-icons";
-import { User } from "@services/auth/auth.types";
+import { User } from "@services/auth/types";
 import { Text, View } from "react-native";
 
 interface ProfileCardProps {

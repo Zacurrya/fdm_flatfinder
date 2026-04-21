@@ -1,13 +1,14 @@
-import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useSegments } from "expo-router";
 import { TouchableOpacity } from "react-native";
 
 
-const AUTH_HIERARCHY: Record<string, string> = {
+const HIERARCHY: Record<string, string> = {
     "login": "/",                  // login → landing
     "register": "/",      // register → login
     "office-location": "/(auth)/register",   // office-location → register
+    "[chatId]": "/(tabs)/messages",   // chat → messages
+    "[cityChatId]": "/(tabs)/messages",   // chat → messages
 };
 
 type BackButtonProps = {
@@ -18,20 +19,13 @@ type BackButtonProps = {
 export default function BackButton({ fallback }: BackButtonProps) {
     const router = useRouter();
     const segments = useSegments();
-    const { session } = useAuth();
 
     const handlePress = () => {
-        // If logged in, always go home
-        if (session) {
-            router.replace("/(tabs)/home" as any);
-            return;
-        }
-
         // Get the current screen name (last segment)
         const currentScreen = segments[segments.length - 1] ?? "";
 
         // Check hierarchy for a defined parent
-        const parent = AUTH_HIERARCHY[currentScreen] ?? fallback;
+        const parent = HIERARCHY[currentScreen] ?? fallback;
 
         if (parent) {
             router.replace(parent as any);

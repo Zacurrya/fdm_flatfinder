@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { User } from "@services/auth/auth.types";
+import { User } from "@services/auth/types";
 import { ActivityIndicator, FlatList, Text, View } from "react-native";
 import ApprovalRequestCard from "./ApprovalRequestCard";
 

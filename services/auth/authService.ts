@@ -6,7 +6,7 @@ import {
     PasswordResetDTO,
     RegistrationDTO,
     User,
-} from "@services/auth/auth.types";
+} from "./types";
 import { Session } from "@supabase/supabase-js";
 
 const AUDIT_TABLE = "AuditLogs";
