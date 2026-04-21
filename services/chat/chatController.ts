@@ -1,28 +1,28 @@
 export * from "./types";
 import { Listing } from "@services/listings/listingController";
 import {
-  getConversationDetails as getConversationDetailsService,
-  getConversations as getConversationsService,
-  getMessages as getMessagesService,
-  getOrCreateConversation as getOrCreateConversationService,
-  sendMessage as sendMessageService,
-  validateGetConversationDetailsRequest,
-  validateGetConversationsRequest,
-  validateGetMessagesRequest,
-  validateGetOrCreateConversationRequest,
-  validateSendMessageRequest,
+    getConversationDetails as getConversationDetailsService,
+    getConversations as getConversationsService,
+    getMessages as getMessagesService,
+    getOrCreateConversation as getOrCreateConversationService,
+    sendMessage as sendMessageService,
+    validateGetConversationDetailsRequest,
+    validateGetConversationsRequest,
+    validateGetMessagesRequest,
+    validateGetOrCreateConversationRequest,
+    validateSendMessageRequest,
 } from "./chatService";
 import type {
-  ChatResponse,
-  Conversation,
-  ConversationWithUser,
-  GetConversationDetailsDTO,
-  GetConversationsDTO,
-  GetMessagesDTO,
-  GetOrCreateConversationDTO,
-  Message,
-  OtherUserProfile,
-  SendMessageDTO,
+    ChatResponse,
+    Conversation,
+    ConversationWithUser,
+    GetConversationDetailsDTO,
+    GetConversationsDTO,
+    GetMessagesDTO,
+    GetOrCreateConversationDTO,
+    Message,
+    OtherUserProfile,
+    SendMessageDTO,
 } from "./types";
 
 export const getOrCreateConversation = async (
@@ -63,7 +63,7 @@ export const getConversations = async (
 
 export const getConversationDetails = async (
   request: GetConversationDetailsDTO
-): Promise<ChatResponse<{ otherUser: OtherUserProfile; listing: Listing | null }>> => {
+): Promise<ChatResponse<{ otherUser: OtherUserProfile; listing: Listing | null; listingId: number | null }>> => {
   const validation = validateGetConversationDetailsRequest(request);
   if (!validation.valid) {
     return { success: false, error: validation.error };

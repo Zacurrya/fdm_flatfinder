@@ -1,6 +1,6 @@
-import { User, ProfilePictureUploadDTO, AuthResponse } from "@services/auth/types";
+import { AuthResponse, ProfilePictureUploadDTO, User } from "@services/auth/types";
 
-export type { User, ProfilePictureUploadDTO, AuthResponse };
+export type { AuthResponse, ProfilePictureUploadDTO, User };
 
 export type UserEmailMapResult = {
     success: boolean;

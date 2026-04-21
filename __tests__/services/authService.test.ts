@@ -7,15 +7,15 @@ import { mockRegistrationDTO } from "@mocks/data/dtos/registrationDTO.json";
 import { mockUser } from "@mocks/data/entities/users.json";
 import { approveUser, login, logout, register, rejectUser, resetPassword } from "@services/auth/authService";
 import {
-  mockAuditLogsTable,
-  mockAuthSession,
-  mockAuthSignOut,
-  mockFailedLogin,
-  mockRequestsTable,
-  mockSuccessfulLogin,
-  mockSuccessfulSignUp,
-  mockUsersTable,
-  resetSupabaseMock
+    mockAuditLogsTable,
+    mockAuthSession,
+    mockAuthSignOut,
+    mockFailedLogin,
+    mockRequestsTable,
+    mockSuccessfulLogin,
+    mockSuccessfulSignUp,
+    mockUsersTable,
+    resetSupabaseMock
 } from "../helpers/supabase";
 
 jest.mock("@lib/supabase");

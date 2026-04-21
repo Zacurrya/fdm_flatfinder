@@ -17,6 +17,7 @@ export function useConversationDetails(
 ) {
   const [otherUser, setOtherUser] = useState<OtherUserProfile | null>(null);
   const [listingData, setListingData] = useState<Listing | null>(null);
+  const [listingId, setListingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export function useConversationDetails(
 
         setOtherUser(result.data.otherUser);
         setListingData(result.data.listing);
+        setListingId(result.data.listingId);
       } catch (error) {
         console.error("[useConversationDetails] Failed:", error);
       } finally {
@@ -46,5 +48,5 @@ export function useConversationDetails(
     void loadData();
   }, [conversationId, userId]);
 
-  return { otherUser, listingData, loading };
+  return { otherUser, listingData, listingId, loading };
 }

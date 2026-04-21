@@ -1,10 +1,10 @@
-import { useAudit } from "@hooks/useAudit";
 import { useAuth } from "@context/AuthContext";
-import { getMessages, getOrCreateConversation, sendMessage } from "@services/chat/chatController";
+import * as AuditController from "@services/audit/auditController";
+import { getOrCreateConversation } from "@services/chat/chatController";
 import { getOrCreateCityChatByCity, sendCityChatMessage } from "@services/cityChat/cityChatController";
 import { deleteListing as deleteListingService, fetchListingById, Listing } from "@services/listings/listingController";
 import { encodeListingShareMessage } from "@utils/chatListingShare";
-import { formatCurrencyWithSymbol, formatListingPrice, getRentLabel } from "@utils/currency";
+import { getRentLabel } from "@utils/currency";
 import { parsePhotoUrls } from "@utils/formatters";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -13,9 +13,9 @@ import { Alert } from "react-native";
 export function useListing(id?: string | number, initialData?: Listing | null) {
   const { user } = useAuth();
   const router = useRouter();
-  const { logAction } = useAudit();
   
   const [listing, setListing] = useState<Listing | null>(initialData || null);
+  const [listingSold, setListingSold] = useState(false);
   const [loading, setLoading] = useState(!initialData && !!id);
   const [signedPhotos, setSignedPhotos] = useState<string[]>([]);
 
@@ -23,6 +23,7 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
   useEffect(() => {
     if (initialData) {
       setListing(initialData);
+      setListingSold(false);
       setLoading(false);
     }
   }, [initialData]);
@@ -33,8 +34,10 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
     try {
       const data = await fetchListingById({ id: Number(id) });
       setListing(data);
-    } catch (err) {
-      console.error("Failed to fetch flat details:", err);
+      setListingSold(false);
+    } catch {
+      setListing(null);
+      setListingSold(true);
     } finally {
       setLoading(false);
     }
@@ -67,7 +70,7 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
     if (!listing?.id) return;
     try {
       await deleteListingService({ id: Number(listing.id) });
-      await logAction("LISTING_DELETED", listing.id.toString());
+      await AuditController.logAudit("LISTING_DELETED", listing.id.toString());
       router.back();
     } catch (e) {
       console.error("Failed to delete", e);
@@ -131,18 +134,7 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
         throw new Error(conversationResult.error ?? "Could not open conversation.");
       }
 
-      const conversation = conversationResult.data;
-      const existingMessagesResult = await getMessages({ conversationId: conversation.id });
-      
-      if (existingMessagesResult.success && existingMessagesResult.data?.length === 0) {
-        await sendMessage({
-          conversationId: conversation.id,
-          senderId: user.userId,
-          content: `Hi! I'm interested in your listing: "${listing.title}" - ${formatListingPrice(listing.price, (listing as any).rentPeriod)} in ${locationLabel}.`,
-        });
-      }
-
-      router.push(`/(tabs)/messages/${conversation.id}` as any);
+      router.push(`/(tabs)/messages/${conversationResult.data.id}` as any);
     } catch (error) {
       console.error("Failed to open conversation", error);
       Alert.alert("Error", "Could not open chat. Please try again.");
@@ -156,6 +148,7 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
 
   return {
     listing,
+    listingSold,
     loading,
     signedPhotos,
     rentLabel,

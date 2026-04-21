@@ -1,4 +1,5 @@
 import { supabase } from "@lib/supabase";
+import * as AuthController from "@services/auth/authController";
 import {
     AuthResponse,
     LoginDTO,
@@ -7,7 +8,6 @@ import {
     RegistrationDTO,
     User,
 } from "@services/auth/types";
-import * as AuthController from "@services/auth/authController";
 import * as UserController from "@services/user/userController";
 import { Session } from "@supabase/supabase-js";
 import React, { createContext, useContext, useEffect, useState } from "react";

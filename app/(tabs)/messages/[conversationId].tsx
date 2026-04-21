@@ -5,8 +5,8 @@ import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import FDMLoader from "@components/ui/FDMLoader";
 import { useAuth } from "@context/AuthContext";
 import { useChatInput } from "@hooks/useChatInput";
-import { useConversationDetails } from "@hooks/useConversationDetails";
 import { DecoratedChatMessage } from "@hooks/useChatMessages";
+import { useConversationDetails } from "@hooks/useConversationDetails";
 import { sendMessage } from "@services/chat/chatController";
 import { formatTime, getInitials } from "@utils/formatters";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -20,7 +20,7 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   // Conversation metadata
-  const { otherUser, listingData, loading } = useConversationDetails(conversationId, user?.userId);
+  const { otherUser, listingData, listingId, loading } = useConversationDetails(conversationId, user?.userId);
 
   // Chat send/upload logic
   const { inputProps } = useChatInput(async (content) => {
@@ -90,7 +90,7 @@ export default function ChatScreen() {
         chatId={conversationId}
         source="PRIVATE"
         headerContent={headerContent}
-        subHeader={<ChatListingSubHeader initialData={listingData} />}
+        subHeader={<ChatListingSubHeader listingId={listingId ?? undefined} initialData={listingData} />}
         flatListRef={flatListRef}
         renderMessage={renderMessage}
         listEmptyText="Send a message to get started"

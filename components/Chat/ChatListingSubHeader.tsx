@@ -15,9 +15,42 @@ export default function ChatListingSubHeader({
   initialData 
 }: ChatListingSubHeaderProps) {
   const router = useRouter();
-  const { listing, firstPhotoUrl, loading, locationLabel } = useListing(listingId, initialData);
+  const { listing, listingSold, firstPhotoUrl, loading, locationLabel } = useListing(listingId, initialData);
 
-  if (loading || !listing) return null;
+  if (loading) return null;
+
+  if (listingSold && !listing) {
+    return (
+      <View className="mx-4 mt-3 flex-row bg-fdm-fg/5 border border-fdm-fg/10 rounded-2xl overflow-hidden opacity-80">
+        <View className="w-[72px] h-[72px] bg-fdm-fg/10 items-center justify-center overflow-hidden">
+          <Ionicons name="home" size={26} color="#ffffff35" />
+        </View>
+
+        <View className="flex-1 px-3 py-2 justify-center">
+          <Text className="text-fdm-fg font-semibold text-sm" numberOfLines={1}>
+            Listing sold
+          </Text>
+          <View className="flex-row items-center mt-1">
+            <Ionicons name="close-circle-outline" size={11} color="#ffffff50" />
+            <Text className="text-fdm-fg/50 text-xs flex-1" numberOfLines={1}>
+              This flat is no longer available.
+            </Text>
+          </View>
+          <View className="flex-row items-center mt-1 gap-1">
+            <Ionicons name="alert-circle-outline" size={11} color="#ffffff40" />
+            <Text className="text-fdm-fg/60 text-xs">View listing</Text>
+          </View>
+        </View>
+
+        <View className="px-3 justify-center items-end border-l border-fdm-fg/10">
+          <Text className="text-fdm-fg/60 font-bold text-base">Sold</Text>
+          <Ionicons name="chevron-forward" size={14} color="#ffffff20" style={{ marginTop: 4 }} />
+        </View>
+      </View>
+    );
+  }
+
+  if (!listing) return null;
 
   return (
     <TouchableOpacity

@@ -1,8 +1,8 @@
 import { User } from "@services/auth/types";
 import {
-  getFallbackProfilePictureInitials,
-  getFallbackProfilePictureUrl,
-  getProfilePictureUrl,
+    getFallbackProfilePictureInitials,
+    getFallbackProfilePictureUrl,
+    getProfilePictureUrl,
 } from "@services/user/userController";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";

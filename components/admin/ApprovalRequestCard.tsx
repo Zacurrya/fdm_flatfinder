@@ -16,8 +16,11 @@ export default function ApprovalRequestCard({
   onReject,
 }: ApprovalRequestCardProps) {
   return (
+    // Card container
     <View className="bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl p-5 mb-4">
-      <View className="flex-row items-center justify-between mb-4">
+      {/* -- Header section -- */}
+      <View className="bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl p-5 flex-row items-center justify-between mb-4">
+        {/* User avatar and identity */}
         <View className="flex-row items-center gap-3 flex-1">
           <View className="w-12 h-12 rounded-full bg-fdm-accent/15 border border-fdm-accent/20 items-center justify-center">
             <Text className="text-fdm-accent font-bold text-lg">
@@ -33,27 +36,34 @@ export default function ApprovalRequestCard({
             </Text>
           </View>
         </View>
+        {/* Approval status badge */}
         <View className="bg-yellow-500/15 border border-yellow-500/25 px-3 py-1 rounded-xl">
           <Text className="text-yellow-400 text-xs font-semibold uppercase">Pending</Text>
         </View>
       </View>
 
+      {/* -- Contact details section -- */}
       <View className="gap-2.5 mb-5 pl-1">
+        {/* Email row */}
         <View className="flex-row items-center gap-2.5">
           <Ionicons name="mail-outline" size={15} color="#ffffff60" />
           <Text className="text-fdm-fg/70 text-sm">{user.email || "Not provided"}</Text>
         </View>
+        {/* Phone row */}
         <View className="flex-row items-center gap-2.5">
           <Ionicons name="call-outline" size={15} color="#ffffff60" />
           <Text className="text-fdm-fg/70 text-sm">{user.phoneNumber || "Not provided"}</Text>
         </View>
+        {/* Office location row */}
         <View className="flex-row items-center gap-2.5">
           <Ionicons name="location-outline" size={15} color="#ffffff60" />
           <Text className="text-fdm-fg/70 text-sm">{user.officeLocation || "Not set"}</Text>
         </View>
       </View>
 
+      {/* -- Action buttons section -- */}
       <View className="flex-row gap-3">
+        {/* Approve button */}
         <TouchableOpacity
           className="flex-1 bg-fdm-accent py-3 rounded-2xl items-center active:opacity-80"
           onPress={() => onApprove(user)}
@@ -68,6 +78,7 @@ export default function ApprovalRequestCard({
             </View>
           )}
         </TouchableOpacity>
+        {/* Reject button */}
         <TouchableOpacity
           className="flex-1 bg-red-500/15 border border-red-500/25 py-3 rounded-2xl items-center active:opacity-80"
           onPress={() => onReject(user)}

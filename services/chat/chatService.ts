@@ -2,16 +2,16 @@ import { supabase } from "@lib/supabase";
 import { Listing } from "@services/listings/listingController";
 import { isNonEmptyString, isPositiveInteger } from "@utils/validation";
 import {
-  ChatValidationResult,
-  Conversation,
-  ConversationWithUser,
-  GetConversationDetailsDTO,
-  GetConversationsDTO,
-  GetMessagesDTO,
-  GetOrCreateConversationDTO,
-  Message,
-  OtherUserProfile,
-  SendMessageDTO,
+    ChatValidationResult,
+    Conversation,
+    ConversationWithUser,
+    GetConversationDetailsDTO,
+    GetConversationsDTO,
+    GetMessagesDTO,
+    GetOrCreateConversationDTO,
+    Message,
+    OtherUserProfile,
+    SendMessageDTO,
 } from "./types";
 
 
@@ -201,7 +201,7 @@ export const getConversations = async (userId: string): Promise<ConversationWith
 export const getConversationDetails = async (
   conversationId: string,
   currentUserId: string
-): Promise<{ otherUser: OtherUserProfile; listing: Listing | null }> => {
+): Promise<{ otherUser: OtherUserProfile; listing: Listing | null; listingId: number | null }> => {
   const { data: conv, error } = await supabase
     .from("Conversations")
     .select("user1_id, user2_id, listing_id")
@@ -240,6 +240,7 @@ export const getConversationDetails = async (
       email: null,
     },
     listing: (listingResult as any).data as Listing | null,
+    listingId: conv.listing_id ?? null,
   };
 };
 

@@ -17,6 +17,8 @@ export function useRealtime<T>(
 ) {
   // Use a ref for the callback to prevent unnecessary subscription cycles if the handler is not memoized
   const onInsertRef = useRef(onInsert);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const instanceIdRef = useRef(Math.random().toString(36).slice(2));
   onInsertRef.current = onInsert;
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export function useRealtime<T>(
     if (filter && (!filter.value || filter.value === "undefined")) return;
 
     const filterString = filter ? `${filter.column}=eq.${filter.value}` : "";
-    const channelName = `${tableName}:${filter?.column ?? "all"}:${filter?.value ?? "global"}`;
+    const channelName = `${tableName}:${filter?.column ?? "all"}:${filter?.value ?? "global"}:${instanceIdRef.current}`;
 
     const channel = supabase
       .channel(channelName)
@@ -42,8 +44,15 @@ export function useRealtime<T>(
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      void channel.unsubscribe();
+      const activeChannel = channelRef.current;
+      channelRef.current = null;
+
+      if (activeChannel) {
+        void supabase.removeChannel(activeChannel);
+      }
     };
   }, [tableName, filter?.column, filter?.value]);
 }
