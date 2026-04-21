@@ -88,6 +88,7 @@ export default function SearchScreen() {
 
   return (
     <View className="flex-1 bg-fdm-bg">
+      {loading && <FDMLoader />}
       <View className="flex-1 flex-row">
         {/* Landscape Sidebar */}
         {isLandscape && renderSidebar()}
@@ -106,11 +107,7 @@ export default function SearchScreen() {
 
           {/* Results list */}
           <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
-            {loading ? (
-              <View className="mt-20">
-                <FDMLoader />
-              </View>
-            ) : listings.length === 0 ? (
+            {listings.length === 0 && !loading ? (
               <View className="items-center justify-center mt-20">
                 <Ionicons name="search-outline" size={64} color="#ffffff20" />
                 <Text className="text-fdm-fg/50 text-lg mt-4 font-medium text-center">No flats found matching your search</Text>

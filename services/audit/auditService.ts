@@ -34,10 +34,10 @@ export const logAudit = async (
 		success: true,
 		data: {
 			auditId: data.id,
-			userId: data.userId,
-			targetId: data.targetId,
+			userId: data.userId ?? "",
+			targetId: data.targetId ?? "",
 			actionType: data.actionType as ActionType,
-			timeStamp: data.timestamp,
+			timeStamp: data.timestamp ?? new Date().toISOString(),
 		},
 	};
 };

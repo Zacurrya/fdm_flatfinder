@@ -84,6 +84,7 @@ export default function HomeScreen() {
       <StatusBar style="light" />
 
       <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
+      {loading && <FDMLoader />}
 
       <ScrollView
         className="flex-1"
@@ -103,9 +104,7 @@ export default function HomeScreen() {
           </View>
 
           <View className="gap-4">
-            {loading ? (
-              <FDMLoader />
-            ) : listings.length === 0 ? (
+            {listings.length === 0 && !loading ? (
               <Text className="text-fdm-fg/50 text-center py-4">No saved listings yet.</Text>
             ) : (
               listings.map((listing) => (

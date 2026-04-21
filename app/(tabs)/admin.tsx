@@ -157,7 +157,7 @@ export default function AdminScreen() {
         <AdminRequestsTable
           requests={requests}
           isLoading={isLoadingRequests}
-          errorMessage={requestsError}
+          errorMessage={requestsError ?? ""}
           statusFilter={requestStatusFilter}
           processingId={requestProcessingId}
           onChangeFilter={handleChangeRequestFilter}
@@ -169,7 +169,7 @@ export default function AdminScreen() {
         <AuditTable
           auditLogs={auditLogs}
           isLoading={isLoadingAudits}
-          auditError={auditError}
+          auditError={auditError ?? ""}
           auditSearchEmail={auditSearchEmail}
           onChangeSearchEmail={setAuditSearchEmail}
           onSearch={handleSearchAudits}
