@@ -1,4 +1,4 @@
-import { describe, expect, test } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { formatRelativeDate, formatTime, getInitials } from "@utils/formatters";
 
 describe("getInitials", () => {
@@ -8,7 +8,7 @@ describe("getInitials", () => {
     })
 
     /*
-    These tests outine behaviours I need to enable
+    These tests outine behaviours I need to enable:
 
     test("should return one initial from a single name", () => {
     })
@@ -25,31 +25,17 @@ describe("formatTime", () => {
 })
 
 describe("formatRelativeDate", () => {
-    // Save the real Date
-    const RealDate = Date;
+    // Mock the system time for each test
+    beforeEach(() => {
+        jest.useFakeTimers();
+    });
 
-    // Mock Date for each test
-    const mockCurrentDate = (isoString: string) => {
-        const mockDate = new Date(isoString);
-
-        (global.Date as any) = class extends RealDate {
-            constructor(...args: any[]) {
-                if (args.length === 0) return mockDate; // when called as "new Date()" with no args
-                return new RealDate(...args);
-            }
-        };
-
-        // For calendar day comparison, we need to mock static methods if used
-        (global.Date as any).now = () => mockDate.getTime();
-    };
-
-    // Restore real Date after each test
     afterEach(() => {
-        global.Date = RealDate;
+        jest.useRealTimers();
     });
 
     test("returns time if same day", () => {
-        mockCurrentDate("2026-04-20T16:00:00Z");
+        jest.setSystemTime(new Date("2026-04-20T16:00:00Z"));
         const result = formatRelativeDate("2026-04-20T14:35:00Z");
 
         // Format should be HH:MM
@@ -57,14 +43,14 @@ describe("formatRelativeDate", () => {
     });
 
     test("returns 'Yesterday' for yesterday's date", () => {
-        mockCurrentDate("2026-04-21T10:00:00Z"); // today is April 21
+        jest.setSystemTime(new Date("2026-04-21T10:00:00Z")); // today is April 21
         const result = formatRelativeDate("2026-04-20T14:35:00Z"); // yesterday is April 20
 
         expect(result).toBe("Yesterday");
     });
 
     test("returns day and month for older dates", () => {
-        mockCurrentDate("2026-04-20T16:00:00Z"); // today
+        jest.setSystemTime(new Date("2026-04-20T16:00:00Z")); // today
         const result = formatRelativeDate("2026-04-10T14:35:00Z"); // 10 days ago
 
         // Format is "10 Apr" (en-GB format: day + short month)
@@ -72,7 +58,7 @@ describe("formatRelativeDate", () => {
     });
 
     test("handles dates from different months", () => {
-        mockCurrentDate("2026-04-20T16:00:00Z");
+        jest.setSystemTime(new Date("2026-04-20T16:00:00Z"));
         const result = formatRelativeDate("2026-03-15T14:35:00Z");
 
         expect(result).toBe("15 Mar");

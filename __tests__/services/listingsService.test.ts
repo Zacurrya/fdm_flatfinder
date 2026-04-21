@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { supabase } from "@lib/supabase";
 import { mockListingDTO } from "@mocks/data/dtos/listingDTO.json";
-import { mockListingRow } from "@mocks/data/listings.json";
+import { mockListingRow } from "@mocks/data/entities/listings.json";
 import { deleteListing, fetchListingById, fetchListings } from "@services/listings/listingsService";
-import { createResolvedMock, resetSupabaseMock } from "../helpers/supabaseMock";
+import { createChainableSupabaseMock, mockListingsTable, resetSupabaseMock } from "../helpers/supabase";
 
 jest.mock("@lib/supabase");
 
@@ -14,11 +14,7 @@ beforeEach(() => {
 describe("listingsService", () => {
   describe("fetchListings", () => {
     test("fetches all approved listings", async () => {
-      const listingsMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: createResolvedMock({ data: [mockListingRow], error: null }),
-      };
+      const listingsMock = mockListingsTable([mockListingRow]);
 
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
@@ -36,11 +32,7 @@ describe("listingsService", () => {
 
   describe("fetchListingById", () => {
     test("fetches a single approved listing", async () => {
-      const listingsMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: createResolvedMock({ data: mockListingRow, error: null }),
-      };
+      const listingsMock = mockListingsTable(mockListingRow);
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Listings") return listingsMock;
@@ -55,14 +47,8 @@ describe("listingsService", () => {
 
   describe("deleteListing", () => {
     test("deletes favourites then listing", async () => {
-      const favouritesMock = {
-        delete: jest.fn().mockReturnThis(),
-        eq: createResolvedMock({ error: null }),
-      };
-      const listingsMock = {
-        delete: jest.fn().mockReturnThis(),
-        eq: createResolvedMock({ error: null }),
-      };
+      const favouritesMock = createChainableSupabaseMock({ error: null });
+      const listingsMock = createChainableSupabaseMock({ error: null });
 
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;

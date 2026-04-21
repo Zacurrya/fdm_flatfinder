@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { supabase } from "@lib/supabase";
 import { mockCityChangeDTO } from "@mocks/data/dtos/cityChangeDTO.json";
-import { mockUser } from "@mocks/data/users.json";
+import { mockUser } from "@mocks/data/entities/users.json";
 import { addFavourite, getPendingUsers, getUserFavourites, getUserProfile, removeFavourite, requestOfficeLocationChange } from "@services/user/userService";
-import { createResolvedMock, createThenCallbackMock, resetSupabaseMock } from "../helpers/supabaseMock";
+import { createChainableSupabaseMock, createResolvedMock, createThenCallbackMock, mockAuditLogsTable, mockRequestsTable, mockUsersTable, resetSupabaseMock } from "../helpers/supabase";
 
 jest.mock("@lib/supabase");
 
@@ -14,11 +14,7 @@ beforeEach(() => {
 describe("userService", () => {
   describe("getUserProfile", () => {
     test("fetches user profile", async () => {
-      const usersMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: createResolvedMock({ data: mockUser, error: null }),
-      };
+      const usersMock = mockUsersTable(mockUser);
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Users") return usersMock;
@@ -29,18 +25,14 @@ describe("userService", () => {
 
       expect(supabase.from).toHaveBeenCalledWith("Users");
       expect(result.success).toBe(true);
-      expect(result.data?.userId).toBe("user-123");
+      expect(result.data?.userId).toBe(mockUser.userId);
     });
   });
 
   describe("getPendingUsers", () => {
     test("fetches pending users", async () => {
       const pendingUser = { ...mockUser, approvalStatus: "PENDING" };
-      const usersMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: createResolvedMock({ data: [pendingUser], error: null }),
-      };
+      const usersMock = mockUsersTable([pendingUser]);
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Users") return usersMock;
@@ -57,11 +49,7 @@ describe("userService", () => {
 
   describe("requestOfficeLocationChange", () => {
     test("fails if city is the same as current", async () => {
-      const usersMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: createResolvedMock({ data: { officeLocation: "London", role: "CONSULTANT" }, error: null }),
-      };
+      const usersMock = mockUsersTable(mockUser);
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Users") return usersMock;
@@ -79,18 +67,9 @@ describe("userService", () => {
     });
 
     test("creates request for consultant", async () => {
-      const usersMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: createResolvedMock({ data: { officeLocation: "London", role: "CONSULTANT" }, error: null }),
-      };
-      const requestsMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        limit: createResolvedMock({ data: [], error: null }),
-        insert: createResolvedMock({ error: null }),
-      };
-      const auditMock = { insert: createResolvedMock({ error: null }) };
+      const usersMock = mockUsersTable(mockUser);
+      const requestsMock = mockRequestsTable([]);
+      const auditMock = mockAuditLogsTable([]);
 
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
@@ -110,7 +89,7 @@ describe("userService", () => {
 
   describe("UserFavourites", () => {
     test("adds a favourite", async () => {
-      const favouritesMock = { insert: createResolvedMock({ error: null }) };
+      const favouritesMock = createChainableSupabaseMock({ error: null });
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "UserFavourites") return favouritesMock;
@@ -125,8 +104,7 @@ describe("userService", () => {
 
     test("removes a favourite", async () => {
       const favouritesMock = {
-        delete: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
+        ...createChainableSupabaseMock({ error: null }),
         then: createThenCallbackMock({ error: null })
       };
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
@@ -143,7 +121,7 @@ describe("userService", () => {
 
     test("gets favourites", async () => {
       const favouritesMock = {
-        select: jest.fn().mockReturnThis(),
+        ...createChainableSupabaseMock({ data: [{ listingId: 1 }], error: null }),
         eq: createResolvedMock({ data: [{ listingId: 1 }], error: null }),
       };
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {

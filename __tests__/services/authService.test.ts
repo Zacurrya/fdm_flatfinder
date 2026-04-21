@@ -4,8 +4,19 @@ import { mockApprovalDTO } from "@mocks/data/dtos/approvalDTO.json";
 import { mockLoginDTO } from "@mocks/data/dtos/loginDTO.json";
 import { mockPasswordResetDTO } from "@mocks/data/dtos/passwordResetDTO.json";
 import { mockRegistrationDTO } from "@mocks/data/dtos/registrationDTO.json";
+import { mockUser } from "@mocks/data/entities/users.json";
 import { approveUser, login, logout, register, rejectUser, resetPassword } from "@services/auth/authService";
-import { asAsyncMock, createResolvedMock, mockAuthSession, mockFailedLogin, mockSuccessfulLogin, resetSupabaseMock } from "../helpers/supabaseMock";
+import {
+  mockAuditLogsTable,
+  mockAuthSession,
+  mockAuthSignOut,
+  mockFailedLogin,
+  mockRequestsTable,
+  mockSuccessfulLogin,
+  mockSuccessfulSignUp,
+  mockUsersTable,
+  resetSupabaseMock
+} from "../helpers/supabase";
 
 jest.mock("@lib/supabase");
 
@@ -19,13 +30,14 @@ describe("authService", () => {
       const { mockSession, mockUserId, select, eq, single } = mockSuccessfulLogin();
       const result = await login(mockLoginDTO.email, mockLoginDTO.password);
 
-      expect(supabase.from).toHaveBeenCalledWith("Users");
+      // Select the user from the database
       expect(select).toHaveBeenCalledWith("*");
       expect(eq).toHaveBeenCalledWith("userId", mockUserId);
       expect(single).toHaveBeenCalled();
 
       expect(result.success).toBe(true);
       expect(result.data?.session).toEqual(mockSession);
+      // Compares to 
       expect(result.data?.user).toMatchObject({
         userId: mockUserId,
       });
@@ -47,14 +59,11 @@ describe("authService", () => {
 
   describe("register", () => {
     test("registers user successfully", async () => {
-      asAsyncMock<{ data: { user: { id: string } }; error: null }>(supabase.auth.signUp).mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
-      });
+      mockSuccessfulSignUp();
 
-      const usersMock = { insert: createResolvedMock({ error: null }) };
-      const requestsMock = { insert: createResolvedMock({ error: null }) };
-      const auditMock = { insert: createResolvedMock({ error: null }) };
+      const usersMock = mockUsersTable(mockUser);
+      const requestsMock = mockRequestsTable([]);
+      const auditMock = mockAuditLogsTable([]);
 
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
@@ -75,7 +84,7 @@ describe("authService", () => {
 
   describe("logout", () => {
     test("calls sign out", async () => {
-      asAsyncMock<{ error: null }>(supabase.auth.signOut).mockResolvedValue({ error: null });
+      mockAuthSignOut();
       const result = await logout();
       expect(supabase.auth.signOut).toHaveBeenCalled();
       expect(result.success).toBe(true);
@@ -86,7 +95,7 @@ describe("authService", () => {
     test("calls resetPasswordForEmail", async () => {
       asAsyncMock<{ error: null }>(supabase.auth.resetPasswordForEmail).mockResolvedValue({ error: null });
       const result = await resetPassword(mockPasswordResetDTO);
-      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith("test@fdmgroup.com");
+      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(mockUser.email);
       expect(result.success).toBe(true);
     });
   });
@@ -94,11 +103,8 @@ describe("authService", () => {
   describe("approveUser", () => {
     test("updates approvalStatus to APPROVED", async () => {
       mockAuthSession();
-      const usersMock = {
-        update: jest.fn().mockReturnThis(),
-        eq: createResolvedMock({ error: null }),
-      };
-      const auditMock = { insert: createResolvedMock({ error: null }) };
+      const usersMock = mockUsersTable(mockUser);
+      const auditMock = mockAuditLogsTable([]);
 
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
@@ -117,11 +123,8 @@ describe("authService", () => {
   describe("rejectUser", () => {
     test("updates approvalStatus to REJECTED", async () => {
       mockAuthSession();
-      const usersMock = {
-        update: jest.fn().mockReturnThis(),
-        eq: createResolvedMock({ error: null }),
-      };
-      const auditMock = { insert: createResolvedMock({ error: null }) };
+      const usersMock = mockUsersTable(mockUser);
+      const auditMock = mockAuditLogsTable([]);
 
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
@@ -136,4 +139,6 @@ describe("authService", () => {
       expect(result.success).toBe(true);
     });
   });
-});
+});function asAsyncMock<T>(fn: any) {
+  return fn as jest.MockedFunction<(...args: any[]) => Promise<T>>;
+}

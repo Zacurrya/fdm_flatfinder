@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { supabase } from "@lib/supabase";
 import { mockUserCurrencyDTO } from "@mocks/data/dtos/settingsDTO.json";
-import { mockUserSettings } from "@mocks/data/settings.json";
+import { mockUserSettings } from "@mocks/data/entities/settings.json";
 import type { SupportedCurrency } from "@services/settings/settings.types";
 import { getUserCurrency, upsertUserCurrency } from "@services/settings/settingsService";
-import { createResolvedMock, resetSupabaseMock } from "../helpers/supabaseMock";
+import { createResolvedMock, resetSupabaseMock } from "../helpers/supabase";
 
 jest.mock("@lib/supabase");
 

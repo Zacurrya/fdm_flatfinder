@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { supabase } from "@lib/supabase";
-import { mockConversation, mockMessage } from "@mocks/data/chat.json";
 import { mockConversationRequestDTO } from "@mocks/data/dtos/chatDTO.json";
+import { mockConversation, mockMessage } from "@mocks/data/entities/chat.json";
 import {
-    getMessages,
-    getOrCreateConversation,
-    sendMessage,
-    validateGetOrCreateConversationRequest
+  getMessages,
+  getOrCreateConversation,
+  sendMessage,
+  validateGetOrCreateConversationRequest
 } from "@services/chat/chatService";
-import { createResolvedMock, createThenCallbackMock, resetSupabaseMock } from "../helpers/supabaseMock";
+import { mockConversationsTable, mockMessagesTable, resetSupabaseMock } from "../helpers/supabase";
 
 jest.mock("@lib/supabase");
 
@@ -41,14 +41,7 @@ describe("chatService", () => {
 
   describe("getOrCreateConversation", () => {
     test("returns existing conversation if found", async () => {
-      const convMock = {
-        select: jest.fn().mockReturnThis(),
-        or: jest.fn().mockReturnThis(),
-        order: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        eq: createResolvedMock({ data: [mockConversation], error: null }),
-        then: createThenCallbackMock({ data: [mockConversation], error: null })
-      };
+      const convMock = mockConversationsTable([mockConversation]);
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Conversations") return convMock;
@@ -66,11 +59,7 @@ describe("chatService", () => {
 
   describe("getMessages", () => {
     test("fetches messages", async () => {
-      const messagesMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: createResolvedMock({ data: [mockMessage], error: null }),
-      };
+      const messagesMock = mockMessagesTable([mockMessage]);
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Messages") return messagesMock;
@@ -84,15 +73,8 @@ describe("chatService", () => {
 
   describe("sendMessage", () => {
     test("sends message and updates conversation", async () => {
-      const messagesMock = {
-        insert: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        single: createResolvedMock({ data: mockMessage, error: null }),
-      };
-      const convMock = {
-        update: jest.fn().mockReturnThis(),
-        eq: createResolvedMock({ error: null }),
-      };
+      const messagesMock = mockMessagesTable(mockMessage);
+      const convMock = mockConversationsTable([]);
 
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
@@ -111,4 +93,6 @@ describe("chatService", () => {
       expect(result).toEqual(mockMessage);
     });
   });
-});
+});function asAsyncMock<T>(fn: any) {
+  return fn as jest.MockedFunction<(...args: any[]) => Promise<T>>;
+}

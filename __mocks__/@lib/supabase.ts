@@ -1,5 +1,7 @@
 import { jest } from "@jest/globals";
 
+// This file mocks the supabase client
+
 export const supabase = {
   auth: {
     signUp: jest.fn(),

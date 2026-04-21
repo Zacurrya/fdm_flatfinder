@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { supabase } from "@lib/supabase";
 import { mockCreateRequestDTO } from "@mocks/data/dtos/mockCreateRequestDTO.json";
-import { mockRequest } from "@mocks/data/requests.json";
+import { mockRequest } from "@mocks/data/entities/requests.json";
+import { mockUser } from "@mocks/data/entities/users.json";
 import { createRequest, getAllRequests, getUserRequests, hasPendingRequest } from "@services/requests/requestService";
 import type { RequestType } from "@services/requests/requestTypes";
-import { createResolvedMock, resetSupabaseMock } from "../helpers/supabaseMock";
+import { mockListingsTable, mockRequestsTable, mockUsersTable, resetSupabaseMock } from "../helpers/supabase";
 
 jest.mock("@lib/supabase");
 
@@ -20,11 +21,7 @@ describe("requestService", () => {
 
   describe("createRequest", () => {
     test("creates a new request", async () => {
-      const requestsMock = {
-        insert: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        single: createResolvedMock({ data: mockRequest, error: null }),
-      };
+      const requestsMock = mockRequestsTable(mockRequest);
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Requests") return requestsMock;
@@ -41,20 +38,15 @@ describe("requestService", () => {
 
   describe("getAllRequests", () => {
     test("fetches all requests without filters", async () => {
-      const requestsMock = {
-        select: jest.fn().mockReturnThis(),
-        order: createResolvedMock({ data: [mockRequest], error: null }),
-      };
-      const usersMock = {
-        select: jest.fn().mockReturnThis(),
-        in: createResolvedMock({ data: [], error: null }),
-      };
+      const requestsMock = mockRequestsTable([mockRequest]);
+      const usersMock = mockUsersTable([mockUser]);
+      const listingsMock = mockListingsTable([]);
 
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Requests") return requestsMock;
         if (table === "Users") return usersMock;
-        if (table === "Listings") return { select: jest.fn().mockReturnThis(), in: createResolvedMock({ data: [], error: null }) };
+        if (table === "Listings") return listingsMock;
         return {};
       });
 
@@ -67,11 +59,7 @@ describe("requestService", () => {
 
   describe("getUserRequests", () => {
     test("fetches requests for specific user", async () => {
-      const requestsMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: createResolvedMock({ data: [mockRequest], error: null }),
-      };
+      const requestsMock = mockRequestsTable([mockRequest]);
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Requests") return requestsMock;
@@ -87,11 +75,7 @@ describe("requestService", () => {
 
   describe("hasPendingRequest", () => {
     test("returns true if pending request exists", async () => {
-      const requestsMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        limit: createResolvedMock({ data: [{ id: 1 }], error: null }),
-      };
+      const requestsMock = mockRequestsTable([mockRequest]);
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Requests") return requestsMock;
