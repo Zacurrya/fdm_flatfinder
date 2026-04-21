@@ -1,6 +1,4 @@
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
-import MessageAvatar from "@components/Chat/MessageAvatar";
-import DateMessage from "@components/Chat/MessageTypes/DateMessage";
 import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import CityImage from "@components/ui/CityImage";
 import { useAuth } from "@context/AuthContext";
@@ -42,7 +40,7 @@ export default function CityChatScreen() {
 
   const isValidId = Number.isFinite(parsedCityChatId) && parsedCityChatId > 0;
 
-  // ── Load messages ─────────────────────────────────────────────────────────
+  // Load messages 
   useEffect(() => {
     if (!isValidId) return;
 
@@ -186,27 +184,18 @@ export default function CityChatScreen() {
     const senderInitials = getInitials(senderName);
 
     return (
-      <>
-        {showDateSeparator && <DateMessage date={item.createdAt} />}
-
-        <View className={`flex-row mb-1 px-4 items-start ${isMe ? "justify-end" : "justify-start"}`}>
-          {!isMe ? (
-            <MessageAvatar
-              profilePicture={item.senderProfilePicture}
-              initials={senderInitials}
-              visible={showSenderMeta}
-            />
-          ) : null}
-
-          <MessageBuilder
-            content={item.content}
-            timeLabel={formatTime(item.createdAt)}
-            isMe={isMe}
-            senderName={senderName}
-            showSenderName={showSenderMeta}
-          />
-        </View>
-      </>
+      <MessageBuilder
+        content={item.content}
+        timeLabel={formatTime(item.createdAt)}
+        isMe={isMe}
+        senderName={senderName}
+        showSenderName={showSenderMeta}
+        createdAt={item.createdAt}
+        showDateSeparator={showDateSeparator}
+        avatarProfilePicture={item.senderProfilePicture}
+        avatarInitials={senderInitials}
+        avatarVisible={showSenderMeta}
+      />
     );
   };
 

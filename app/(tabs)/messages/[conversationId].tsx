@@ -5,8 +5,6 @@ import {
 } from "@/utils/mapMessages";
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import ContactActionButtons from "@components/Chat/ContactActionButtons";
-import MessageAvatar from "@components/Chat/MessageAvatar";
-import DateMessage from "@components/Chat/MessageTypes/DateMessage";
 import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -187,25 +185,17 @@ export default function ChatScreen() {
       new Date(item.createdAt).toDateString() !== new Date(previous.createdAt).toDateString();
 
     return (
-      <>
-        {showDateSeparator && <DateMessage date={item.createdAt} />}
-
-        <View
-          className={`flex-row mb-1 px-4 items-end ${isMe ? "justify-end" : "justify-start"}`}
-        >
-          {!isMe ? (
-            <MessageAvatar profilePicture={otherUser?.profilePicture} initials={initials} />
-          ) : null}
-
-          <MessageBuilder
-            content={item.content}
-            timeLabel={formatTime(item.createdAt)}
-            isMe={isMe}
-            senderName={otherUserName}
-            showSenderName={false}
-          />
-        </View>
-      </>
+      <MessageBuilder
+        content={item.content}
+        timeLabel={formatTime(item.createdAt)}
+        isMe={isMe}
+        senderName={otherUserName}
+        showSenderName={false}
+        createdAt={item.createdAt}
+        showDateSeparator={showDateSeparator}
+        avatarProfilePicture={otherUser?.profilePicture}
+        avatarInitials={initials}
+      />
     );
   };
 
