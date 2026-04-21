@@ -5,9 +5,8 @@ import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import * as AuditController from "@services/audit/auditController";
-import { AuditLog } from "@services/audit/types";
-import * as RequestController from "@services/requests/requestController";
+import { useAudit } from "@hooks/useAudit";
+import { useRequests } from "@hooks/useRequests";
 import { RequestRecord, RequestStatus } from "@services/requests/types";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
@@ -19,85 +18,54 @@ export default function AdminScreen() {
   const isLandscape = width > height;
 
   const [activeTab, setActiveTab] = useState<"requests" | "audits">("requests");
-  const [requests, setRequests] = useState<RequestRecord[]>([]);
-  const [isLoadingRequests, setIsLoadingRequests] = useState(true);
-  const [requestsError, setRequestsError] = useState("");
   const [requestStatusFilter, setRequestStatusFilter] = useState<RequestStatus | "ALL">("ALL");
-  const [requestProcessingId, setRequestProcessingId] = useState<number | null>(null);
 
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [isLoadingAudits, setIsLoadingAudits] = useState(false);
+  // Requests Hook
+  const { 
+    requests, 
+    loading: isLoadingRequests, 
+    error: requestsError, 
+    processingId: requestProcessingId,
+    fetchRequests,
+    reviewRequest
+  } = useRequests();
+
+  // Audit Hook
+  const { auditLogs, loading: isLoadingAudits, error: auditError, fetchHistory: fetchAuditHistory } = useAudit();
+
   const [auditSearchEmail, setAuditSearchEmail] = useState("");
-  const [auditError, setAuditError] = useState("");
   const [hasLoadedAudits, setHasLoadedAudits] = useState(false);
   const isAuditLandscape = activeTab === "audits" && width > height;
 
-  const fetchRequests = useCallback(async (filter?: RequestStatus) => {
-    setIsLoadingRequests(true);
-    setRequestsError("");
-
-    const result = await RequestController.getAllRequests(filter);
-
-    if (result.success && result.data) {
-      setRequests(result.data);
-    } else {
-      setRequests([]);
-      setRequestsError(result.error ?? "Unable to load requests.");
-    }
-
-    setIsLoadingRequests(false);
-  }, []);
-
-  const fetchAuditHistory = useCallback(async () => {
-    setIsLoadingAudits(true);
-    setAuditError("");
-
-    const result = await AuditController.getHistory();
-
-    if (result.success && result.data) {
-      setAuditLogs(result.data);
-    } else {
-      setAuditLogs([]);
-      setAuditError(result.error ?? "Unable to load audit history.");
-    }
-
-    setHasLoadedAudits(true);
-    setIsLoadingAudits(false);
-  }, []);
-
+  // Effects
   useEffect(() => {
     void fetchRequests(requestStatusFilter === "ALL" ? undefined : requestStatusFilter);
   }, [fetchRequests, requestStatusFilter]);
 
+  const loadAuditsIfNeeded = useCallback(async () => {
+    await fetchAuditHistory();
+    setHasLoadedAudits(true);
+  }, [fetchAuditHistory]);
+
   useEffect(() => {
     if (activeTab === "audits" && !hasLoadedAudits) {
-      void fetchAuditHistory();
+      void loadAuditsIfNeeded();
     }
-  }, [activeTab, hasLoadedAudits, fetchAuditHistory]);
+  }, [activeTab, hasLoadedAudits, loadAuditsIfNeeded]);
 
   const handleReviewRequest = useCallback(
     async (request: RequestRecord, decision: "APPROVED" | "REJECTED") => {
-      setRequestProcessingId(request.id);
-
-      const result = await RequestController.reviewRequest({
-        requestId: request.id,
-        decision,
-      });
-
-      setRequestProcessingId(null);
+      const result = await reviewRequest(request.id, decision);
 
       if (!result.success) {
         Alert.alert("Error", result.error ?? "Failed to review request.");
         return;
       }
 
-      await fetchRequests(requestStatusFilter === "ALL" ? undefined : requestStatusFilter);
-
-      if (activeTab === "audits") {
-        await fetchAuditHistory();
-      }
+      // Refresh list
+      void fetchRequests(requestStatusFilter === "ALL" ? undefined : requestStatusFilter);
     },
-    [activeTab, fetchAuditHistory, fetchRequests, requestStatusFilter]
+    [fetchRequests, requestStatusFilter, reviewRequest]
   );
 
   const handleApproveRequest = useCallback(
@@ -206,7 +174,6 @@ export default function AdminScreen() {
           onChangeSearchEmail={setAuditSearchEmail}
           onSearch={handleSearchAudits}
           onShowAll={handleShowAllAudits}
-          onRefresh={fetchAuditHistory}
           showInlineTabs={isAuditLandscape}
           activeTab={activeTab}
           onChangeTab={setActiveTab}

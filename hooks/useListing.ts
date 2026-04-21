@@ -1,3 +1,4 @@
+import { useAudit } from "@hooks/useAudit";
 import { useAuth } from "@context/AuthContext";
 import { getMessages, getOrCreateConversation, sendMessage } from "@services/chat/chatController";
 import { getOrCreateCityChatByCity, sendCityChatMessage } from "@services/cityChat/cityChatController";
@@ -12,6 +13,7 @@ import { Alert } from "react-native";
 export function useListing(id?: string | number, initialData?: Listing | null) {
   const { user } = useAuth();
   const router = useRouter();
+  const { logAction } = useAudit();
   
   const [listing, setListing] = useState<Listing | null>(initialData || null);
   const [loading, setLoading] = useState(!initialData && !!id);
@@ -64,6 +66,7 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
     if (!listing?.id) return;
     try {
       await deleteListingService({ id: Number(listing.id) });
+      await logAction("LISTING_DELETED", listing.id.toString());
       router.back();
     } catch (e) {
       console.error("Failed to delete", e);

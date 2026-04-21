@@ -2,7 +2,6 @@ import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import CityImage from "@components/ui/CityImage";
 import { useAuth } from "@context/AuthContext";
-import { Ionicons } from "@expo/vector-icons";
 import { DecoratedChatMessage } from "@hooks/useChatMessages";
 import {
   getCityChatParticipantCount,
@@ -165,7 +164,6 @@ export default function CityChatScreen() {
       headerContent={headerContent}
       flatListRef={flatListRef}
       renderMessage={renderMessage}
-      listEmptyIcon={<Ionicons name="people-outline" size={40} color="#ffffff20" />}
       listEmptyText="No messages in this city chat yet"
       inputProps={{
         value: inputText,

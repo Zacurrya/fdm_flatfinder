@@ -4,7 +4,7 @@ import { mockCreateRequestDTO } from "@mocks/data/dtos/mockCreateRequestDTO.json
 import { mockRequest } from "@mocks/data/entities/requests.json";
 import { mockUser } from "@mocks/data/entities/users.json";
 import { createRequest, getAllRequests, getUserRequests, hasPendingRequest } from "@services/requests/requestService";
-import type { RequestType } from "@services/requests/requestTypes";
+import type { RequestType } from "@services/requests/types";
 import { mockListingsTable, mockRequestsTable, mockUsersTable, resetSupabaseMock } from "../helpers/supabase";
 
 jest.mock("@lib/supabase");

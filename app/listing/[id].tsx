@@ -1,3 +1,5 @@
+import DeleteListingButton from "@components/listing/DeleteListingButton";
+import ShareListingButton from "@components/listing/ShareListingButton";
 import FDMLoader from "@components/ui/FDMLoader";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -98,15 +100,22 @@ export default function ListingDetailScreen() {
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
 
-          {user?.userId ? (
-            <TouchableOpacity
-              className="absolute right-6 h-12 w-12 bg-black/40 rounded-full items-center justify-center backdrop-blur-md border border-white/10"
-              style={{ top: insets.top || 48 }}
-              onPress={actions.shareToGroupChat}
-            >
-              <Ionicons name="share-social-outline" size={22} color="white" />
-            </TouchableOpacity>
-          ) : null}
+          {/* Action buttons overlay */}
+          <View 
+            className="absolute right-6 flex-row items-center gap-3" 
+            style={{ top: insets.top || 48 }}
+          >
+            {user?.userId && (
+              <ShareListingButton 
+                onShare={actions.shareToGroupChat} 
+                cityName={listing.ListingLocations?.city}
+              />
+            )}
+            
+            {isOwner && (
+              <DeleteListingButton onDelete={actions.deleteListing} />
+            )}
+          </View>
         </View>
 
         {/* content body */}
@@ -167,17 +176,6 @@ export default function ListingDetailScreen() {
               <Text className="text-fdm-bg font-bold px-10">Message Seller</Text>
             </TouchableOpacity>
           )}
-
-          {isOwner && (
-            <TouchableOpacity
-              onPress={actions.deleteListing}
-              className="bg-red-500/20 py-4 rounded-2xl flex-row justify-center items-center mt-2 border border-red-500/30"
-            >
-              <Ionicons name="trash-outline" size={20} color="#ef4444" className="mr-2" />
-              <Text className="text-red-500 font-bold ml-2">Delete My Listing</Text>
-            </TouchableOpacity>
-          )}
-
         </View>
       </ScrollView>
     </View>

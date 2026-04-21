@@ -7,14 +7,13 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ReactNode, RefObject, useState } from "react";
 import {
-    ActivityIndicator,
     FlatList,
     KeyboardAvoidingView,
     ListRenderItem,
     Platform,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -32,7 +31,6 @@ type ChatScreenLayoutProps = {
     footerExtra?: ReactNode;
     flatListRef: RefObject<FlatList | null>;
     renderMessage: (item: DecoratedChatMessage, index: number) => ReactNode;
-    listEmptyIcon?: ReactNode;
     listEmptyText?: string;
     inputProps: MessageInputProps;
     /* Spacing between messages. */
@@ -46,7 +44,6 @@ export default function ChatScreenLayout({
     subHeader,
     flatListRef,
     renderMessage,
-    listEmptyIcon,
     listEmptyText = "Send a message to get started",
     inputProps,
     messageGap = 2.5,
@@ -124,18 +121,9 @@ export default function ChatScreenLayout({
                         renderItem={renderItem}
                         onContentSizeChange={handleContentSizeChange}
                         ListEmptyComponent={
-                            <View className="flex-1 items-center justify-center">
-                                {listEmptyIcon ?? (
-                                    <Ionicons
-                                        name="chatbubble-outline"
-                                        size={40}
-                                        color="#ffffff20"
-                                    />
-                                )}
-                                <Text className="text-fdm-fg/30 text-sm mt-4">
-                                    {listEmptyText}
-                                </Text>
-                            </View>
+                            <Text className="self-center text-fdm-fg/30 text-sm mt-4">
+                                {listEmptyText}
+                            </Text>
                         }
                     />
                     {/* Input box */}

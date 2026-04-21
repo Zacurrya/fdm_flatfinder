@@ -27,7 +27,7 @@ export default function FDMLoader({ fullScreen = true }: FDMLoaderProps) {
   }, [scaleAnim]);
 
   const content = (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }} className="items-center justify-center">
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }} className="absolute self-center justify-center">
       <Image
         source={require("@assets/images/logo.svg")}
         style={{ width: 80, height: 80 }}
@@ -39,7 +39,7 @@ export default function FDMLoader({ fullScreen = true }: FDMLoaderProps) {
 
   if (fullScreen) {
     return (
-      <View className="absolute inset-0 bg-fdm-bg items-center justify-center z-50">
+      <View className="absolute inset-0 bg-fdm-bg self-center justify-center z-50">
         {content}
       </View>
     );

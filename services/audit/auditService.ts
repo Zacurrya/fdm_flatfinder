@@ -20,22 +20,24 @@ export const logAudit = async (
 		return { success: false, error: "No authenticated user." };
 	}
 
-	const { error } = await supabase
+	const { data, error } = await supabase
 		.from(TABLE)
-		.insert({ actionType: action, userId, targetId });
+		.insert({ actionType: action, userId, targetId })
+    .select()
+    .single();
 
-	if (error) {
-		return { success: false, error: error.message };
+	if (error || !data) {
+		return { success: false, error: error?.message || "Failed to create audit log." };
 	}
 
 	return {
 		success: true,
 		data: {
-			auditId: `local-${Date.now()}`,
-			userId,
-			targetId,
-			actionType: action,
-			timeStamp: new Date().toISOString(),
+			auditId: data.id,
+			userId: data.userId,
+			targetId: data.targetId,
+			actionType: data.actionType as ActionType,
+			timeStamp: data.timestamp,
 		},
 	};
 };

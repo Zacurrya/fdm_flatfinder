@@ -1,17 +1,5 @@
 export * from "./types";
-import type {
-  ChatResponse,
-  Conversation,
-  ConversationWithUser,
-  GetConversationDetailsDTO,
-  GetConversationsDTO,
-  GetMessagesDTO,
-  GetOrCreateConversationDTO,
-  ListingSnippet,
-  Message,
-  OtherUserProfile,
-  SendMessageDTO,
-} from "./types";
+import { Listing } from "@services/listings/listingController";
 import {
   getConversationDetails as getConversationDetailsService,
   getConversations as getConversationsService,
@@ -24,6 +12,18 @@ import {
   validateGetOrCreateConversationRequest,
   validateSendMessageRequest,
 } from "./chatService";
+import type {
+  ChatResponse,
+  Conversation,
+  ConversationWithUser,
+  GetConversationDetailsDTO,
+  GetConversationsDTO,
+  GetMessagesDTO,
+  GetOrCreateConversationDTO,
+  Message,
+  OtherUserProfile,
+  SendMessageDTO,
+} from "./types";
 
 export const getOrCreateConversation = async (
   request: GetOrCreateConversationDTO
@@ -63,7 +63,7 @@ export const getConversations = async (
 
 export const getConversationDetails = async (
   request: GetConversationDetailsDTO
-): Promise<ChatResponse<{ otherUser: OtherUserProfile; listing: ListingSnippet | null }>> => {
+): Promise<ChatResponse<{ otherUser: OtherUserProfile; listing: Listing | null }>> => {
   const validation = validateGetConversationDetailsRequest(request);
   if (!validation.valid) {
     return { success: false, error: validation.error };

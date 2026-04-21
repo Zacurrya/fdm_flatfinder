@@ -424,6 +424,7 @@ export type Database = {
         | "LISTING_UPLOAD_REQUESTED"
         | "LISTING_UPLOAD_APPROVED"
         | "LISTING_UPLOAD_DENIED"
+        | "LISTING_DELETED"
       ApprovalStatus: "PENDING" | "APPROVED" | "REJECTED"
       PropertyType:
         | "FLAT"
@@ -576,6 +577,7 @@ export const Constants = {
         "LISTING_UPLOAD_REQUESTED",
         "LISTING_UPLOAD_APPROVED",
         "LISTING_UPLOAD_DENIED",
+        "LISTING_DELETED",
       ],
       ApprovalStatus: ["PENDING", "APPROVED", "REJECTED"],
       PropertyType: [

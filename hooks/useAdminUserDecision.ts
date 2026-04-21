@@ -1,6 +1,6 @@
 import { User } from "@services/auth/types";
 import * as AuthController from "@services/auth/authController";
-import * as AuditController from "@services/audit/auditController";
+import { useAudit } from "@hooks/useAudit";
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 
@@ -14,6 +14,7 @@ export default function useAdminUserDecision({
   onSuccess,
 }: UseAdminUserDecisionOptions = {}) {
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const { logAction } = useAudit();
 
   const handleDecision = useCallback(
     (pendingUser: User, action: DecisionAction) => {
@@ -36,7 +37,7 @@ export default function useAdminUserDecision({
               setProcessingId(null);
 
               if (result.success) {
-                const auditResult = await AuditController.logAudit(
+                const auditResult = await logAction(
                   isApprove ? "USER_APPROVED" : "USER_DENIED",
                   pendingUser.userId
                 );

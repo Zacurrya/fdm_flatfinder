@@ -4,7 +4,7 @@ import { mockAuditLogDTO } from "@mocks/data/dtos/auditLogDTO.json";
 import { mockAuditLog } from "@mocks/data/entities/audit.json";
 import { mockUser } from "@mocks/data/entities/users.json";
 import { getHistory, logAudit } from "@services/audit/auditService";
-import type { ActionType } from "@services/audit/auditTypes";
+import type { ActionType } from "@services/audit/types";
 import { asAsyncMock, mockAuditLogsTable, mockAuthSession, mockDatabaseCall, mockUsersTable, resetSupabaseMock } from "../helpers/supabase";
 
 jest.mock("@lib/supabase");
@@ -17,7 +17,7 @@ describe("auditService", () => {
   describe("logAudit", () => {
     test("successfully logs an audit", async () => {
       mockAuthSession();
-      const mockChain = mockDatabaseCall({ data: null, error: null });
+      const mockChain = mockDatabaseCall({ data: mockAuditLog, error: null });
       const typedAuditLogDTO = {
         ...mockAuditLogDTO,
         actionType: mockAuditLogDTO.actionType as ActionType,
@@ -32,7 +32,7 @@ describe("auditService", () => {
         targetId: typedAuditLogDTO.targetId,
       });
       expect(result.success).toBe(true);
-      expect(result.data).toBeDefined();
+      expect(result.data?.auditId).toBe(mockAuditLog.id);
     });
 
     test("fails if no user session", async () => {

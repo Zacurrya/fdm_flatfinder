@@ -21,8 +21,6 @@ type AuditTableProps = {
   onChangeSearchEmail: (value: string) => void;
   onSearch: () => void;
   onShowAll: () => void;
-  onRefresh: () => void;
-  isRefreshing?: boolean;
   showInlineTabs?: boolean;
   activeTab?: "requests" | "audits";
   onChangeTab?: (tab: "requests" | "audits") => void;
@@ -57,8 +55,6 @@ export default function AuditTable({
   onChangeSearchEmail,
   onSearch,
   onShowAll,
-  onRefresh,
-  isRefreshing = false,
   showInlineTabs = false,
   activeTab = "audits",
   onChangeTab,
@@ -100,17 +96,6 @@ export default function AuditTable({
           onPress={onShowAll}
         >
           <Text className="text-fdm-fg/80 font-semibold text-xs uppercase">All</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className="w-12 h-12 rounded-xl border border-fdm-fg/20 items-center justify-center"
-          onPress={onRefresh}
-          disabled={isRefreshing || isLoading}
-        >
-          <Ionicons
-            name="refresh-outline"
-            size={18}
-            color={isRefreshing || isLoading ? "#ffffff30" : "#ffffff99"}
-          />
         </TouchableOpacity>
       </View>
 
