@@ -3,14 +3,11 @@ import AppTrademark from "@components/ui/AppTrademark";
 import OfficeLocationSelector from "@components/ui/OfficeLocationSelector";
 import ScreenHeader from "@components/ui/ScreenHeader";
 import { useAuth } from "@context/AuthContext";
+import { useCityTransfer } from "@hooks/useCityTransfer";
+import { useUserCurrency } from "@hooks/useUserCurrency";
 import { Ionicons } from "@expo/vector-icons";
-import { OfficeCity, findOfficeCityByName } from "@lib/office-cities";
-import * as SettingsController from "@services/settings/settingsController";
-import { SupportedCurrency } from "@services/settings/types";
-import * as UserController from "@services/user/userController";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type SettingsModalProps = {
   visible: boolean;
@@ -19,89 +16,28 @@ type SettingsModalProps = {
 
 export default function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const { user, refreshUser } = useAuth();
-  const insets = useSafeAreaInsets();
 
-  const [selectedCurrency, setSelectedCurrency] = useState<SupportedCurrency>("GBP");
-  const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
-  const [isLoadingCurrency, setIsLoadingCurrency] = useState(false);
-  const [isSavingCurrency, setIsSavingCurrency] = useState(false);
-  const [currencyError, setCurrencyError] = useState("");
-  const [currencyMessage, setCurrencyMessage] = useState("");
+  const {
+    selectedCurrency,
+    setSelectedCurrency,
+    isCurrencyDropdownOpen,
+    setIsCurrencyDropdownOpen,
+    isLoadingCurrency,
+    isSavingCurrency,
+    currencyError,
+    currencyMessage,
+    handleSaveCurrency,
+  } = useUserCurrency(user?.userId, visible);
 
-  const [selectedCity, setSelectedCity] = useState<OfficeCity | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const [isSubmittingCityChange, setIsSubmittingCityChange] = useState(false);
-  const [cityError, setCityError] = useState("");
-  const [cityMessage, setCityMessage] = useState("");
-
-  useEffect(() => {
-    if (!visible) {
-      setIsCurrencyDropdownOpen(false);
-      return;
-    }
-
-    setCurrencyError("");
-    setCurrencyMessage("");
-    setCityError("");
-    setCityMessage("");
-
-    const currentCity = findOfficeCityByName(user?.officeLocation ?? "");
-    setSelectedCity(currentCity?.city ?? null);
-    setSelectedRegion(currentCity?.region ?? "");
-
-    if (!user?.userId) return;
-
-    setIsLoadingCurrency(true);
-    SettingsController.getUserCurrency(user.userId)
-      .then((result) => {
-        if (result.success) {
-          setSelectedCurrency(result.data?.currency ?? "GBP");
-        }
-      })
-      .finally(() => setIsLoadingCurrency(false));
-  }, [visible, user?.officeLocation, user?.userId]);
-
-  const handleSaveCurrency = async () => {
-    if (!user?.userId) return;
-
-    setCurrencyError("");
-    setCurrencyMessage("");
-    setIsSavingCurrency(true);
-
-    const result = await SettingsController.upsertUserCurrency(user.userId, selectedCurrency);
-    setIsSavingCurrency(false);
-
-    if (!result.success) {
-      setCurrencyError(result.error ?? "Failed to update currency.");
-      return;
-    }
-
-    setCurrencyMessage("Currency preference updated.");
-  };
-
-  const handleRequestCityChange = async () => {
-    if (!user?.userId || !selectedCity) return;
-
-    if (selectedCity.name === user.officeLocation) {
-      setCityError("Please choose a different city.");
-      return;
-    }
-
-    setCityError("");
-    setCityMessage("");
-    setIsSubmittingCityChange(true);
-
-    const result = await UserController.requestOfficeLocationChange(user.userId, selectedCity.name);
-    if (!result.success) {
-      setIsSubmittingCityChange(false);
-      setCityError(result.error ?? "Failed to submit request.");
-      return;
-    }
-
-    await refreshUser();
-    setIsSubmittingCityChange(false);
-    setCityMessage("Request submitted. Awaiting admin approval.");
-  };
+  const {
+    selectedCity,
+    selectedRegion,
+    handleSelectCity,
+    isSubmittingCityChange,
+    cityError,
+    cityMessage,
+    handleRequestCityChange,
+  } = useCityTransfer(user, visible, refreshUser);
 
   return (
     <Modal
@@ -111,7 +47,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
       onRequestClose={onClose}
     >
       <View className="flex-1 bg-fdm-bg">
-        {/* Modern Header */}
+        {/* Header */}
         <ScreenHeader
           title="Settings"
           condensed
@@ -194,12 +130,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                 label="City"
                 selectedCity={selectedCity}
                 selectedRegion={selectedRegion}
-                onSelectCity={(region, city) => {
-                  setSelectedRegion(region);
-                  setSelectedCity(city);
-                  setCityError("");
-                  setCityMessage("");
-                }}
+                onSelectCity={handleSelectCity}
                 disabled={isSubmittingCityChange}
                 errorMessage={cityError}
               />

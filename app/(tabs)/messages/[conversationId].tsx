@@ -4,136 +4,39 @@ import ContactActionButtons from "@components/Chat/ContactActionButtons";
 import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import FDMLoader from "@components/ui/FDMLoader";
 import { useAuth } from "@context/AuthContext";
+import { useChatInput } from "@hooks/useChatInput";
+import { useConversationDetails } from "@hooks/useConversationDetails";
 import { DecoratedChatMessage } from "@hooks/useChatMessages";
-import {
-  getConversationDetails,
-  OtherUserProfile,
-  sendMessage,
-} from "@services/chat/chatController";
-import { uploadListingPhoto } from "@services/listings/listingController";
-import { formatCurrencyWithSymbol } from "@utils/currency";
-import { formatTime } from "@utils/formatters";
-import * as ImagePicker from "expo-image-picker";
+import { sendMessage } from "@services/chat/chatController";
+import { formatTime, getInitials } from "@utils/formatters";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { Alert, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
+import { useRef } from "react";
+import { FlatList, Image, Text, View } from "react-native";
 
 export default function ChatScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { user } = useAuth();
   const router = useRouter();
-
-  const [loading, setLoading] = useState(true);
-  const [inputText, setInputText] = useState("");
-  const [attachment, setAttachment] = useState<{ uri: string; type: "image" } | null>(null);
-  const [sending, setSending] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [otherUser, setOtherUser] = useState<OtherUserProfile | null>(null);
-  const [listingData, setListingData] = useState<any>(null);
-  
   const flatListRef = useRef<FlatList>(null);
 
-  // Load conversation details (Other user & Listing metadata)
-  useEffect(() => {
-    if (!conversationId || !user?.userId) return;
+  // Conversation metadata
+  const { otherUser, listingData, loading } = useConversationDetails(conversationId, user?.userId);
 
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const detailsResult = await getConversationDetails({
-          conversationId,
-          currentUserId: user.userId
-        });
+  // Chat send/upload logic
+  const { inputProps } = useChatInput(async (content) => {
+    if (!user?.userId || !conversationId) return;
+    const result = await sendMessage({ conversationId, senderId: user.userId, content });
+    if (!result.success) throw new Error(result.error ?? "Failed to send message.");
+  });
 
-        if (!detailsResult.success || !detailsResult.data) {
-          throw new Error(detailsResult.error ?? "Failed to load conversation details.");
-        }
-
-        setOtherUser(detailsResult.data.otherUser);
-        setListingData(detailsResult.data.listing);
-      } catch (error) {
-        console.error("Failed to load conversation details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadData();
-  }, [conversationId, user?.userId]);
-
-  // Send
-  const handleSend = async () => {
-    const content = inputText.trim();
-    if ((!content && !attachment) || !user?.userId || !conversationId || sending) return;
-
-    setInputText("");
-    setAttachment(null);
-    setSending(true);
-
-    try {
-      let finalContent = content;
-
-      if (attachment) {
-        setUploadingImage(true);
-        try {
-          const uploadedUrl = await uploadListingPhoto({ uri: attachment.uri });
-          finalContent = content ? `${uploadedUrl} ${content}` : uploadedUrl;
-        } finally {
-          setUploadingImage(false);
-        }
-      }
-
-      const savedResult = await sendMessage({ conversationId, senderId: user.userId, content: finalContent });
-
-      if (!savedResult.success || !savedResult.data) {
-        throw new Error(savedResult.error ?? "Failed to send message.");
-      }
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      setInputText(content);
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const handleUploadImage = async () => {
-    if (!user?.userId || !conversationId || uploadingImage) return;
-
-    try {
-      const pickerResult = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsMultipleSelection: false,
-        quality: 0.8,
-      });
-
-      if (pickerResult.canceled || pickerResult.assets.length === 0) return;
-
-      const imageUri = pickerResult.assets[0].uri;
-      setAttachment({ uri: imageUri, type: "image" });
-    } catch (error) {
-      console.error("Failed to select image:", error);
-      Alert.alert("Selection Failed", "We couldn't select your image.");
-    }
-  };
-
-
-  // Helpers
-
+  // Derived display values
   const otherUserName = otherUser
     ? [otherUser.firstName, otherUser.lastName].filter(Boolean).join(" ") || "User"
     : "Chat";
+  const initials = getInitials(otherUserName);
 
-  const initials = otherUserName
-    .split(" ")
-    .map((name) => name[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  // Render helpers
   const renderMessage = (item: DecoratedChatMessage, _index: number) => {
     const isMe = item.senderId === user?.userId;
-
     return (
       <MessageBuilder
         content={item.content}
@@ -150,7 +53,6 @@ export default function ChatScreen() {
     );
   };
 
-  // Header avatar + title
   const headerContent = (
     <>
       <View className="w-10 h-10 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center mr-3 overflow-hidden">
@@ -180,32 +82,23 @@ export default function ChatScreen() {
       />
     </>
   );
-  if (loading) {
-    return <FDMLoader />;
-  }
 
   return (
-    <ChatScreenLayout
-      chatId={conversationId}
-      source="PRIVATE"
-      headerContent={headerContent}
-      subHeader={<ChatListingSubHeader initialData={listingData} />}
-      flatListRef={flatListRef}
-      renderMessage={renderMessage}
-      listEmptyText="Send a message to get started"
-      inputProps={{
-        value: inputText,
-        onChangeText: setInputText,
-        placeholder: attachment ? "Add a caption..." : "Message...",
-        editable: !uploadingImage,
-        onSend: handleSend,
-        sendDisabled: (!inputText.trim() && !attachment) || sending || uploadingImage,
-        showActions: true,
-        onPressImage: handleUploadImage,
-        actionsDisabled: uploadingImage || sending,
-        attachment: attachment,
-        onClearAttachment: () => setAttachment(null),
-      }}
-    />
+    <View style={{ flex: 1 }}>
+      {loading && <FDMLoader />}
+      <ChatScreenLayout
+        chatId={conversationId}
+        source="PRIVATE"
+        headerContent={headerContent}
+        subHeader={<ChatListingSubHeader initialData={listingData} />}
+        flatListRef={flatListRef}
+        renderMessage={renderMessage}
+        listEmptyText="Send a message to get started"
+        inputProps={{
+          ...inputProps,
+          placeholder: inputProps.attachment ? "Add a caption..." : "Message...",
+        }}
+      />
+    </View>
   );
 }

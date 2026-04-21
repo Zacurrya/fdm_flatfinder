@@ -32,7 +32,6 @@ export const fetchListingById = async (id: number | string): Promise<Listing> =>
     .from("Listings")
     .select("*, ListingLocations(*)")
     .eq("id", Number(id))
-    .eq("approvalStatus", "APPROVED")
     .single();
 
   if (error) {

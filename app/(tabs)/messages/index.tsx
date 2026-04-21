@@ -1,11 +1,11 @@
-import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
+import ApprovalGuard from "@components/ui/ApprovalGuard";
 import CityImage from "@components/ui/CityImage";
 import FDMLoader from "@components/ui/FDMLoader";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { ConversationWithUser, getConversations } from "@services/chat/chatController";
 import { CityChat, fetchCityChats, getOrCreateCityChatByCity } from "@services/cityChat/cityChatController";
-import { formatCurrencyWithSymbol } from "@utils/currency";
+import { formatCurrencyWithSymbol, getRentLabel } from "@utils/currency";
 import { formatRelativeDate, getInitials } from "@utils/formatters";
 import AppTrademark from "@components/ui/AppTrademark";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
@@ -76,21 +76,9 @@ export default function MessagesScreen() {
     }, [user?.userId, user?.officeLocation, user?.role])
   );
 
-  if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
-    return (
-      <AwaitingApprovalView
-        title={user.approvalStatus === "REJECTED" ? "Account Denied" : "Awaiting Admin Approval"}
-        message={
-          user.approvalStatus === "REJECTED"
-            ? "Your account has been denied. Please contact an administrator for more information."
-            : "Your account is awaiting admin approval."
-        }
-      />
-    );
-  }
-
   return (
-    <View className="flex-1 bg-fdm-bg">
+    <ApprovalGuard>
+      <View className="flex-1 bg-fdm-bg">
       <StatusBar style="light" />
       <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
 
@@ -187,11 +175,7 @@ export default function MessagesScreen() {
                       <Ionicons name="home-outline" size={11} color="#ccff0070" />
                       <Text className="text-fdm-accent/70 text-xs flex-1" numberOfLines={1}>
                         {conv.listing.title} - {formatCurrencyWithSymbol(conv.listing.price)}/
-                        {conv.listing.rentPeriod === "WEEKLY"
-                          ? "pw"
-                          : conv.listing.rentPeriod === "BIWEEKLY"
-                            ? "biwk"
-                            : "pcm"}
+                        {getRentLabel(conv.listing.rentPeriod)}
                       </Text>
                     </View>
                   )}
@@ -209,6 +193,7 @@ export default function MessagesScreen() {
           <AppTrademark />
         </ScrollView>
       )}
-    </View>
+      </View>
+    </ApprovalGuard>
   );
 }

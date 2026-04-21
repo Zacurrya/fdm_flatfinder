@@ -1,7 +1,7 @@
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import FilterSidebar from "@components/search/FilterSidebar";
 import SearchBar from "@components/search/SearchBar";
-import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
+import ApprovalGuard from "@components/ui/ApprovalGuard";
 import FDMLoader from "@components/ui/FDMLoader";
 import ListingCard from "@components/ui/ListingCard";
 import { useAuth } from "@context/AuthContext";
@@ -55,19 +55,6 @@ export default function SearchScreen() {
     }
   }, [showMobileSidebar, width, slideAnim]);
 
-  if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
-    return (
-      <AwaitingApprovalView
-        title={user.approvalStatus === "REJECTED" ? "Account Denied" : "Awaiting Admin Approval"}
-        message={
-          user.approvalStatus === "REJECTED"
-            ? "Your account has been denied. Please contact an administrator for more information."
-            : "Your account is awaiting admin approval."
-        }
-      />
-    );
-  }
-
   const sidebarProps = {
     ...filters,
     setMinPrice,
@@ -88,8 +75,9 @@ export default function SearchScreen() {
   );
 
   return (
-    <View className="flex-1 bg-fdm-bg">
-      <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
+    <ApprovalGuard>
+      <View className="flex-1 bg-fdm-bg">
+        <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
       {loading && <FDMLoader />}
       <View className="flex-1 flex-row">
         {/* Landscape Sidebar */}
@@ -166,6 +154,7 @@ export default function SearchScreen() {
           </View>
         </Modal>
       )}
-    </View>
+      </View>
+    </ApprovalGuard>
   );
 }

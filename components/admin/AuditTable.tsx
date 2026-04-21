@@ -2,14 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { AuditLog } from "@services/audit/types";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-    useWindowDimensions,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
 } from "react-native";
 import AdminTabs from "./AdminTabs";
 
@@ -27,20 +27,20 @@ type AuditTableProps = {
 };
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
-  SIGN_UP_REQUESTED:     { label: "Sign Up Requested",     color: "#93c5fd" },
-  SIGN_UP_APPROVED:      { label: "Sign Up Approved",      color: "#4ade80" },
-  SIGN_UP_DENIED:        { label: "Sign Up Denied",        color: "#f87171" },
+  SIGN_UP_REQUESTED: { label: "Sign Up Requested", color: "#93c5fd" },
+  SIGN_UP_APPROVED: { label: "Sign Up Approved", color: "#4ade80" },
+  SIGN_UP_DENIED: { label: "Sign Up Denied", color: "#f87171" },
   CITY_CHANGE_REQUESTED: { label: "City Change Requested", color: "#93c5fd" },
-  CITY_CHANGE_APPROVED:  { label: "City Change Approved",  color: "#4ade80" },
-  CITY_CHANGE_DENIED:    { label: "City Change Denied",    color: "#f87171" },
-  CITY_CHANGED:          { label: "City Changed",          color: "#4ade80" },
+  CITY_CHANGE_APPROVED: { label: "City Change Approved", color: "#4ade80" },
+  CITY_CHANGE_DENIED: { label: "City Change Denied", color: "#f87171" },
+  CITY_CHANGED: { label: "City Changed", color: "#4ade80" },
   LISTING_UPLOAD_REQUESTED: { label: "Listing Upload Requested", color: "#93c5fd" },
-  LISTING_UPLOAD_APPROVED:  { label: "Listing Upload Approved",  color: "#4ade80" },
-  LISTING_UPLOAD_DENIED:    { label: "Listing Upload Denied",    color: "#f87171" },
-  USER_APPROVED:         { label: "User Approved",         color: "#4ade80" },
-  USER_DENIED:           { label: "User Denied",           color: "#f87171" },
-  USER_BANNED:           { label: "User Banned",           color: "#f87171" },
-  MESSAGE_DELETED:       { label: "Message Deleted",       color: "#fbbf24" },
+  LISTING_UPLOAD_APPROVED: { label: "Listing Upload Approved", color: "#4ade80" },
+  LISTING_UPLOAD_DENIED: { label: "Listing Upload Denied", color: "#f87171" },
+  USER_APPROVED: { label: "User Approved", color: "#4ade80" },
+  USER_DENIED: { label: "User Denied", color: "#f87171" },
+  USER_BANNED: { label: "User Banned", color: "#f87171" },
+  MESSAGE_DELETED: { label: "Message Deleted", color: "#fbbf24" },
 };
 
 function getActionDisplay(actionType: string) {
@@ -120,7 +120,7 @@ export default function AuditTable({
         >
           <ScrollView horizontal showsHorizontalScrollIndicator>
             <View className="rounded-2xl border border-fdm-fg/10 overflow-hidden" style={{ minWidth: tableMinWidth }}>
-              {/* Header */}
+              {/* Table Header */}
               <View className="flex-row bg-fdm-fg/10 px-3 py-3">
                 <Text className="w-20 text-fdm-fg/60 text-xs font-semibold uppercase">ID</Text>
                 <Text className="w-52 text-fdm-fg/60 text-xs font-semibold uppercase">Timestamp</Text>

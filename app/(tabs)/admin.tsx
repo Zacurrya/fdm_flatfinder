@@ -2,7 +2,7 @@ import ScreenHeader from "@components/ui/ScreenHeader";
 import AdminRequestsTable from "@components/admin/AdminRequestsTable";
 import AdminTabs from "@components/admin/AdminTabs";
 import AuditTable from "@components/admin/AuditTable";
-import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
+import ApprovalGuard from "@components/ui/ApprovalGuard";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,28 +31,16 @@ export default function AdminScreen() {
     reviewRequest
   } = useRequests();
 
-  // Audit Hook
+  // Audit Hook (auto-fetches on mount)
   const { auditLogs, loading: isLoadingAudits, error: auditError, fetchHistory: fetchAuditHistory } = useAudit();
 
   const [auditSearchEmail, setAuditSearchEmail] = useState("");
-  const [hasLoadedAudits, setHasLoadedAudits] = useState(false);
   const isAuditLandscape = activeTab === "audits" && width > height;
 
   // Effects
   useEffect(() => {
     void fetchRequests(requestStatusFilter === "ALL" ? undefined : requestStatusFilter);
   }, [fetchRequests, requestStatusFilter]);
-
-  const loadAuditsIfNeeded = useCallback(async () => {
-    await fetchAuditHistory();
-    setHasLoadedAudits(true);
-  }, [fetchAuditHistory]);
-
-  useEffect(() => {
-    if (activeTab === "audits" && !hasLoadedAudits) {
-      void loadAuditsIfNeeded();
-    }
-  }, [activeTab, hasLoadedAudits, loadAuditsIfNeeded]);
 
   const handleReviewRequest = useCallback(
     async (request: RequestRecord, decision: "APPROVED" | "REJECTED") => {
@@ -103,19 +91,6 @@ export default function AdminScreen() {
     void fetchAuditHistory();
   };
 
-  if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
-    return (
-      <AwaitingApprovalView
-        title={user.approvalStatus === "REJECTED" ? "Account Denied" : "Awaiting Admin Approval"}
-        message={
-          user.approvalStatus === "REJECTED"
-            ? "Your account has been denied. Please contact an administrator for more information."
-            : "Your account is awaiting admin approval."
-        }
-      />
-    );
-  }
-
   if (user?.role !== "ADMIN") {
     return (
       <View className="flex-1 bg-fdm-bg items-center justify-center p-6">
@@ -134,8 +109,9 @@ export default function AdminScreen() {
       : `${auditLogs.length} audit ${auditLogs.length === 1 ? "entry" : "entries"}`;
 
   return (
-    <View className="flex-1 bg-fdm-bg">
-      <StatusBar style="light" hidden={width > height} />
+    <ApprovalGuard>
+      <View className="flex-1 bg-fdm-bg">
+        <StatusBar style="light" hidden={width > height} />
 
       <BackgroundCircle top={0} right={0} size={256} color="#CCFF001A" opacity={0.5} />
 
@@ -179,6 +155,7 @@ export default function AdminScreen() {
           onChangeTab={setActiveTab}
         />
       )}
-    </View>
+      </View>
+    </ApprovalGuard>
   );
 }

@@ -61,41 +61,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     useEffect(() => {
-        // Restore existing session on mount
-        supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
-            if (existingSession?.user) {
-                setSession(existingSession);
-
-                // Fetch profile from Users table
-                const result = await UserController.getUserProfile(existingSession.user.id);
+        const hydrateSession = async (currentSession: Session | null) => {
+            setSession(currentSession);
+            if (!currentSession?.user) {
+                setUser(null);
+            } else {
+                const result = await UserController.getUserProfile(currentSession.user.id);
                 if (result.success && result.data) {
                     setUser(result.data);
                 }
             }
+        };
+
+        // Restore existing session on mount
+        supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
+            await hydrateSession(existingSession);
             setIsLoading(false);
         });
 
         // Listen for auth state changes (sign in, sign out, token refresh)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, newSession) => {
-                setSession(newSession);
-
-                if (event === "SIGNED_OUT" || !newSession?.user) {
-                    setUser(null);
-                    return;
-                }
-
-                if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-                    const result = await UserController.getUserProfile(newSession.user.id);
-                    if (result.success && result.data) {
-                        setUser(result.data);
-                    }
+                if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+                    await hydrateSession(newSession);
                 }
             }
         );
 
         return () => subscription.unsubscribe();
     }, []);
+
 
     // Actions
 

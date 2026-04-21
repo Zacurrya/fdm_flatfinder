@@ -1,7 +1,7 @@
 import AppTrademark from "@components/ui/AppTrademark";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import ScreenHeader from "@components/ui/ScreenHeader";
-import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
+import ApprovalGuard from "@components/ui/ApprovalGuard";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { createListing, InsertListing, uploadListingPhoto } from "@services/listings/listingController";
@@ -29,15 +29,6 @@ export default function AddListingScreen() {
   const [propertyType, setPropertyType] = useState<"FLAT" | "STUDIO" | "TERRACEDHOUSE" | "SEMIDETACHED" | "DETACHED">("FLAT");
   const [photos, setPhotos] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (user?.approvalStatus === "PENDING" || user?.approvalStatus === "REJECTED") {
-    return (
-      <AwaitingApprovalView
-        title={user.approvalStatus === "REJECTED" ? "Account Denied" : "Awaiting Admin Approval"}
-        message="You must be an approved user to upload listings."
-      />
-    );
-  }
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -117,8 +108,9 @@ export default function AddListingScreen() {
   };
 
   return (
-    <View className="flex-1 bg-fdm-bg">
-      <StatusBar style="light" />
+    <ApprovalGuard>
+      <View className="flex-1 bg-fdm-bg">
+        <StatusBar style="light" />
       <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
       
       <ScreenHeader title="Add" highlightedTitle="Listing" />
@@ -276,6 +268,7 @@ export default function AddListingScreen() {
         </View>
         <AppTrademark />
       </ScrollView>
-    </View>
+      </View>
+    </ApprovalGuard>
   );
 }

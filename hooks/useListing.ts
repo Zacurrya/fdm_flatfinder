@@ -4,7 +4,7 @@ import { getMessages, getOrCreateConversation, sendMessage } from "@services/cha
 import { getOrCreateCityChatByCity, sendCityChatMessage } from "@services/cityChat/cityChatController";
 import { deleteListing as deleteListingService, fetchListingById, Listing } from "@services/listings/listingController";
 import { encodeListingShareMessage } from "@utils/chatListingShare";
-import { formatCurrencyWithSymbol, formatListingPrice } from "@utils/currency";
+import { formatCurrencyWithSymbol, formatListingPrice, getRentLabel } from "@utils/currency";
 import { parsePhotoUrls } from "@utils/formatters";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -18,6 +18,14 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
   const [listing, setListing] = useState<Listing | null>(initialData || null);
   const [loading, setLoading] = useState(!initialData && !!id);
   const [signedPhotos, setSignedPhotos] = useState<string[]>([]);
+
+  // Sync state if initialData arrives later (async)
+  useEffect(() => {
+    if (initialData) {
+      setListing(initialData);
+      setLoading(false);
+    }
+  }, [initialData]);
 
   const loadData = useCallback(async () => {
     if (!id || initialData) return;
@@ -43,14 +51,7 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
     }
   }, [listing]);
 
-  const rentLabel = useMemo(() => {
-    if (!listing) return "pw";
-    const period = listing.rentPeriod;
-    if (period === "WEEKLY") return "pw";
-    if (period === "BIWEEKLY") return "biwk";
-    if (period === "MONTHLY") return "pcm";
-    return "pw";
-  }, [listing]);
+  const rentLabel = useMemo(() => getRentLabel(listing?.rentPeriod), [listing?.rentPeriod]);
 
   const firstPhotoUrl = useMemo(() => {
     return signedPhotos[0] || null;

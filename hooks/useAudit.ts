@@ -1,7 +1,7 @@
 import { useRealtime } from "@hooks/useRealtime";
 import * as AuditController from "@services/audit/auditController";
 import { ActionType, AuditLog } from "@services/audit/types";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * useAudit Hook
@@ -31,7 +31,6 @@ export function useAudit() {
   }, []);
 
   const onNewLog = useCallback((payload: any) => {
-    // Map Supabase column names to interface property names
     const mappedLog: AuditLog = {
       auditId: payload.id,
       userId: payload.userId || "",
@@ -39,15 +38,17 @@ export function useAudit() {
       actionType: payload.actionType as ActionType,
       timeStamp: payload.timestamp || new Date().toISOString(),
     };
-
-    // Prepend to show new events at the top
     setAuditLogs((prev) => [mappedLog, ...prev]);
   }, []);
 
   // Subscribe to real-time updates
   useRealtime<any>("AuditLogs", undefined, onNewLog);
 
-  // Creates an audit log entry.
+
+  useEffect(() => {
+    void loadInitialHistory();
+  }, [loadInitialHistory]);
+
   const logAction = useCallback(async (action: ActionType, targetId: string) => {
     const result = await AuditController.logAudit(action, targetId);
     if (!result.success) {
