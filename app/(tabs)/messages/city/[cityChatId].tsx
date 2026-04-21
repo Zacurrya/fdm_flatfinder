@@ -3,20 +3,15 @@ import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import CityImage from "@components/ui/CityImage";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { supabase } from "@lib/supabase";
 import {
   getCityChatParticipantCount,
-  getCityChatSenderProfile,
   sendCityChatMessage,
 } from "@services/cityChat/cityChatController";
 import { uploadListingPhoto } from "@services/listings/listingController";
 import { formatTime, getInitials } from "@utils/formatters";
 import {
-  fetchAndMapCityChatMessages,
-  mapCityChatMessage,
   MappedChatMessage,
 } from "@utils/mapMessages";
-import { subscribeToCityChatMessages } from "@utils/realtime";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -29,7 +24,6 @@ export default function CityChatScreen() {
   const parsedCityChatId = Number(cityChatId);
   const cityLabel = typeof city === "string" && city.trim() ? decodeURIComponent(city) : "City";
 
-  const [messages, setMessages] = useState<MappedChatMessage[]>([]);
   const [participantCount, setParticipantCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState("");
@@ -40,73 +34,26 @@ export default function CityChatScreen() {
 
   const isValidId = Number.isFinite(parsedCityChatId) && parsedCityChatId > 0;
 
-  // Load messages 
+  // Load participant count
   useEffect(() => {
     if (!isValidId) return;
 
     const loadData = async () => {
       setLoading(true);
       try {
-        const [msgResult, countResult] = await Promise.all([
-          fetchAndMapCityChatMessages({ cityChatId: parsedCityChatId }),
-          getCityChatParticipantCount({ cityChatId: parsedCityChatId }),
-        ]);
+        const countResult = await getCityChatParticipantCount({ cityChatId: parsedCityChatId });
 
-        if (!msgResult.success || !msgResult.data) {
-          throw new Error(msgResult.error ?? "Failed to load city chat messages.");
-        }
-
-        setMessages(msgResult.data);
         if (countResult.success && countResult.data !== undefined) {
           setParticipantCount(countResult.data);
         }
       } catch (error) {
-        console.error("Failed to load city chat messages:", error);
+        console.error("Failed to load city chat details:", error);
       } finally {
         setLoading(false);
       }
     };
 
     void loadData();
-  }, [isValidId, parsedCityChatId, user?.userId]);
-
-  // Real-time subscription
-  useEffect(() => {
-    if (!isValidId) return;
-
-    const channel = subscribeToCityChatMessages(parsedCityChatId, (raw) => {
-      const newMessage = raw as Parameters<typeof mapCityChatMessage>[0];
-      const mappedMessage = mapCityChatMessage(newMessage);
-      setMessages((prev) => {
-        if (prev.find((m) => m.id === mappedMessage.id)) return prev;
-        return [...prev, mappedMessage];
-      });
-      flatListRef.current?.scrollToEnd({ animated: true });
-
-      if (mappedMessage.senderId !== user?.userId) {
-        void getCityChatSenderProfile({ senderId: mappedMessage.senderId }).then((profileResult) => {
-          if (!profileResult.success) return;
-
-          setMessages((prev) =>
-            prev.map((message) =>
-              message.id === mappedMessage.id
-                ? {
-                  ...message,
-                  senderName: profileResult.data
-                    ? [profileResult.data.firstName, profileResult.data.lastName]
-                      .filter(Boolean)
-                      .join(" ") || "Consultant"
-                    : message.senderName,
-                  senderProfilePicture: profileResult.data?.profilePicture ?? null,
-                }
-                : message
-            )
-          );
-        });
-      }
-    });
-
-    return () => { supabase.removeChannel(channel); };
   }, [isValidId, parsedCityChatId, user?.userId]);
 
 
@@ -171,17 +118,11 @@ export default function CityChatScreen() {
   };
 
   // Render message 
-  const renderMessage = ({ item, index }: { item: MappedChatMessage; index: number }) => {
+  const renderMessage = (item: MappedChatMessage, _index: number, showDateSeparator: boolean, isPreviousFromSameSender: boolean) => {
     const isMe = item.senderId === user?.userId;
-    const previous = messages[index - 1];
-    const isPreviousFromSameSender = previous?.senderId === item.senderId;
-    const showSenderMeta = !isMe && !isPreviousFromSameSender;
-    const showDateSeparator =
-      !previous ||
-      new Date(item.createdAt).toDateString() !== new Date(previous.createdAt).toDateString();
-
     const senderName = item.senderName || "Consultant";
     const senderInitials = getInitials(senderName);
+    const showSenderMeta = !isMe && !isPreviousFromSameSender;
 
     return (
       <MessageBuilder
@@ -221,9 +162,9 @@ export default function CityChatScreen() {
 
   return (
     <ChatScreenLayout
+      chatId={parsedCityChatId}
+      source="CITY"
       headerContent={headerContent}
-      messages={messages}
-      loading={loading}
       flatListRef={flatListRef}
       renderMessage={renderMessage}
       listEmptyIcon={<Ionicons name="people-outline" size={40} color="#ffffff20" />}

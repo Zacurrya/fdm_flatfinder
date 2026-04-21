@@ -1,4 +1,4 @@
-import { SupportedCurrency } from "@services/settings/settings.types";
+import { SupportedCurrency } from "@services/settings/types";
 
 const CURRENCY_SYMBOLS: Record<SupportedCurrency, string> = {
   GBP: "£",

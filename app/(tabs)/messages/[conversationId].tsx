@@ -1,6 +1,4 @@
 import {
-  fetchAndMapConversationMessages,
-  mapConversationMessage,
   MappedChatMessage,
 } from "@/utils/mapMessages";
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
@@ -8,7 +6,6 @@ import ContactActionButtons from "@components/Chat/ContactActionButtons";
 import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { supabase } from "@lib/supabase";
 import {
   getConversationDetails,
   ListingSnippet,
@@ -18,7 +15,6 @@ import {
 import { uploadListingPhoto } from "@services/listings/listingController";
 import { formatCurrencyWithSymbol } from "@utils/currency";
 import { formatTime } from "@utils/formatters";
-import { subscribeToConversationMessages } from "@utils/realtime";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -35,7 +31,6 @@ export default function ChatScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [messages, setMessages] = useState<MappedChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState("");
   const [attachment, setAttachment] = useState<{ uri: string; type: "image" } | null>(null);
@@ -46,27 +41,22 @@ export default function ChatScreen() {
   const [listingPhotoUrl, setListingPhotoUrl] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
-  // Load messages & conversation details
+  // Load conversation details (Other user & Listing metadata)
   useEffect(() => {
     if (!conversationId || !user?.userId) return;
 
     const loadData = async () => {
       setLoading(true);
       try {
-        const [messagesResult, detailsResult] = await Promise.all([
-          fetchAndMapConversationMessages({ conversationId }),
-          getConversationDetails({ conversationId, currentUserId: user.userId }),
-        ]);
-
-        if (!messagesResult.success || !messagesResult.data) {
-          throw new Error(messagesResult.error ?? "Failed to load messages.");
-        }
+        const detailsResult = await getConversationDetails({ 
+          conversationId, 
+          currentUserId: user.userId 
+        });
 
         if (!detailsResult.success || !detailsResult.data) {
           throw new Error(detailsResult.error ?? "Failed to load conversation details.");
         }
 
-        setMessages(messagesResult.data);
         setOtherUser(detailsResult.data.otherUser);
         setListing(detailsResult.data.listing);
         setListingPhotoUrl(
@@ -75,7 +65,7 @@ export default function ChatScreen() {
             : null
         );
       } catch (error) {
-        console.error("Failed to load chat:", error);
+        console.error("Failed to load conversation details:", error);
       } finally {
         setLoading(false);
       }
@@ -83,23 +73,6 @@ export default function ChatScreen() {
 
     void loadData();
   }, [conversationId, user?.userId]);
-
-  // Real-time subscription
-  useEffect(() => {
-    if (!conversationId) return;
-
-    const channel = subscribeToConversationMessages(conversationId, (raw) => {
-      const newMessage = raw as Parameters<typeof mapConversationMessage>[0];
-      const mappedMessage = mapConversationMessage(newMessage);
-      setMessages((prev) => {
-        if (prev.find((m) => m.id === mappedMessage.id)) return prev;
-        return [...prev, mappedMessage];
-      });
-      flatListRef.current?.scrollToEnd({ animated: true });
-    });
-
-    return () => { supabase.removeChannel(channel); };
-  }, [conversationId]);
 
   // Send
   const handleSend = async () => {
@@ -177,12 +150,8 @@ export default function ChatScreen() {
     .slice(0, 2);
 
   // Render helpers
-  const renderMessage = ({ item, index }: { item: MappedChatMessage; index: number }) => {
+  const renderMessage = (item: MappedChatMessage, _index: number, showDateSeparator: boolean, isPreviousFromSameSender: boolean) => {
     const isMe = item.senderId === user?.userId;
-    const previous = messages[index - 1];
-    const showDateSeparator =
-      !previous ||
-      new Date(item.createdAt).toDateString() !== new Date(previous.createdAt).toDateString();
 
     return (
       <MessageBuilder
@@ -195,6 +164,7 @@ export default function ChatScreen() {
         showDateSeparator={showDateSeparator}
         avatarProfilePicture={otherUser?.profilePicture}
         avatarInitials={initials}
+        avatarVisible={!isMe && !isPreviousFromSameSender}
       />
     );
   };
@@ -276,10 +246,10 @@ export default function ChatScreen() {
 
   return (
     <ChatScreenLayout
+      chatId={conversationId}
+      source="PRIVATE"
       headerContent={headerContent}
       subHeader={subHeader}
-      messages={messages}
-      loading={loading}
       flatListRef={flatListRef}
       renderMessage={renderMessage}
       listEmptyText="Send a message to get started"

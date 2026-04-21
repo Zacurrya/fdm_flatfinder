@@ -1,6 +1,7 @@
 import ComposerActionsModal from "@components/Chat/ComposerActionsModal";
 import MessageInputBox from "@components/Chat/MessageInputBox";
 import { Ionicons } from "@expo/vector-icons";
+import { useChatMessages } from "@hooks/useChatMessages";
 import { MappedChatMessage } from "@utils/mapMessages";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -33,16 +34,21 @@ type MessageInputProps = {
 };
 
 type ChatScreenLayoutProps = {
+    chatId: string | number;
+    source: "PRIVATE" | "CITY";
     /* Left-side avatar + title/subtitle block inside the header row */
     headerContent: ReactNode;
     /* Optional card shown beneath the header (e.g. the listing card) */
     subHeader?: ReactNode;
     /* Extra node rendered after the KeyboardAvoidingView (e.g. modals) */
     footerExtra?: ReactNode;
-    messages: MappedChatMessage[];
-    loading: boolean;
     flatListRef: RefObject<FlatList | null>;
-    renderMessage: ListRenderItem<MappedChatMessage>;
+    renderMessage: (
+        item: MappedChatMessage,
+        index: number,
+        showDateSeparator: boolean,
+        isPreviousFromSameSender: boolean
+    ) => ReactNode;
     listEmptyIcon?: ReactNode;
     listEmptyText?: string;
     inputProps: MessageInputProps;
@@ -51,10 +57,10 @@ type ChatScreenLayoutProps = {
 };
 
 export default function ChatScreenLayout({
+    chatId,
+    source,
     headerContent,
     subHeader,
-    messages,
-    loading,
     flatListRef,
     renderMessage,
     listEmptyIcon,
@@ -66,11 +72,45 @@ export default function ChatScreenLayout({
     const insets = useSafeAreaInsets();
     const [actionsVisible, setActionsVisible] = useState(false);
 
+    const { messages, loading } = useChatMessages(chatId, source);
+
     const handlePressPlus = () => {
         if (inputProps.onPressPlus) {
             inputProps.onPressPlus();
         }
         setActionsVisible(true);
+    };
+
+    const renderItem: ListRenderItem<MappedChatMessage> = ({ item, index }) => {
+        const previous = messages[index - 1];
+        const showDateSeparator =
+            !previous ||
+            new Date(item.createdAt).toDateString() !==
+                new Date(previous.createdAt).toDateString();
+
+        const isPreviousFromSameSender = previous?.senderId === item.senderId;
+
+        return (
+            <View
+                style={{
+                    marginBottom:
+                        typeof messageGap === "number"
+                            ? messageGap * 4
+                            : undefined,
+                }}
+            >
+                {renderMessage(
+                    item,
+                    index,
+                    showDateSeparator,
+                    isPreviousFromSameSender
+                )}
+            </View>
+        );
+    };
+
+    const handleContentSizeChange = () => {
+        flatListRef.current?.scrollToEnd({ animated: false });
     };
 
     return (
@@ -113,14 +153,8 @@ export default function ChatScreenLayout({
                         ref={flatListRef}
                         data={messages}
                         keyExtractor={(item) => String(item.id)}
-                        renderItem={(info) => (
-                            <View style={{ marginBottom: typeof messageGap === 'number' ? messageGap * 4 : undefined }}>
-                                {renderMessage(info)}
-                            </View>
-                        )}
-                        onContentSizeChange={() =>
-                            flatListRef.current?.scrollToEnd({ animated: false })
-                        }
+                        renderItem={renderItem}
+                        onContentSizeChange={handleContentSizeChange}
                         ListEmptyComponent={
                             <View className="flex-1 items-center justify-center">
                                 {listEmptyIcon ?? (
