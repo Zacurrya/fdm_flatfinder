@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     const router = useRouter();
-    
+
     const refreshUser = async (): Promise<AuthResponse<User>> => {
         if (!session?.user?.id) {
             return { success: false, error: "No active session." };
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return result;
     };
-    
+
     /**
      * @param dto 
      * @return true if inputs are valid, false and sets error messages if invalid

@@ -4,7 +4,6 @@ import AuditTable from "@components/admin/AuditTable";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import ScreenHeader from "@components/ui/ScreenHeader";
 import { useAudit } from "@hooks/useAudit";
-import { useRealtime } from "@hooks/useRealtime";
 import { useRequests } from "@hooks/useRequests";
 import { useFocusEffect } from "@react-navigation/native";
 import { RequestRecord, RequestStatus } from "@services/requests/types";
@@ -25,7 +24,7 @@ export default function AdminScreen() {
     processingId: requestProcessingId,
     fetchRequests,
     reviewRequest,
-  } = useRequests();
+  } = useRequests({ enabled: activeTab === "requests" });
 
   const { auditLogs, loading: isLoadingAudits, error: auditError, fetchHistory: fetchAuditHistory } = useAudit();
 
@@ -43,11 +42,6 @@ export default function AdminScreen() {
   const handleRefreshRequests = useCallback(() => {
     void fetchRequests(requestStatusFilter === "ALL" ? undefined : requestStatusFilter);
   }, [fetchRequests, requestStatusFilter]);
-
-  useRealtime<RequestRecord>("Requests", {
-    onInsert: handleRefreshRequests,
-    enabled: activeTab === "requests",
-  });
 
   const handleReviewRequest = useCallback(
     async (request: RequestRecord, decision: "APPROVED" | "REJECTED") => {

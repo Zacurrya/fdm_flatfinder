@@ -1,3 +1,7 @@
+/**
+ * Maps audit action types to user-friendly labels and identifying colours
+ */
+
 type ActionDisplay = {
   label: string;
   color: string;

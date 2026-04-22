@@ -1,6 +1,7 @@
 import { User } from "@services/auth/types";
 import { getUserProfile } from "@services/user/userController";
 import { useEffect, useState } from "react";
+import { useUserAvatar } from "./useUserAvatar";
 
 const userCache = new Map<string, User>(); // Cache user details by userId
 const pendingUserRequests = new Map<string, Promise<User>>(); // Store promises to prevent request racing
@@ -8,6 +9,8 @@ const pendingUserRequests = new Map<string, Promise<User>>(); // Store promises 
 export function useUserDetails(userId: string | null | undefined) {
   const [userDetails, setUserDetails] = useState<User | null>(userCache.get(userId ?? "") ?? null);
   const [loading, setLoading] = useState(!userCache.has(userId ?? ""));
+
+  const { avatarUrl, initials, hasProfilePicture, loading: avatarLoading } = useUserAvatar(userDetails);
 
   useEffect(() => {
     if (!userId) {
@@ -78,7 +81,10 @@ export function useUserDetails(userId: string | null | undefined) {
 
   return {
     userDetails,
-    profilePicture: userDetails?.profilePicture ?? null,
-    loading,
+    profilePicture: avatarUrl,
+    avatarUrl,
+    initials,
+    hasProfilePicture,
+    loading: loading || avatarLoading,
   };
 }

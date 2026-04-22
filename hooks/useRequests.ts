@@ -1,5 +1,6 @@
 import * as RequestController from "@services/requests/requestController";
 import { RequestRecord, RequestStatus } from "@services/requests/types";
+import { useRealtime } from "@hooks/useRealtime";
 import { logger } from "@utils/logger";
 import { useCallback, useState } from "react";
 
@@ -9,13 +10,15 @@ import { useCallback, useState } from "react";
  *
  * @returns Request list state, loading/error flags, and fetch/review helpers.
  */
-export function useRequests() {
+export function useRequests({ enabled = true }: { enabled?: boolean } = {}) {
   const [requests, setRequests] = useState<RequestRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [currentStatus, setCurrentStatus] = useState<RequestStatus | undefined>(undefined);
 
   const fetchRequests = useCallback(async (status?: RequestStatus) => {
+    setCurrentStatus(status);
     setLoading(true);
     setError(null);
     try {
@@ -57,6 +60,16 @@ export function useRequests() {
       logger.log(`Request complete. Decision: ${decision}`);
     }
   }, []);
+
+  useRealtime<RequestRecord>("Requests", {
+    onInsert: () => {
+      void fetchRequests(currentStatus);
+    },
+    onUpdate: () => {
+      void fetchRequests(currentStatus);
+    },
+    enabled,
+  });
 
   return {
     requests,

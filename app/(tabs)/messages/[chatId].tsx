@@ -105,7 +105,7 @@ export default function ChatScreen() {
         flatListRef={flatListRef}
         renderMessage={renderMessage}
         listEmptyText="Send a message to get started"
-        inputProps={{...inputProps,}}
+        inputProps={{ ...inputProps, }}
       />
     </View>
   );
