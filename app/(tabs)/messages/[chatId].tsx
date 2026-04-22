@@ -3,29 +3,35 @@ import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
 import ContactActionButtons from "@components/Chat/ContactActionButtons";
 import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
 import FDMLoader from "@components/ui/FDMLoader";
-import { useAuth } from "@context/AuthContext";
+import { useAuth } from "@hooks/useAuth";
 import { useChatInput } from "@hooks/useChatInput";
 import { DecoratedChatMessage } from "@hooks/useChatMessages";
-import { useConversationDetails } from "@hooks/useConversationDetails";
+import { useChatMeta } from "@hooks/useChatMeta";
+import { useListing } from "@hooks/useListing";
+import { useUserDetails } from "@hooks/useUserDetails";
 import { sendMessage } from "@services/chat/chatController";
 import { formatTime, getInitials } from "@utils/formatters";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useRef } from "react";
 import { FlatList, Image, Text, View } from "react-native";
 
 export default function ChatScreen() {
-  const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
+  const { chatId } = useLocalSearchParams<{ chatId: string }>();
   const { user } = useAuth();
-  const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
 
-  // Conversation metadata
-  const { otherUser, listingData, listingId, loading } = useConversationDetails(conversationId, user?.userId);
+  const { otherUserId, listingId, loading: metaLoading } = useChatMeta(
+    chatId,
+    user?.userId
+  );
+  const { userDetails: otherUser, loading: otherUserLoading } = useUserDetails(otherUserId);
+  const { listing: listingData, loading: listingLoading } = useListing(listingId ?? undefined);
+  const loading = metaLoading || otherUserLoading || listingLoading;
 
   // Chat send/upload logic
   const { inputProps } = useChatInput(async (content) => {
-    if (!user?.userId || !conversationId) return;
-    const result = await sendMessage({ conversationId, senderId: user.userId, content });
+    if (!user?.userId || !chatId) return;
+    const result = await sendMessage({ chatId, senderId: user.userId, content });
     if (!result.success) throw new Error(result.error ?? "Failed to send message.");
   });
 
@@ -34,21 +40,26 @@ export default function ChatScreen() {
     ? [otherUser.firstName, otherUser.lastName].filter(Boolean).join(" ") || "User"
     : "Chat";
   const initials = getInitials(otherUserName);
+  const currentUserName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User";
+  const currentUserInitials = getInitials(currentUserName);
 
   const renderMessage = (item: DecoratedChatMessage, _index: number) => {
-    const isMe = item.senderId === user?.userId;
+    const isMe = item.sender_id === user?.userId;
+    const senderName = isMe ? currentUserName : otherUserName;
+    const senderProfilePicture = isMe ? user?.profilePicture ?? null : otherUser?.profilePicture ?? null;
+    const senderInitials = isMe ? currentUserInitials : initials;
     return (
       <MessageBuilder
         content={item.content}
-        timeLabel={formatTime(item.createdAt)}
+        timeLabel={formatTime(item.createdAt)} // Used for HH:MM message timestamp
         isMe={isMe}
-        senderName={otherUserName}
+        senderName={senderName}
         showSenderName={false}
         createdAt={item.createdAt}
         showDateSeparator={item.showDateSeparator}
-        avatarProfilePicture={otherUser?.profilePicture}
-        avatarInitials={initials}
-        avatarVisible={!isMe && !item.isPreviousFromSameSender}
+        avatarProfilePicture={senderProfilePicture}
+        avatarInitials={senderInitials}
+        avatarVisible={!isMe && !item.isPreviousFromSameSender} // Only render other user's avatars
       />
     );
   };
@@ -87,17 +98,14 @@ export default function ChatScreen() {
     <View style={{ flex: 1 }}>
       {loading && <FDMLoader />}
       <ChatScreenLayout
-        chatId={conversationId}
+        chatId={chatId}
         source="PRIVATE"
         headerContent={headerContent}
         subHeader={<ChatListingSubHeader listingId={listingId ?? undefined} initialData={listingData} />}
         flatListRef={flatListRef}
         renderMessage={renderMessage}
         listEmptyText="Send a message to get started"
-        inputProps={{
-          ...inputProps,
-          placeholder: inputProps.attachment ? "Add a caption..." : "Message...",
-        }}
+        inputProps={{...inputProps,}}
       />
     </View>
   );

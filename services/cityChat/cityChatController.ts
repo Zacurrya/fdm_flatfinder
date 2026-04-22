@@ -1,4 +1,3 @@
-export * from "./types";
 import {
   fetchCityChats as fetchCityChatsService,
   getCityChatMessages as getCityChatMessagesService,
@@ -21,7 +20,15 @@ import type {
   GetCityChatSenderProfileDTO,
   SendCityChatMessageDTO,
 } from "./types";
+export * from "./types";
 
+/**
+ * getOrCreateCityChatByCity
+ * Loads an existing city chat for a city or creates one if needed.
+ *
+ * @param request The city lookup payload.
+ * @returns A city chat response containing the chat row.
+ */
 export const getOrCreateCityChatByCity = async (
   request: GetCityChatByCityDTO
 ): Promise<CityChatResponse<CityChat>> => {
@@ -43,6 +50,12 @@ export const getOrCreateCityChatByCity = async (
   }
 };
 
+/**
+ * fetchCityChats
+ * Loads the list of available city chats.
+ *
+ * @returns A city chat response containing the city chat list.
+ */
 export const fetchCityChats = async (): Promise<CityChatResponse<CityChat[]>> => {
   try {
     const cityChats = await fetchCityChatsService();
@@ -52,6 +65,13 @@ export const fetchCityChats = async (): Promise<CityChatResponse<CityChat[]>> =>
   }
 };
 
+/**
+ * getCityChatMessages
+ * Loads the message history for a city chat.
+ *
+ * @param request The city chat message lookup payload.
+ * @returns A city chat response containing the message list.
+ */
 export const getCityChatMessages = async (
   request: GetCityChatMessagesDTO
 ): Promise<CityChatResponse<CityChatMessageWithSender[]>> => {
@@ -68,6 +88,13 @@ export const getCityChatMessages = async (
   }
 };
 
+/**
+ * getCityChatParticipantCount
+ * Counts the participants currently active in a city chat.
+ *
+ * @param request The city chat lookup payload.
+ * @returns A city chat response containing the participant count.
+ */
 export const getCityChatParticipantCount = async (
   request: GetCityChatMessagesDTO
 ): Promise<CityChatResponse<number>> => {
@@ -84,6 +111,13 @@ export const getCityChatParticipantCount = async (
   }
 };
 
+/**
+ * sendCityChatMessage
+ * Validates and sends a message into a city chat.
+ *
+ * @param request The city chat message payload.
+ * @returns A city chat response containing the created message.
+ */
 export const sendCityChatMessage = async (
   request: SendCityChatMessageDTO
 ): Promise<CityChatResponse<CityChatMessageWithSender>> => {
@@ -110,6 +144,13 @@ export const sendCityChatMessage = async (
   }
 };
 
+/**
+ * getCityChatSenderProfile
+ * Resolves the sender profile for a city chat message.
+ *
+ * @param request The sender lookup payload.
+ * @returns A city chat response containing the sender profile or null.
+ */
 export const getCityChatSenderProfile = async (
   request: GetCityChatSenderProfileDTO
 ): Promise<CityChatResponse<CityChatSenderProfile | null>> => {

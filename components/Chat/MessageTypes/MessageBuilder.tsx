@@ -13,6 +13,11 @@ import ListingMessage from "./ListingMessage";
 import TextMessage from "./TextMessage";
 import { MessageProps } from "./types";
 
+/**
+ * 
+ * @param 
+  * @returns Takes in a message and determines which type of message it is (text, image, listing share, audit) and renders the appropriate component for it. It also handles rendering the date separator and avatar for the message. 
+ */
 export default function MessageBuilder(props: MessageProps) {
   const {
     content,
@@ -55,7 +60,7 @@ export default function MessageBuilder(props: MessageProps) {
       {showDateSeparator && <DateMessage date={createdAt} />}
 
       <View
-        className={`flex-row mb-1 px-4 items-end ${
+        className={`flex-row mb-1 px-4 items-start ${
           isMe ? "justify-end" : "justify-start"
         }`}
       >

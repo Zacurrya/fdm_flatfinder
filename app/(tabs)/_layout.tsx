@@ -1,5 +1,5 @@
-import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@hooks/useAuth";
 import { Tabs } from "expo-router";
 import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -86,7 +86,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages/[conversationId]"
+        name="messages/[chatId]"
         options={{
           href: null,
         }}

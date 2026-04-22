@@ -13,6 +13,14 @@ function requireNonEmpty(value: string | undefined | null, fieldName: string): s
     return null;
 }
 
+/**
+ * logAudit
+ * Validates and persists an audit event for the given target entity.
+ *
+ * @param action The audit action type to record.
+ * @param targetId The entity ID being audited.
+ * @returns A success/error response containing the created audit log entry.
+ */
 export const logAudit = async (
     action: ActionType,
     targetId: string
@@ -29,6 +37,12 @@ export const logAudit = async (
     return AuditService.logAudit(action, targetId.trim());
 };
 
+/**
+ * getHistory
+ * Loads the audit history ordered by most recent activity.
+ *
+ * @returns A success/error response containing the audit history list.
+ */
 export const getHistory = async (): Promise<AuditResponse<AuditLog[]>> => {
     return AuditService.getHistory();
 };

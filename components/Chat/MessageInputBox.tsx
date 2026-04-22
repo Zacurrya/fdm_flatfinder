@@ -9,7 +9,6 @@ type MessageInputBoxProps = {
   onSend?: () => void;
   sendDisabled?: boolean;
   onPressPlus?: () => void;
-  onPressImage?: () => void;
   actionsDisabled?: boolean;
   showActions?: boolean;
   attachment?: { uri: string; type: "image" } | null;
@@ -24,7 +23,6 @@ export default function MessageInputBox({
   onSend,
   sendDisabled = false,
   onPressPlus,
-  onPressImage,
   actionsDisabled = false,
   showActions = true,
   attachment,
@@ -33,7 +31,7 @@ export default function MessageInputBox({
   const rightInsetClassName = showActions ? "pr-28" : "pr-12";
 
   return (
-    <View className="flex-1 bg-fdm-fg/10 border border-fdm-fg/10 rounded-3xl px-2 py-2">
+    <View className="flex-1 bg-fdm-fg/10 border border-fdm-fg/10 rounded-3xl px-2 mx-2">
       {attachment?.type === "image" ? (
         <View className="flex-row items-center mb-2 px-1">
           <View className="relative">
@@ -63,10 +61,9 @@ export default function MessageInputBox({
         style={{ maxHeight: 120, minHeight: 40 }}
       />
 
-      {/* Action buttons container */}
+      {/* Action buttons modal */}
       <View
-        className="absolute right-2 top-1/2 flex-row items-center gap-1"
-        style={{ marginTop: 10 }}
+        className="absolute bottom-2 right-2 flex-row gap-1"
       >
         {showActions ? (
           <>
@@ -77,21 +74,9 @@ export default function MessageInputBox({
             >
               <Ionicons name="add" size={20} color={actionsDisabled ? "#ffffff30" : "#ffffff90"} />
             </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={onPressImage}
-              disabled={actionsDisabled}
-              className="w-8 h-8 rounded-full items-center justify-center"
-            >
-              <Ionicons
-                name="image-outline"
-                size={18}
-                color={actionsDisabled ? "#ffffff30" : "#ffffff90"}
-              />
-            </TouchableOpacity>
           </>
         ) : null}
-
+        {/* Send button */}
         <TouchableOpacity
           onPress={onSend}
           disabled={sendDisabled}

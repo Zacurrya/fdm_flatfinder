@@ -1,4 +1,4 @@
-import { useAuth } from "@context/AuthContext";
+import { useAuth } from "@hooks/useAuth";
 import { Ionicons } from "@expo/vector-icons";
 import { Alert, Text, TouchableOpacity } from "react-native";
 

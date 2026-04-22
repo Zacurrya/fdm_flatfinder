@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { supabase } from "@lib/supabase";
-import { mockConversationRequestDTO } from "@mocks/data/dtos/chatDTO.json";
-import { mockConversation, mockMessage } from "@mocks/data/entities/chat.json";
+import { mockChatRequestDTO } from "@mocks/data/dtos/chatDTO.json";
+import { mockChat, mockMessage } from "@mocks/data/entities/chat.json";
 import {
   getMessages,
-  getOrCreateConversation,
+  getOrCreateChat,
   sendMessage,
-  validateGetOrCreateConversationRequest
+  validateGetOrCreateChatRequest
 } from "@services/chat/chatService";
 import { mockConversationsTable, mockMessagesTable, resetSupabaseMock } from "../helpers/supabase";
 
@@ -18,42 +18,42 @@ beforeEach(() => {
 
 describe("chatService", () => {
   describe("Validation", () => {
-    test("validateGetOrCreateConversationRequest validation", () => {
+    test("validateGetOrCreateChatRequest validation", () => {
       const missingCurrentUserValidationDTO = {
-        ...mockConversationRequestDTO,
+        ...mockChatRequestDTO,
         currentUserId: "",
       };
-      expect(validateGetOrCreateConversationRequest({
+      expect(validateGetOrCreateChatRequest({
         currentUserId: missingCurrentUserValidationDTO.currentUserId,
         otherUserId: missingCurrentUserValidationDTO.otherUserId,
       })).toEqual({ valid: false, error: "Current user ID is required." });
 
       const sameUserValidationDTO = {
-        ...mockConversationRequestDTO,
-        otherUserId: mockConversationRequestDTO.currentUserId,
+        ...mockChatRequestDTO,
+        otherUserId: mockChatRequestDTO.currentUserId,
       };
-      expect(validateGetOrCreateConversationRequest({
+      expect(validateGetOrCreateChatRequest({
         currentUserId: sameUserValidationDTO.currentUserId,
         otherUserId: sameUserValidationDTO.otherUserId,
-      })).toEqual({ valid: false, error: "You cannot start a conversation with yourself." });
+      })).toEqual({ valid: false, error: "You cannot start a chat with yourself." });
     });
   });
 
-  describe("getOrCreateConversation", () => {
-    test("returns existing conversation if found", async () => {
-      const convMock = mockConversationsTable([mockConversation]);
+  describe("getOrCreateChat", () => {
+    test("returns existing chat if found", async () => {
+      const chatMock = mockConversationsTable([mockChat]);
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
-        if (table === "Conversations") return convMock;
+        if (table === "Conversations") return chatMock;
         return {};
       });
 
-      const result = await getOrCreateConversation(
-        mockConversationRequestDTO.currentUserId,
-        mockConversationRequestDTO.otherUserId,
-        mockConversationRequestDTO.listingId
+      const result = await getOrCreateChat(
+        mockChatRequestDTO.currentUserId,
+        mockChatRequestDTO.otherUserId,
+        mockChatRequestDTO.listingId
       );
-      expect(result).toEqual(mockConversation);
+      expect(result).toEqual(mockChat);
     });
   });
 
@@ -66,30 +66,30 @@ describe("chatService", () => {
         return {};
       });
 
-      const result = await getMessages(mockConversationRequestDTO.conversationId);
+      const result = await getMessages(mockChatRequestDTO.chatId);
       expect(result).toEqual([mockMessage]);
     });
   });
 
   describe("sendMessage", () => {
-    test("sends message and updates conversation", async () => {
+    test("sends message and updates chat", async () => {
       const messagesMock = mockMessagesTable(mockMessage);
-      const convMock = mockConversationsTable([]);
+      const chatMock = mockConversationsTable([]);
 
       (supabase.from as jest.Mock).mockImplementation((...args: unknown[]) => {
         const table = args[0] as string;
         if (table === "Messages") return messagesMock;
-        if (table === "Conversations") return convMock;
+        if (table === "Conversations") return chatMock;
         return {};
       });
 
       const result = await sendMessage(
-        mockConversationRequestDTO.conversationId,
-        mockConversationRequestDTO.currentUserId,
-        mockConversationRequestDTO.message
+        mockChatRequestDTO.chatId,
+        mockChatRequestDTO.currentUserId,
+        mockChatRequestDTO.message
       );
       expect(messagesMock.insert).toHaveBeenCalled();
-      expect(convMock.update).toHaveBeenCalled();
+      expect(chatMock.update).toHaveBeenCalled();
       expect(result).toEqual(mockMessage);
     });
   });

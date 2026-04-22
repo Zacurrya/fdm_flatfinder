@@ -1,15 +1,24 @@
-import { useAuth } from "@context/AuthContext";
+import { useAuth } from "@hooks/useAuth";
 import * as AuditController from "@services/audit/auditController";
-import { getOrCreateConversation } from "@services/chat/chatController";
+import { getOrCreateChat } from "@services/chat/chatController";
 import { getOrCreateCityChatByCity, sendCityChatMessage } from "@services/cityChat/cityChatController";
 import { deleteListing as deleteListingService, fetchListingById, Listing } from "@services/listings/listingController";
 import { encodeListingShareMessage } from "@utils/chatListingShare";
 import { getRentLabel } from "@utils/currency";
 import { parsePhotoUrls } from "@utils/formatters";
+import { logger } from "@utils/logger";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 
+/**
+ * useListing
+ * Loads a single listing and exposes the detail-page actions for that listing.
+ *
+ * @param id The listing ID or route param value.
+ * @param initialData Optional preloaded listing to avoid a fetch on first render.
+ * @returns Listing state, derived values, and listing-related actions.
+ */
 export function useListing(id?: string | number, initialData?: Listing | null) {
   const { user } = useAuth();
   const router = useRouter();
@@ -18,15 +27,6 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
   const [listingSold, setListingSold] = useState(false);
   const [loading, setLoading] = useState(!initialData && !!id);
   const [signedPhotos, setSignedPhotos] = useState<string[]>([]);
-
-  // Sync state if initialData arrives later (async)
-  useEffect(() => {
-    if (initialData) {
-      setListing(initialData);
-      setListingSold(false);
-      setLoading(false);
-    }
-  }, [initialData]);
 
   const loadData = useCallback(async () => {
     if (!id || initialData) return;
@@ -65,27 +65,31 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
     const loc = listing.ListingLocations;
     return loc?.address ?? loc?.city ?? "Location unavailable";
   }, [listing]);
-
+  /**
+   * 
+   * @returns Deletes a listing record.
+   */
   const deleteListing = async () => {
     if (!listing?.id) return;
     try {
       await deleteListingService({ id: Number(listing.id) });
       await AuditController.logAudit("LISTING_DELETED", listing.id.toString());
       router.back();
+      logger.log("Listing deleted successfully, ID:", listing.id);
     } catch (e) {
       console.error("Failed to delete", e);
       Alert.alert("Error", "Failed to delete listing.");
     }
   };
 
+  /**
+   * 
+   * @returns and finally sends a message containing the listing details to that chat. It also handles errors and provides user feedback through alerts.
+   */
   const shareToGroupChat = async () => {
     if (!user?.userId || !listing) return;
 
     const cityForChat = (listing as Listing).ListingLocations?.city?.trim() || user.officeLocation?.trim();
-    if (!cityForChat) {
-      Alert.alert("Share Failed", "No city found for this listing.");
-      return;
-    }
 
     try {
       const cityChatResult = await getOrCreateCityChatByCity({ city: cityForChat });
@@ -120,27 +124,27 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
     }
   };
 
-  const openConversation = async () => {
+  // Routes user to the chat screen with the listing owner
+  const openChat = async () => {
     if (!user?.userId || !listing) return;
 
     try {
-      const conversationResult = await getOrCreateConversation({
+      const chatResult = await getOrCreateChat({
         currentUserId: user.userId,
         otherUserId: (listing as Listing).userId,
         listingId: Number(listing.id),
       });
 
-      if (!conversationResult.success || !conversationResult.data) {
-        throw new Error(conversationResult.error ?? "Could not open conversation.");
-      }
+      if (!chatResult.success || !chatResult.data) { throw new Error(chatResult.error ?? "Could not open chat."); }
 
-      router.push(`/(tabs)/messages/${conversationResult.data.id}` as any);
+      router.push(`/(tabs)/messages/${chatResult.data.id}`);
     } catch (error) {
-      console.error("Failed to open conversation", error);
+      console.error("Failed to open chat", error);
       Alert.alert("Error", "Could not open chat. Please try again.");
     }
   };
 
+  // Determine if the current user is the owner of the listing for conditional UI rendering
   const isOwner = useMemo(() => {
     if (!user?.userId || !listing) return false;
     return listing.userId === user.userId;
@@ -157,7 +161,7 @@ export function useListing(id?: string | number, initialData?: Listing | null) {
     actions: {
       deleteListing,
       shareToGroupChat,
-      openConversation,
+      openChat,
     },
     isOwner,
   };

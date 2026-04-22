@@ -1,7 +1,8 @@
 import LoginForm from "@components/auth/LoginForm";
 import BackButton from '@components/ui/BackButton';
 import BackgroundCircle from "@components/ui/BackgroundCircle";
-import { useAuth } from "@context/AuthContext";
+import { useAuth } from "@hooks/useAuth";
+import { emailRegex } from "@utils/authPatterns";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -22,13 +23,12 @@ export default function Login() {
   const isBusy = isSubmitting || isResettingPassword;
 
   const validateInputs = (trimmedEmail: string, currentPassword: string) => {
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     let valid = true;
 
     if (!trimmedEmail) {
       setEmailError("Email is required.");
       valid = false;
-    } else if (!emailPattern.test(trimmedEmail)) {
+    } else if (!emailRegex.test(trimmedEmail)) {
       setEmailError("Enter a valid email address.");
       valid = false;
     } else {
@@ -37,9 +37,6 @@ export default function Login() {
 
     if (!currentPassword) {
       setPasswordError("Password is required.");
-      valid = false;
-    } else if (currentPassword.length < 8) {
-      setPasswordError("Password must be at least 8 characters.");
       valid = false;
     } else {
       setPasswordError("");

@@ -2,21 +2,21 @@ import { supabase } from "@lib/supabase";
 import { Listing } from "@services/listings/listingController";
 import { isNonEmptyString, isPositiveInteger } from "@utils/validation";
 import {
+    Chat,
     ChatValidationResult,
-    Conversation,
-    ConversationWithUser,
-    GetConversationDetailsDTO,
-    GetConversationsDTO,
-    GetMessagesDTO,
-    GetOrCreateConversationDTO,
+    ChatWithUser,
+    GetChatDetailsDTO,
+    GetChatMessagesDTO,
+    GetChatsDTO,
+    GetOrCreateChatDTO,
     Message,
     OtherUserProfile,
-    SendMessageDTO,
+    SendChatMessageDTO,
 } from "./types";
 
 
-export const validateGetOrCreateConversationRequest = (
-  request: GetOrCreateConversationDTO
+export const validateGetOrCreateChatRequest = (
+  request: GetOrCreateChatDTO
 ): ChatValidationResult => {
   if (!isNonEmptyString(request.currentUserId)) {
     return { valid: false, error: "Current user ID is required." };
@@ -27,7 +27,7 @@ export const validateGetOrCreateConversationRequest = (
   }
 
   if (request.currentUserId === request.otherUserId) {
-    return { valid: false, error: "You cannot start a conversation with yourself." };
+    return { valid: false, error: "You cannot start a chat with yourself." };
   }
 
   if (typeof request.listingId !== "undefined" && !isPositiveInteger(request.listingId)) {
@@ -37,8 +37,8 @@ export const validateGetOrCreateConversationRequest = (
   return { valid: true };
 };
 
-export const validateGetConversationsRequest = (
-  request: GetConversationsDTO
+export const validateGetChatsRequest = (
+  request: GetChatsDTO
 ): ChatValidationResult => {
   if (!isNonEmptyString(request.userId)) {
     return { valid: false, error: "User ID is required." };
@@ -47,11 +47,11 @@ export const validateGetConversationsRequest = (
   return { valid: true };
 };
 
-export const validateGetConversationDetailsRequest = (
-  request: GetConversationDetailsDTO
+export const validateGetChatDetailsRequest = (
+  request: GetChatDetailsDTO
 ): ChatValidationResult => {
-  if (!isNonEmptyString(request.conversationId)) {
-    return { valid: false, error: "Conversation ID is required." };
+  if (!isNonEmptyString(request.chatId)) {
+    return { valid: false, error: "Chat ID is required." };
   }
 
   if (!isNonEmptyString(request.currentUserId)) {
@@ -61,21 +61,21 @@ export const validateGetConversationDetailsRequest = (
   return { valid: true };
 };
 
-export const validateGetMessagesRequest = (
-  request: GetMessagesDTO
+export const validateGetChatMessagesRequest = (
+  request: GetChatMessagesDTO
 ): ChatValidationResult => {
-  if (!isNonEmptyString(request.conversationId)) {
-    return { valid: false, error: "Conversation ID is required." };
+  if (!isNonEmptyString(request.chatId)) {
+    return { valid: false, error: "Chat ID is required." };
   }
 
   return { valid: true };
 };
 
-export const validateSendMessageRequest = (
-  request: SendMessageDTO
+export const validateSendChatMessageRequest = (
+  request: SendChatMessageDTO
 ): ChatValidationResult => {
-  if (!isNonEmptyString(request.conversationId)) {
-    return { valid: false, error: "Conversation ID is required." };
+  if (!isNonEmptyString(request.chatId)) {
+    return { valid: false, error: "Chat ID is required." };
   }
 
   if (!isNonEmptyString(request.senderId)) {
@@ -89,12 +89,12 @@ export const validateSendMessageRequest = (
   return { valid: true };
 };
 
-// Get or create a conversation between two users, optionally linked to a listing.
-export const getOrCreateConversation = async (
+// Get or create a chat between two users, optionally linked to a listing.
+export const getOrCreateChat = async (
   currentUserId: string,
   otherUserId: string,
   listingId?: number
-): Promise<Conversation> => {
+): Promise<Chat> => {
   let query = supabase
     .from("Conversations")
     .select("*")
@@ -111,7 +111,7 @@ export const getOrCreateConversation = async (
   const { data: existingRows, error: existingError } = await query;
 
   if (existingError) {
-    console.error("Error checking existing conversation:", existingError);
+    console.error("Error checking existing chat:", existingError);
     throw existingError;
   }
 
@@ -130,15 +130,15 @@ export const getOrCreateConversation = async (
     .single();
 
   if (error || !data) {
-    console.error("Error creating conversation:", error);
-    throw error ?? new Error("Conversation was not created.");
+    console.error("Error creating chat:", error);
+    throw error ?? new Error("Chat was not created.");
   }
 
   return data;
 };
 
-// Get all conversations for the current user with counterparty profile and full listing.
-export const getConversations = async (userId: string): Promise<ConversationWithUser[]> => {
+// Get all chats for the current user with counterparty profile and full listing.
+export const getChats = async (userId: string): Promise<ChatWithUser[]> => {
   const { data, error } = await supabase
     .from("Conversations")
     .select("*")
@@ -146,7 +146,7 @@ export const getConversations = async (userId: string): Promise<ConversationWith
     .order("last_message_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching conversations:", error);
+    console.error("Error fetching chats:", error);
     throw error;
   }
 
@@ -172,11 +172,11 @@ export const getConversations = async (userId: string): Promise<ConversationWith
       ]);
 
       if (otherUserResult.error) {
-        console.warn("Could not load other user profile for conversation", conv.id, otherUserResult.error);
+        console.warn("Could not load other user profile for chat", conv.id, otherUserResult.error);
       }
 
       if ((listingResult as any).error) {
-        console.warn("Could not load listing for conversation", conv.id, (listingResult as any).error);
+        console.warn("Could not load listing for chat", conv.id, (listingResult as any).error);
       }
 
       return {
@@ -197,20 +197,20 @@ export const getConversations = async (userId: string): Promise<ConversationWith
   return enriched;
 };
 
-// Get profile and listing details for a specific conversation.
-export const getConversationDetails = async (
-  conversationId: string,
+// Get profile and listing details for a specific chat.
+export const getChatDetails = async (
+  chatId: string,
   currentUserId: string
 ): Promise<{ otherUser: OtherUserProfile; listing: Listing | null; listingId: number | null }> => {
   const { data: conv, error } = await supabase
     .from("Conversations")
     .select("user1_id, user2_id, listing_id")
-    .eq("id", conversationId)
+    .eq("id", chatId)
     .single();
 
   if (error || !conv) {
-    console.error("Error fetching conversation details:", error);
-    throw error ?? new Error("Conversation not found.");
+    console.error("Error fetching chat details:", error);
+    throw error ?? new Error("Chat not found.");
   }
 
   const otherUserId = conv.user1_id === currentUserId ? conv.user2_id : conv.user1_id;
@@ -244,15 +244,38 @@ export const getConversationDetails = async (
   };
 };
 
-export const getMessages = async (conversationId: string): Promise<Message[]> => {
+export const getChatMeta = async (
+  chatId: string,
+  currentUserId: string
+): Promise<{ otherUserId: string; listingId: number | null }> => {
+  const { data: conv, error } = await supabase
+    .from("Conversations")
+    .select("user1_id, user2_id, listing_id")
+    .eq("id", chatId)
+    .single();
+
+  if (error || !conv) {
+    console.error("Error fetching chat meta:", error);
+    throw error ?? new Error("Chat not found.");
+  }
+
+  const otherUserId = conv.user1_id === currentUserId ? conv.user2_id : conv.user1_id;
+
+  return {
+    otherUserId,
+    listingId: conv.listing_id ?? null,
+  };
+};
+
+export const getMessages = async (chatId: string): Promise<Message[]> => {
   const { data, error } = await supabase
     .from("Messages")
     .select("*")
-    .eq("conversation_id", conversationId)
+    .eq("conversation_id", chatId)
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("Error fetching messages:", error);
+    console.error("Error fetching chat messages:", error);
     throw error;
   }
 
@@ -260,37 +283,35 @@ export const getMessages = async (conversationId: string): Promise<Message[]> =>
 };
 
 export const sendMessage = async (
-  conversationId: string,
+  chatId: string,
   senderId: string,
   content: string
 ): Promise<Message> => {
-  const normalizedContent = content.trim();
-
   const { data, error } = await supabase
     .from("Messages")
     .insert({
-      conversation_id: conversationId,
+      conversation_id: chatId,
       sender_id: senderId,
-      content: normalizedContent,
+      content,
     })
     .select()
     .single();
 
   if (error || !data) {
-    console.error("Error sending message:", error);
+    console.error("Error sending chat message:", error);
     throw error ?? new Error("Message was not created.");
   }
 
   const { error: updateError } = await supabase
     .from("Conversations")
     .update({
-      last_message: normalizedContent,
+      last_message: content,
       last_message_at: new Date().toISOString(),
     })
-    .eq("id", conversationId);
+    .eq("id", chatId);
 
   if (updateError) {
-    console.warn("Failed to update conversation preview:", updateError);
+    console.warn("Failed to update chat preview:", updateError);
   }
 
   return data;

@@ -48,7 +48,7 @@ export const formatListingPrice = (
 };
 
 /**
- * Returns a short human-readable rent period label.
+ * Returns a shortened rent period label.
  * e.g. WEEKLY → "pw", BIWEEKLY → "biwk", MONTHLY → "pcm"
  */
 export const getRentLabel = (period: string | null | undefined): string => {

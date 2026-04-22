@@ -1,20 +1,19 @@
 import ApprovalGuard from "@components/ui/ApprovalGuard";
+import AppTrademark from "@components/ui/AppTrademark";
+import BackgroundCircle from "@components/ui/BackgroundCircle";
 import CityImage from "@components/ui/CityImage";
 import FDMLoader from "@components/ui/FDMLoader";
-import { useAuth } from "@context/AuthContext";
+import ScreenHeader from "@components/ui/ScreenHeader";
 import { Ionicons } from "@expo/vector-icons";
-import { ConversationWithUser, getConversations } from "@services/chat/chatController";
+import { useAuth } from "@hooks/useAuth";
+import { ChatWithUser, getChats } from "@services/chat/chatController";
 import { CityChat, fetchCityChats, getOrCreateCityChatByCity } from "@services/cityChat/cityChatController";
 import { formatCurrencyWithSymbol, getRentLabel } from "@utils/currency";
 import { formatRelativeDate, getInitials } from "@utils/formatters";
-import AppTrademark from "@components/ui/AppTrademark";
-import BackgroundCircle from "@components/ui/BackgroundCircle";
-import ScreenHeader from "@components/ui/ScreenHeader";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Image,
   ScrollView,
   Text,
@@ -25,7 +24,7 @@ import {
 export default function MessagesScreen() {
   const { user } = useAuth();
   const router = useRouter();
-  const [conversations, setConversations] = useState<ConversationWithUser[]>([]);
+  const [chats, setChats] = useState<ChatWithUser[]>([]);
   const [cityChats, setCityChats] = useState<CityChat[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,10 +36,10 @@ export default function MessagesScreen() {
       const load = async () => {
         setLoading(true);
         try {
-          const conversationsResult = await getConversations({ userId: user.userId });
+          const chatsResult = await getChats({ userId: user.userId });
 
-          if (!conversationsResult.success || !conversationsResult.data) {
-            throw new Error(conversationsResult.error ?? "Failed to load conversations.");
+          if (!chatsResult.success || !chatsResult.data) {
+            throw new Error(chatsResult.error ?? "Failed to load chats.");
           }
 
           const cityChatsResult =
@@ -51,7 +50,7 @@ export default function MessagesScreen() {
                 : { success: true, data: null };
 
           if (active) {
-            setConversations(conversationsResult.data);
+            setChats(chatsResult.data);
             if (!cityChatsResult.success) {
               setCityChats([]);
             } else if (Array.isArray(cityChatsResult.data)) {
@@ -63,7 +62,7 @@ export default function MessagesScreen() {
             }
           }
         } catch (e) {
-          console.error("Failed to load conversations:", e);
+          console.error("Failed to load chats:", e);
         } finally {
           if (active) setLoading(false);
         }
@@ -86,12 +85,12 @@ export default function MessagesScreen() {
 
       {loading ? (
         <FDMLoader />
-      ) : conversations.length === 0 && cityChats.length === 0 ? (
+      ) : chats.length === 0 && cityChats.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <Ionicons name="chatbubbles-outline" size={56} color="#ffffff20" />
           <Text className="text-fdm-fg/40 text-base text-center mt-4">No messages yet.</Text>
           <Text className="text-fdm-fg/30 text-sm text-center mt-1">
-            Open a listing and tap Message Seller to start a conversation.
+            Open a listing and tap Message Seller to start a chat.
           </Text>
         </View>
       ) : (
@@ -136,22 +135,22 @@ export default function MessagesScreen() {
             </TouchableOpacity>
           ))}
 
-          {conversations.map((conv) => {
+          {chats.map((chat) => {
             const name =
-              [conv.otherUser.firstName, conv.otherUser.lastName]
+              [chat.otherUser.firstName, chat.otherUser.lastName]
                 .filter(Boolean)
                 .join(" ") || "User";
             const initials = getInitials(name);
 
             return (
               <TouchableOpacity
-                key={conv.id}
-                onPress={() => router.push(`/(tabs)/messages/${conv.id}` as any)}
+                key={chat.id}
+                onPress={() => router.push(`/(tabs)/messages/${chat.id}` as any)}
                 className="flex-row items-center px-6 py-4 border-b border-fdm-fg/5 active:bg-fdm-fg/5"
               >
-                {conv.otherUser.profilePicture ? (
+                {chat.otherUser.profilePicture ? (
                   <Image
-                    source={{ uri: conv.otherUser.profilePicture }}
+                    source={{ uri: chat.otherUser.profilePicture }}
                     className="w-12 h-12 rounded-full"
                   />
                 ) : (
@@ -163,19 +162,19 @@ export default function MessagesScreen() {
                 <View className="flex-1 ml-4">
                   <View className="flex-row justify-between items-center">
                     <Text className="text-fdm-fg font-semibold text-base">{name}</Text>
-                    <Text className="text-fdm-fg/40 text-xs">{formatRelativeDate(conv.last_message_at)}</Text>
+                    <Text className="text-fdm-fg/40 text-xs">{formatRelativeDate(chat.last_message_at)}</Text>
                   </View>
 
                   <Text className="text-fdm-fg/50 text-sm mt-0.5" numberOfLines={1}>
-                    {conv.last_message ?? "Start a conversation"}
+                    {chat.last_message ?? "Start a chat"}
                   </Text>
 
-                  {conv.listing && (
+                  {chat.listing && (
                     <View className="flex-row items-center mt-1.5 gap-1">
                       <Ionicons name="home-outline" size={11} color="#ccff0070" />
                       <Text className="text-fdm-accent/70 text-xs flex-1" numberOfLines={1}>
-                        {conv.listing.title} - {formatCurrencyWithSymbol(conv.listing.price)}/
-                        {getRentLabel(conv.listing.rentPeriod)}
+                        {chat.listing.title} - {formatCurrencyWithSymbol(chat.listing.price)}/
+                        {getRentLabel(chat.listing.rentPeriod)}
                       </Text>
                     </View>
                   )}

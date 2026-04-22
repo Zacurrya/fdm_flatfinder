@@ -1,6 +1,6 @@
 {
-  "mockConversation": {
-    "id": "conv-123",
+  "mockChat": {
+    "id": "chat-123",
     "user1_id": "user-123",
     "user2_id": "user-456",
     "listing_id": 1,

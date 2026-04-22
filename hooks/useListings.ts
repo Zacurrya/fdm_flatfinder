@@ -1,6 +1,5 @@
-import { useAuth } from "@context/AuthContext";
+import { useSavedListings } from "@hooks/useSavedListings";
 import { fetchListings, Listing } from "@services/listings/listingController";
-import { addFavourite, getUserFavourites, removeFavourite } from "@services/user/userController";
 import { filterListings } from "@utils/listingFilters";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -14,11 +13,21 @@ export type ListingFilterState = {
   searchQuery: string;
 };
 
+/**
+ * useListings
+ * Loads the listing feed, applies client-side search filters, and composes saved-listing actions.
+ *
+ * @returns The filtered listings, all listings, favourite IDs, loading state, and filter setters.
+ */
 export function useListings() {
-  const { user } = useAuth();
+  const {
+    favIds,
+    loadingFavourites,
+    refreshFavourites,
+    toggleFavourite,
+  } = useSavedListings();
   
   const [listings, setListings] = useState<Listing[]>([]);
-  const [favIds, setFavIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filter states
@@ -31,18 +40,17 @@ export function useListings() {
 
   const loadData = useCallback(async () => {
     try {
-      const [data, favData] = await Promise.all([
+      const [data] = await Promise.all([
         fetchListings(),
-        user?.userId ? getUserFavourites(user.userId) : Promise.resolve({ success: true, data: [] as number[] })
+        refreshFavourites(),
       ]);
       setListings(data);
-      setFavIds(favData.success ? favData.data || [] : []);
     } catch (error) {
       console.error("Failed to fetch listings or favourites:", error);
     } finally {
       setLoading(false);
     }
-  }, [user?.userId]);
+  }, [refreshFavourites]);
 
   useFocusEffect(
     useCallback(() => {
@@ -61,28 +69,7 @@ export function useListings() {
       sourceFilter,
     });
   }, [listings, searchQuery, minPrice, maxPrice, bedrooms, bathrooms, sourceFilter]);
-
-  const toggleFavourite = async (listingId: string | number) => {
-    if (!user) return;
-    const lId = Number(listingId);
-    const isFaved = favIds.includes(lId);
-    
-    // Optimistic UI
-    if (isFaved) {
-      setFavIds(prev => prev.filter(id => id !== lId));
-      const res = await removeFavourite(user.userId, lId);
-      if (!res.success) {
-        setFavIds(prev => [...prev, lId]); // Rollback
-      }
-    } else {
-      setFavIds(prev => [...prev, lId]);
-      const res = await addFavourite(user.userId, lId);
-      if (!res.success) {
-        setFavIds(prev => prev.filter(id => id !== lId)); // Rollback
-      }
-    }
-  };
-
+  
   const clearAllFilters = () => {
     setMinPrice("");
     setMaxPrice("");
@@ -96,7 +83,7 @@ export function useListings() {
     listings: filteredListings,
     allListings: listings,
     favIds,
-    loading,
+    loading: loading || loadingFavourites,
     refresh: loadData,
     toggleFavourite,
     

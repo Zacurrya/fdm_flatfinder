@@ -1,3 +1,5 @@
+import { supabase } from "@lib/supabase";
+import { File } from "expo-file-system";
 import {
     AuthResponse,
     GetProfilePictureUrlOptions,
@@ -7,8 +9,6 @@ import {
     User,
     UserEmailMapResult,
 } from "./types";
-import { File } from "expo-file-system";
-import { supabase } from "@lib/supabase";
 
 const PROFILE_PICTURE_BUCKET = "profile-pictures";
 
@@ -353,21 +353,11 @@ export const removeProfilePicture = async (
 
 export const requestOfficeLocationChange = async (
     authUserId: string,
-    officeLocation: string
+    officeLocation: string,
+    profileContext?: { oldCity: string; role: User["role"] }
 ): Promise<AuthResponse> => {
-    // Fetch the current office location (old city) and role
-    const { data: profile, error: profileError } = await supabase
-        .from("Users")
-        .select("officeLocation, role")
-        .eq("userId", authUserId)
-        .single();
-
-    if (profileError || !profile) {
-        return { success: false, error: "Failed to fetch current profile." };
-    }
-
-    const oldCity = profile.officeLocation ?? "";
-    const role = profile.role;
+    let oldCity = profileContext?.oldCity ?? "";
+    let role = profileContext?.role;
 
     if (role === "ADMIN") {
         // Admins bypass approval: update city immediately

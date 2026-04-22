@@ -1,9 +1,10 @@
-import DeleteListingButton from "@components/listing/DeleteListingButton";
-import ShareListingButton from "@components/listing/ShareListingButton";
+import FavouriteListingButton from "@components/listing/FavouriteListingButton";
+import IconButton from "@components/listing/IconButton";
 import FDMLoader from "@components/ui/FDMLoader";
-import { useAuth } from "@context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@hooks/useAuth";
 import { useListing } from "@hooks/useListing";
+import { useSavedListings } from "@hooks/useSavedListings";
 import { formatListingPrice } from "@utils/currency";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -15,6 +16,7 @@ export default function ListingDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { favIds, toggleFavourite } = useSavedListings();
 
   const {
     listing,
@@ -24,7 +26,11 @@ export default function ListingDetailScreen() {
     isOwner,
   } = useListing(id as string);
 
+  const listingId = listing ? Number(listing.id) : null;
+  const isFavourite = listingId != null && favIds.includes(listingId);
+
   const windowWidth = Dimensions.get('window').width;
+  const buttonSize = 28;
 
   return (
     <View className="flex-1 bg-fdm-bg">
@@ -94,15 +100,31 @@ export default function ListingDetailScreen() {
               className="absolute right-6 flex-row items-center gap-3" 
               style={{ top: insets.top || 48 }}
             >
-              {user?.userId && (
-                <ShareListingButton 
-                  onShare={actions.shareToGroupChat} 
-                  cityName={listing.ListingLocations?.city}
+              {/* -- Favourite listing button -- */}
+              {user?.userId && listingId != null && (
+                <FavouriteListingButton
+                  isFavourite={isFavourite}
+                  size={buttonSize}
+                  toggleFavourite={() => toggleFavourite(listingId)}
                 />
               )}
-              
+              {/* -- Share listing button -- */}
+              {user?.userId && (
+                <IconButton
+                  iconName="share-social-outline"
+                  onPress={actions.shareToGroupChat} 
+                  size={buttonSize}
+                />
+              )}
+              {/* -- Delete listing button -- */}
               {isOwner && (
-                <DeleteListingButton onDelete={actions.deleteListing} />
+                <IconButton
+                  iconName="trash-outline"
+                  iconColor="#ef4444"
+                  size={28}
+                  onPress={actions.deleteListing}   // wraps the Alert confirmation
+                  disabled={loading}
+                />
               )}
             </View>
           </View>
@@ -158,8 +180,8 @@ export default function ListingDetailScreen() {
 
             {!isOwner && (
               <TouchableOpacity
-                onPress={actions.openConversation}
-                className="bg-fdm-accent py-4 rounded-2xl flex-row justify-center items-center mt-2"
+                onPress={actions.openChat}
+                className="bg-fdm-accent py-4 mx-12 rounded-2xl flex-row justify-center items-center mt-2"
               >
                 <Ionicons name="chatbubble-outline" size={20} color="#1a1a1a" />
                 <Text className="text-fdm-bg font-bold px-10">Message Seller</Text>

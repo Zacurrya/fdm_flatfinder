@@ -1,26 +1,20 @@
-import {
-  ChatResponse,
-  getMessages,
-  GetMessagesDTO,
-  Message,
-} from "@services/chat/chatController";
+import { Message } from "@services/chat/chatController";
 import {
   CityChatMessage,
   CityChatMessageWithSender,
-  CityChatResponse,
-  getCityChatMessages,
-  GetCityChatMessagesDTO,
 } from "@services/cityChat/cityChatController";
 
+// Unified message shape consumed by chat UI components and hooks.
 export type MappedChatMessage = {
   id: string;
   content: string;
   createdAt: string;
-  senderId: string;
+  sender_id: string;
   senderName?: string;
   senderProfilePicture?: string | null;
 };
 
+// Minimal row shape emitted by realtime subscriptions for city chat messages.
 export type CityChatRealtimeMessageRow = {
   id: string | number;
   content: string;
@@ -28,54 +22,33 @@ export type CityChatRealtimeMessageRow = {
   sender_id: string;
 };
 
-export const mapConversationMessage = (message: Message): MappedChatMessage => ({
+// Maps private message rows to the shared chat message shape.
+export const mapChatMessage = (message: Message): MappedChatMessage => ({
   id: String(message.id),
   content: message.content,
   createdAt: message.created_at,
-  senderId: message.sender_id,
+  sender_id: message.sender_id,
 });
 
+/**
+ * Maps city chat payloads (history or realtime) into the shared chat message shape.
+ * Normalizes sender identity to sender_id and attaches optional expanded sender profile.
+ *
+ * @param message A city chat message payload from fetch or realtime sources.
+ */
 export const mapCityChatMessage = (
   message: CityChatMessageWithSender | CityChatMessage | CityChatRealtimeMessageRow
-): MappedChatMessage => ({
-  id: String(message.id),
-  content: message.content,
-  createdAt: message.created_at,
-  senderId: "senderId" in message ? message.senderId : message.sender_id,
-  senderName:
-    "sender" in message && message.sender
-      ? [message.sender.firstName, message.sender.lastName].filter(Boolean).join(" ") || "Consultant"
+): MappedChatMessage => {
+  const sender = "sender" in message ? message.sender : null;
+
+  return {
+    id: String(message.id),
+    content: message.content,
+    createdAt: message.created_at,
+    sender_id: "sender_id" in message ? message.sender_id : message.senderId,
+    senderName: sender
+      ? [sender.firstName, sender.lastName].filter(Boolean).join(" ") || "Consultant"
       : undefined,
-  senderProfilePicture:
-    "sender" in message && message.sender
-      ? message.sender.profilePicture
-      : null,
-});
-
-export const fetchAndMapConversationMessages = async (
-  request: GetMessagesDTO
-): Promise<ChatResponse<MappedChatMessage[]>> => {
-  const result = await getMessages(request);
-  if (!result.success || !result.data) {
-    return { success: false, error: result.error ?? "Failed to fetch messages." };
-  }
-
-  return {
-    success: true,
-    data: result.data.map(mapConversationMessage),
-  };
-};
-
-export const fetchAndMapCityChatMessages = async (
-  request: GetCityChatMessagesDTO
-): Promise<CityChatResponse<MappedChatMessage[]>> => {
-  const result = await getCityChatMessages(request);
-  if (!result.success || !result.data) {
-    return { success: false, error: result.error ?? "Failed to fetch city chat messages." };
-  }
-
-  return {
-    success: true,
-    data: result.data.map(mapCityChatMessage),
+    senderProfilePicture: sender ? sender.profilePicture : null,
   };
 };

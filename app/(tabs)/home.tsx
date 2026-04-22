@@ -1,37 +1,52 @@
-import FDMLoader from "@components/ui/FDMLoader";
 import HomeHeader from "@components/home/HomeHeader";
 import ApprovalGuard from "@components/ui/ApprovalGuard";
 import AppTrademark from "@components/ui/AppTrademark";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
+import FDMLoader from "@components/ui/FDMLoader";
 import ListingCard from "@components/ui/ListingCard";
-import { useAuth } from "@context/AuthContext";
-import { useListings } from "@hooks/useListings";
-import { useNavigation, useRouter } from "expo-router";
+import { useAuth } from "@hooks/useAuth";
+import { useSavedListings } from "@hooks/useSavedListings";
+import { fetchListings, Listing } from "@services/listings/listingController";
+import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const cityName = user?.officeLocation || "home";
   const router = useRouter();
-  const navigation = useNavigation();
+  const { favIds, loadingFavourites, refreshFavourites, toggleFavourite } = useSavedListings();
+  const [allListings, setAllListings] = useState<Listing[]>([]);
+  const [loadingListings, setLoadingListings] = useState(true);
 
-  // Use the centralized useListings hook for data + favorites syncing
-  const { allListings, loading, favIds, toggleFavourite, refresh } = useListings();
+  const loadListings = useCallback(async () => {
+    try {
+      setLoadingListings(true);
+      const data = await fetchListings();
+      setAllListings(data);
+    } catch (error) {
+      console.error("Failed to fetch listings:", error);
+      setAllListings([]);
+    } finally {
+      setLoadingListings(false);
+    }
+  }, []);
 
-  // Derived state: only show favorited listings on home
-  const savedListings = allListings.filter((l) => favIds.includes(Number(l.id)));
+  useFocusEffect(
+    useCallback(() => {
+      void loadListings();
+      void refreshFavourites();
+    }, [loadListings, refreshFavourites])
+  );
 
-  useEffect(() => {
-    // Re-fetch data every time the home tab is pressed
-    // @ts-expect-error - expo-router navigation types don't inherently map tab events without explicit typing
-    const unsubscribe = navigation.addListener("tabPress", () => {
-      refresh();
-    });
-    return unsubscribe;
-  }, [navigation, refresh]);
+  const savedListings = useMemo(
+    () => allListings.filter((listing) => favIds.includes(Number(listing.id))),
+    [allListings, favIds]
+  );
 
+  const loading = loadingListings || loadingFavourites;
+  
   return (
     <ApprovalGuard>
       <View className="flex-1 bg-fdm-bg">
@@ -66,8 +81,7 @@ export default function HomeScreen() {
                     listing={listing}
                     isFavourite={favIds.includes(Number(listing.id))}
                     onToggleFavourite={async () => {
-                      await toggleFavourite(listing.id);
-                      refresh(); // Refresh home after unfavoriting
+                      await toggleFavourite(Number(listing.id));
                     }}
                     onPress={() => router.push(`/listing/${listing.id}`)}
                   />

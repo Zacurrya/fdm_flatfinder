@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
  *
  * @param userId  The current user's ID. Pass undefined when not yet available.
  * @param enabled Whether the settings panel is currently open/visible.
+ * @returns Currency selection state, loading/saving flags, and save helpers.
  */
 export function useUserCurrency(userId: string | undefined, enabled: boolean) {
   const [selectedCurrency, setSelectedCurrency] = useState<SupportedCurrency>("GBP");

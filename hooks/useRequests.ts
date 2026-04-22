@@ -1,10 +1,13 @@
-import { useCallback, useState } from "react";
 import * as RequestController from "@services/requests/requestController";
 import { RequestRecord, RequestStatus } from "@services/requests/types";
+import { logger } from "@utils/logger";
+import { useCallback, useState } from "react";
 
 /**
  * useRequests Hook
  * Manages the fetch/filter lifecycle and review orchestration for user requests.
+ *
+ * @returns Request list state, loading/error flags, and fetch/review helpers.
  */
 export function useRequests() {
   const [requests, setRequests] = useState<RequestRecord[]>([]);
@@ -23,13 +26,14 @@ export function useRequests() {
         setRequests([]);
         setError(result.error ?? "Failed to load requests.");
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred while fetching requests.");
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Reviews a request with the given decision
   const reviewRequest = useCallback(async (requestId: number, decision: "APPROVED" | "REJECTED") => {
     setProcessingId(requestId);
     setError(null);
@@ -50,6 +54,7 @@ export function useRequests() {
       return { success: false, error: msg };
     } finally {
       setProcessingId(null);
+      logger.log(`Request complete. Decision: ${decision}`);
     }
   }, []);
 
@@ -60,6 +65,6 @@ export function useRequests() {
     processingId,
     fetchRequests,
     reviewRequest,
-    setRequests, // Exposed for manual updates/optimistic UI
+    setRequests, 
   };
 }

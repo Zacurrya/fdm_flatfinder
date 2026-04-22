@@ -1,3 +1,5 @@
+import { Session } from "@supabase/supabase-js";
+import * as AuthService from "./authService";
 import {
     ApprovalDTO,
     AuthResponse,
@@ -7,8 +9,6 @@ import {
     RegistrationDTO,
     User,
 } from "./types";
-import { Session } from "@supabase/supabase-js";
-import * as AuthService from "./authService";
 
 function normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
@@ -27,6 +27,13 @@ function validateUserIdDto(dto: ApprovalDTO | DeletionDTO): string | null {
     return requireNonEmpty(dto?.userId, "User ID");
 }
 
+/**
+ * register
+ * Validates and forwards a registration request to the auth service.
+ *
+ * @param dto The registration payload.
+ * @returns A success/error response for account creation.
+ */
 export const register = async (
     dto: RegistrationDTO
 ): Promise<AuthResponse> => {
@@ -57,6 +64,13 @@ export const register = async (
     });
 };
 
+/**
+ * login
+ * Validates and forwards a login request to the auth service.
+ *
+ * @param dto The login payload.
+ * @returns A success/error response containing the session and user profile.
+ */
 export const login = async (
     dto: LoginDTO
 ): Promise<AuthResponse<{ session: Session; user: User }>> => {
@@ -75,10 +89,23 @@ export const login = async (
     return AuthService.login(normalizeEmail(dto.email), dto.password);
 };
 
+/**
+ * logout
+ * Signs the current user out through the auth service.
+ *
+ * @returns A success/error response for the logout action.
+ */
 export const logout = async (): Promise<AuthResponse> => {
     return AuthService.logout();
 };
 
+/**
+ * resetPassword
+ * Normalizes the email address and requests a password reset.
+ *
+ * @param dto The password reset payload.
+ * @returns A success/error response for the reset request.
+ */
 export const resetPassword = async (
     dto: PasswordResetDTO
 ): Promise<AuthResponse> => {
@@ -94,6 +121,13 @@ export const resetPassword = async (
     return AuthService.resetPassword({ email: normalizeEmail(dto.email) });
 };
 
+/**
+ * approveUser
+ * Approves a pending user account through the auth service.
+ *
+ * @param dto The user approval payload.
+ * @returns A success/error response for the approval action.
+ */
 export const approveUser = async (
     dto: ApprovalDTO
 ): Promise<AuthResponse> => {
@@ -105,6 +139,13 @@ export const approveUser = async (
     return AuthService.approveUser({ userId: dto.userId.trim() });
 };
 
+/**
+ * rejectUser
+ * Rejects a pending user account through the auth service.
+ *
+ * @param dto The user approval payload.
+ * @returns A success/error response for the rejection action.
+ */
 export const rejectUser = async (
     dto: ApprovalDTO
 ): Promise<AuthResponse> => {
@@ -116,6 +157,13 @@ export const rejectUser = async (
     return AuthService.rejectUser({ userId: dto.userId.trim() });
 };
 
+/**
+ * deleteUser
+ * Permanently deletes a user account through the auth service.
+ *
+ * @param dto The deletion payload.
+ * @returns A success/error response for the deletion action.
+ */
 export const deleteUser = async (
     dto: DeletionDTO
 ): Promise<AuthResponse> => {

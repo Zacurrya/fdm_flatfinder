@@ -2,7 +2,7 @@ import CurrencyDropdown from "@components/profile/CurrencyDropdown";
 import AppTrademark from "@components/ui/AppTrademark";
 import OfficeLocationSelector from "@components/ui/OfficeLocationSelector";
 import ScreenHeader from "@components/ui/ScreenHeader";
-import { useAuth } from "@context/AuthContext";
+import { useAuth } from "@hooks/useAuth";
 import { useCityTransfer } from "@hooks/useCityTransfer";
 import { useUserCurrency } from "@hooks/useUserCurrency";
 import { Ionicons } from "@expo/vector-icons";

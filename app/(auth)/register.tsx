@@ -1,6 +1,7 @@
 import RegisterForm from "@components/auth/RegisterForm";
 import BackButton from "@components/ui/BackButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
+import { emailRegex, hasSymbol, hasUppercaseLetter, internationalPhonePattern } from "@utils/authPatterns";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -91,11 +92,7 @@ export default function Register() {
     const trimmedLastName = lastName.trim();
     const trimmedEmail = email.trim();
     const trimmedPhoneNumber = phoneNumber.trim();
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const internationalPhonePattern = /^\+[1-9]\d{0,3}(?:[\s().-]*\d)+$/;
     const isFdmEmail = trimmedEmail.toLowerCase().endsWith("@fdmgroup.com");
-    const hasUppercaseLetter = /[A-Z]/.test(password);
-    const hasSymbol = /[^A-Za-z0-9\s]/.test(password);
     let isValid = true;
 
     setFormError("");
@@ -117,7 +114,7 @@ export default function Register() {
     if (!trimmedEmail) {
       setEmailError("Email is required.");
       isValid = false;
-    } else if (!emailPattern.test(trimmedEmail)) {
+    } else if (!emailRegex.test(trimmedEmail)) {
       setEmailError("Enter a valid email address.");
       isValid = false;
     } else if (!isFdmEmail) {
@@ -140,7 +137,7 @@ export default function Register() {
     if (!password) {
       setPasswordError("Password is required.");
       isValid = false;
-    } else if (password.length < 8 || !hasUppercaseLetter || !hasSymbol) {
+    } else if (password.length < 8 || !hasUppercaseLetter(password) || !hasSymbol(password)) {
       setPasswordError(
         "Password must be at least 8 characters and include an uppercase letter and a symbol."
       );

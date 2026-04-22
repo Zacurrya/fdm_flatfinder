@@ -2,7 +2,7 @@ import AppTrademark from "@components/ui/AppTrademark";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import ScreenHeader from "@components/ui/ScreenHeader";
 import ApprovalGuard from "@components/ui/ApprovalGuard";
-import { useAuth } from "@context/AuthContext";
+import { useAuth } from "@hooks/useAuth";
 import { Ionicons } from "@expo/vector-icons";
 import { createListing, InsertListing, uploadListingPhoto } from "@services/listings/listingController";
 import * as ImagePicker from "expo-image-picker";

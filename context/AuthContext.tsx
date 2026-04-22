@@ -10,7 +10,9 @@ import {
 } from "@services/auth/types";
 import * as UserController from "@services/user/userController";
 import { Session } from "@supabase/supabase-js";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { logger } from "@utils/logger";
+import { useRouter } from "expo-router";
+import React, { createContext, useEffect, useState } from "react";
 
 // Context Definition 
 
@@ -38,7 +40,7 @@ interface AuthContextType {
     removeProfilePicture: () => Promise<AuthResponse>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Provider
 
@@ -47,6 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const router = useRouter();
+    
     const refreshUser = async (): Promise<AuthResponse<User>> => {
         if (!session?.user?.id) {
             return { success: false, error: "No active session." };
@@ -91,30 +95,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
-
-    // Actions
-
+    /**
+     * @param dto containing email and password
+     * @returns Creates a session and fetches user JWT 
+     */
     const login = async (dto: LoginDTO) => {
         const result = await AuthController.login(dto);
 
         if (result.success && result.data) {
             setSession(result.data.session);
             setUser(result.data.user);
+            logger.log("Login successful")
         }
 
         return result;
     };
     
+    /**
+     * @param dto 
+     * @return true if inputs are valid, false and sets error messages if invalid
+     */
     const register = async (dto: RegistrationDTO) => {
         return AuthController.register(dto);
     };
 
+    /**
+     * @returns result of Supabase sign out and redirects to landing page on success
+     */
     const logout = async () => {
         const result = await AuthController.logout();
 
         if (result.success) {
             setSession(null);
             setUser(null);
+            router.push("/");
+            logger.log("Logout successful");
         }
         return result;
     };
@@ -181,12 +196,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-// Hook
-
-export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
-    return context;
-}
+// Hook moved to hooks/useAuth.ts

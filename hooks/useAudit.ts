@@ -42,7 +42,7 @@ export function useAudit() {
   }, []);
 
   // Subscribe to real-time updates
-  useRealtime<any>("AuditLogs", undefined, onNewLog);
+  useRealtime<any>("AuditLogs", { onInsert: onNewLog, enabled: true });
 
 
   useEffect(() => {

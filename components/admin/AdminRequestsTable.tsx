@@ -13,7 +13,7 @@ type AdminRequestsTableProps = {
     onApprove: (request: RequestRecord) => void;
     onReject: (request: RequestRecord) => void;
     onRefresh: () => void;
-    isRefreshing?: boolean;
+    isRefreshing: boolean;
 };
 
 const FILTER_OPTIONS: { label: string; value: RequestStatus | "ALL" }[] = [
@@ -32,8 +32,6 @@ export default function AdminRequestsTable({
     onChangeFilter,
     onApprove,
     onReject,
-    onRefresh,
-    isRefreshing = false,
 }: AdminRequestsTableProps) {
     const renderItem = ({ item }: { item: RequestRecord }) => (
         <RequestCard
@@ -46,7 +44,7 @@ export default function AdminRequestsTable({
 
     return (
         <View className="flex-1">
-            {/* Filter Pills + Refresh */}
+            {/* Filter Options */}
             <View className="flex-row items-center gap-2 px-6 pb-3">
                 {FILTER_OPTIONS.map((option) => (
                     <TouchableOpacity
@@ -71,18 +69,6 @@ export default function AdminRequestsTable({
                 ))}
 
                 <View className="flex-1" />
-
-                <TouchableOpacity
-                    className="w-8 h-8 rounded-xl border border-fdm-fg/20 items-center justify-center"
-                    onPress={onRefresh}
-                    disabled={isRefreshing || isLoading}
-                >
-                    <Ionicons
-                        name="refresh-outline"
-                        size={16}
-                        color={isRefreshing || isLoading ? "#ffffff30" : "#ffffff99"}
-                    />
-                </TouchableOpacity>
             </View>
 
             {/* Content */}

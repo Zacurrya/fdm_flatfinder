@@ -1,12 +1,30 @@
+import { useAuth } from "@/hooks/useAuth"; // Assuming your hook location
 import BackgroundCircle from "@components/ui/BackgroundCircle";
+import { logger } from "@utils/logger";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 
 export default function Index() {
-  const router = useRouter();
-  const { width, height } = useWindowDimensions();
+  const { session, isLoading } = useAuth();
+    const router = useRouter();
+    const { width, height } = useWindowDimensions();
+
+    useEffect(() => {
+      // Only redirect once we've finished checking for an existing session
+      if (!isLoading && session) {
+        router.replace("/(tabs)/home"); 
+        logger.log("Active session found, navigating to home screen");
+      }
+    }, [session, isLoading, router]);
+
+    // Prevent UI flickering while checking session
+    if (isLoading) return null; 
+
+    // If there is a session, don't render the landing page 
+    if (session) return null;
 
   return (
     <View className="flex-1 bg-fdm-bg items-center justify-center p-6">
@@ -38,7 +56,10 @@ export default function Index() {
           <TouchableOpacity
             className="w-full bg-fdm-accent py-4 rounded-2xl items-center shadow-lg shadow-fdm-accent/20 active:opacity-80 transition-opacity"
             accessibilityLabel="Click to login"
-            onPress={() => router.push("/(auth)/login")}
+            onPress={() => {
+              router.push("/(auth)/login")
+              logger.log("No active session found, navigating to login screen");
+            }}
           >
             <Text className="text-fdm-bg font-bold text-lg tracking-wide uppercase">Log In</Text>
           </TouchableOpacity>

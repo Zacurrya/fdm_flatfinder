@@ -1,11 +1,12 @@
 import { uploadListingPhoto } from "@services/listings/listingController";
+import { logger } from "@utils/logger";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 
 /**
  * useChatInput
- * Centralizes the stateful input, attachment, and send/upload logic shared
+ * Centralises input state, attachment, and send/upload logic
  * by both private and city chat screens.
  *
  * @param sendFn  Async function that sends the final message content string.
@@ -35,6 +36,7 @@ export function useChatInput(sendFn: (content: string) => Promise<void>) {
           finalContent = content ? `${uploadedUrl} ${content}` : uploadedUrl;
         } finally {
           setUploadingImage(false);
+          logger.log("Attachment upload completed");
         }
       }
 
@@ -44,6 +46,7 @@ export function useChatInput(sendFn: (content: string) => Promise<void>) {
       setInputText(content);
     } finally {
       setSending(false);
+      logger.log("Message sent successfully")
     }
   }, [inputText, attachment, sending, sendFn]);
 

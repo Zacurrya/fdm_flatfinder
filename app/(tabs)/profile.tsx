@@ -2,10 +2,10 @@ import ProfileCard from "@components/profile/ProfileCard";
 import ProfilePicModal from "@components/profile/ProfilePicModal";
 import SettingsModal from "@components/profile/SettingsModal";
 import SignOutButton from "@components/profile/SignOutButton";
-import BackgroundCircle from "@components/ui/BackgroundCircle";
 import AppTrademark from "@components/ui/AppTrademark";
+import BackgroundCircle from "@components/ui/BackgroundCircle";
 import ScreenHeader from "@components/ui/ScreenHeader";
-import { useAuth } from "@context/AuthContext";
+import { useAuth } from "@hooks/useAuth";
 import { Ionicons } from "@expo/vector-icons";
 import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
@@ -100,7 +100,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View className="flex-1 bg-fdm-bg">
+    <View className="flex-1 bg-fdm-bg px-6">
       <StatusBar style="light" hidden={width > height} />
 
       <BackgroundCircle top={0} right={0} color="#CCFF001A" opacity={0.5} />
@@ -125,7 +125,7 @@ export default function ProfileScreen() {
         />
 
         {/* Profile Card */}
-        <View className="px-6">
+        <View>
           <ProfileCard
             user={user}
             onPressProfilePicture={() => setIsProfilePictureModalVisible(true)}
@@ -133,14 +133,9 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Account Actions Section Label */}
-        <View className="px-6 mt-10 mb-4 flex-row items-center gap-2">
-          <Ionicons name="key-outline" size={16} color="#ccff00" />
-          <Text className="text-white/40 text-xs font-bold uppercase tracking-widest">Account Security</Text>
-        </View>
 
-        <View className="px-6">
-          <View className="bg-white/5 border border-white/5 rounded-3xl p-6 items-center">
+        <View>
+          <View className="p-6 items-center">
             <Text className="text-white/50 text-sm text-center mb-6 leading-relaxed">
               You are currently signed in as {user?.email}.
             </Text>

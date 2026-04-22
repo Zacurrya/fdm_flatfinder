@@ -1,3 +1,4 @@
+import FavouriteListingButton from "@components/listing/FavouriteListingButton";
 import { Ionicons } from "@expo/vector-icons";
 import { formatListingPrice } from "@utils/currency";
 import { parsePhotoUrls } from "@utils/formatters";
@@ -119,26 +120,16 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
 
                     {/* Favourite Button (Top Left) */}
                     {onToggleFavourite && (
-                        <TouchableOpacity
-                            onPress={(e) => {
-                                e.stopPropagation();
-                                onToggleFavourite();
-                            }}
+                        <FavouriteListingButton
+                            toggleFavourite={onToggleFavourite}
+                            isFavourite={isFavourite}
+                            stopPropagation
                             style={{
                                 position: "absolute",
                                 top: 10,
                                 left: 10,
-                                backgroundColor: "rgba(0,0,0,0.4)",
-                                padding: 6,
-                                borderRadius: 20,
                             }}
-                        >
-                            <Ionicons
-                                name={isFavourite ? "heart" : "heart-outline"}
-                                size={20}
-                                color={isFavourite ? "#ef4444" : "#ffffff"}
-                            />
-                        </TouchableOpacity>
+                        />
                     )}
                 </View>
                 {/* listing details */}

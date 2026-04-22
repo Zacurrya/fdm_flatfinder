@@ -18,23 +18,21 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Use the props type from MessageInputBox directly
-type MessageInputProps = React.ComponentProps<typeof MessageInputBox>;
+type MessageInputProps = React.ComponentProps<typeof MessageInputBox> & {
+    onPressImage?: () => void;
+};
 
 type ChatScreenLayoutProps = {
     chatId: string | number;
     source: "PRIVATE" | "CITY";
-    /* Left-side avatar + title/subtitle block inside the header row */
-    headerContent: ReactNode;
-    /* Optional card shown beneath the header (e.g. the listing card) */
-    subHeader?: ReactNode;
-    /* Extra node rendered after the KeyboardAvoidingView (e.g. modals) */
-    footerExtra?: ReactNode;
+    headerContent: ReactNode; // Left-side avatar + title/subtitle block inside the header row
+    subHeader?: ReactNode; // Optional card shown beneath the header (e.g. the listing card)
+    footerExtra?: ReactNode; // Extra node rendered after the KeyboardAvoidingView (e.g. modals)
     flatListRef: RefObject<FlatList | null>;
     renderMessage: (item: DecoratedChatMessage, index: number) => ReactNode;
     listEmptyText?: string;
-    inputProps: MessageInputProps;
-    /* Spacing between messages. */
-    messageGap?: number | string;
+    inputProps: MessageInputProps; // Spread the props from MessageInputBox
+    messageGap?: number | string; // Spacing between messages.
 };
 
 export default function ChatScreenLayout({
@@ -51,6 +49,7 @@ export default function ChatScreenLayout({
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const [actionsVisible, setActionsVisible] = useState(false);
+    const { onPressImage, ...messageInputProps } = inputProps;
 
     const { messages, loading } = useChatMessages(chatId, source);
 
@@ -128,18 +127,18 @@ export default function ChatScreenLayout({
                     />
                     {/* Input box */}
                     <View
-                        className="flex-row items-end px-2 py-2 bg-fdm-bg"
-                        style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+                        className="flex-row items-end px-4 py-2 bg-fdm-bg"
                     >
                         <MessageInputBox
-                            {...inputProps}
+                            {...messageInputProps}
                             onPressPlus={handlePressPlus}
+                            placeholder="Message"
                         />
                     </View>
                     <ComposerActionsModal
                         visible={actionsVisible}
                         onClose={() => setActionsVisible(false)}
-                        onSelectImage={inputProps.onPressImage}
+                        onSelectImage={onPressImage}
                     />
                 </KeyboardAvoidingView>
             )}

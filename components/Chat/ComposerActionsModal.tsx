@@ -20,8 +20,6 @@ export default function ComposerActionsModal({
   visible,
   onClose,
   onSelectImage,
-  onTakePhoto,
-  onSendLocation
 }: ComposerActionsModalProps) {
   const actions: ComposerActionItem[] = [
     {

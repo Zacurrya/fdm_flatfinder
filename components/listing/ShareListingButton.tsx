@@ -6,13 +6,14 @@ type ShareListingButtonProps = {
   onShare: () => Promise<void>;
   cityName?: string;
   loading?: boolean;
+  size: number;
 };
 
 /**
  * ShareListingButton
  * A reusable button with built-in confirmation for sharing a listing to a city group chat.
  */
-const ShareListingButton: React.FC<ShareListingButtonProps> = ({ onShare, cityName, loading }) => {
+const ShareListingButton: React.FC<ShareListingButtonProps> = ({ onShare, cityName, loading, size }) => {
   const handleSharePress = () => {
     Alert.alert(
       "Share Listing",
@@ -31,11 +32,11 @@ const ShareListingButton: React.FC<ShareListingButtonProps> = ({ onShare, cityNa
 
   return (
     <TouchableOpacity
-      className={`h-12 w-12 bg-black/40 rounded-full items-center justify-center backdrop-blur-md border border-white/10 ${loading ? 'opacity-50' : ''}`}
+      className={`bg-black/40 rounded-full items-center justify-center backdrop-blur-md border border-white/10 ${loading ? 'opacity-50' : ''}`}
       onPress={handleSharePress}
       disabled={loading}
     >
-      <Ionicons name="share-social-outline" size={22} color="white" />
+      <Ionicons name="share-social-outline" size={size} color="white" />
     </TouchableOpacity>
   );
 };

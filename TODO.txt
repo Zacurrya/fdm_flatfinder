@@ -1,3 +1,5 @@
+NOW:
+Complete useFavourites hook
 
 listings:
 - Edit listings
@@ -11,6 +13,7 @@ listings:
 
 chats:
 - Componentise the chat screen
+- Users should be able to see each other's profile pictures
 - Users should be able to caption their images
 - Read receipts
 - Audit messages should notice if a new person is in the city, subscribe to audits for user approvals,

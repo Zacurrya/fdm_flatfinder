@@ -4,7 +4,7 @@ import SearchBar from "@components/search/SearchBar";
 import ApprovalGuard from "@components/ui/ApprovalGuard";
 import FDMLoader from "@components/ui/FDMLoader";
 import ListingCard from "@components/ui/ListingCard";
-import { useAuth } from "@context/AuthContext";
+import { useAuth } from "@hooks/useAuth";
 import { Ionicons } from "@expo/vector-icons";
 import { useListings } from "@hooks/useListings";
 import { useRouter } from "expo-router";

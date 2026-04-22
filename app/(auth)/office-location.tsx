@@ -1,7 +1,7 @@
 import BackButton from "@components/ui/BackButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import OfficeLocationSelector from "@components/ui/OfficeLocationSelector";
-import { useAuth } from "@context/AuthContext";
+import { useAuth } from "@hooks/useAuth";
 import { OfficeCity } from "@lib/office-cities";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";

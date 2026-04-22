@@ -30,6 +30,13 @@ function ensurePositiveNumber(value: unknown, fieldName: string): string | null 
     return null;
 }
 
+/**
+ * createRequest
+ * Validates and creates a request record for the current user.
+ *
+ * @param dto The request creation payload.
+ * @returns A request response containing the created record.
+ */
 export const createRequest = async (
     dto: CreateRequestDTO
 ): Promise<RequestResponse<RequestRecord>> => {
@@ -68,6 +75,13 @@ export const createRequest = async (
     });
 };
 
+/**
+ * getAllRequests
+ * Loads requests, optionally filtered by status.
+ *
+ * @param statusFilter Optional status filter to apply.
+ * @returns A request response containing the request list.
+ */
 export const getAllRequests = async (
     statusFilter?: RequestStatus
 ): Promise<RequestResponse<RequestRecord[]>> => {
@@ -78,6 +92,13 @@ export const getAllRequests = async (
     return RequestService.getAllRequests(statusFilter);
 };
 
+/**
+ * getUserRequests
+ * Loads all requests belonging to a specific user.
+ *
+ * @param userId The user ID to load requests for.
+ * @returns A request response containing the user request list.
+ */
 export const getUserRequests = async (
     userId: string
 ): Promise<RequestResponse<RequestRecord[]>> => {
@@ -89,6 +110,13 @@ export const getUserRequests = async (
     return RequestService.getUserRequests(userId.trim());
 };
 
+/**
+ * reviewRequest
+ * Approves or rejects a request after validating the decision payload.
+ *
+ * @param dto The review payload.
+ * @returns A request response containing the reviewed request.
+ */
 export const reviewRequest = async (
     dto: ReviewRequestDTO
 ): Promise<RequestResponse<RequestRecord>> => {
@@ -111,6 +139,15 @@ export const reviewRequest = async (
     });
 };
 
+/**
+ * hasPendingRequest
+ * Checks whether a pending request already exists for the given criteria.
+ *
+ * @param userId The user ID to check.
+ * @param requestType The request type to match.
+ * @param listingId Optional listing ID for listing-upload requests.
+ * @returns A request response containing a boolean result.
+ */
 export const hasPendingRequest = async (
     userId: string,
     requestType: RequestType,
