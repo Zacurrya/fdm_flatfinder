@@ -10,7 +10,6 @@ type ApprovalGuardProps = {
  * ApprovalGuard
  * Renders AwaitingApprovalView when the current user's account is PENDING
  * or REJECTED, otherwise renders children. Eliminates the repeated
- * approval status conditional that appears verbatim in 4+ tab screens.
  */
 export default function ApprovalGuard({ children }: ApprovalGuardProps) {
   const { user } = useAuth();

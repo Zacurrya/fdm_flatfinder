@@ -1,7 +1,0 @@
-{
-    "mockCreateRequestDTO": {
-        "userId": "user-123",
-        "requestType": "CITY_CHANGE",
-        "newCity": "Singapore"
-    }
-}

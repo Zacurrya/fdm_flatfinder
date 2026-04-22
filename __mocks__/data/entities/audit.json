@@ -1,9 +1,0 @@
-{
-  "mockAuditLog": {
-    "id": 1,
-    "actionType": "SIGN_UP_REQUESTED",
-    "userId": "user-123",
-    "targetId": "user-123",
-    "timestamp": "2026-04-20T00:00:00.000Z"
-  }
-}
