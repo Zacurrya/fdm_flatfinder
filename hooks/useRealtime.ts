@@ -14,7 +14,7 @@ import { useEffect, useRef } from "react";
  * @param onDelete Callback for record deletes.
  * @param enabled Whether the subscription should currently be active.
  */
-export function useRealtime<T>(
+export const useRealtime = <T>(
   tableName: string,
   options: {
     filter?: { column: string; value: string | number },
@@ -23,8 +23,7 @@ export function useRealtime<T>(
     onDelete?: (record: T) => void,
     enabled?: boolean
   } = {}
-) 
-  {
+) => {
   // Use a ref for the callback to prevent unnecessary subscription cycles if the handler is not memoized
   const onInsertRef = useRef(options.onInsert);
   const onUpdateRef = useRef(options.onUpdate);

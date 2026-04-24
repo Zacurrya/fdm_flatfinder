@@ -1,7 +1,7 @@
 import { Text, View } from "react-native";
 import { MessageProps } from "./types";
 
-export default function AuditMessage({ content, timeLabel }: MessageProps) {
+const AuditMessage = ({ content, timeLabel }: MessageProps) => {
   // Audit messages are typically centered, small system text.
   return (
     <View className="items-center my-2">
@@ -12,4 +12,6 @@ export default function AuditMessage({ content, timeLabel }: MessageProps) {
       </View>
     </View>
   );
-}
+};
+
+export default AuditMessage;

@@ -6,10 +6,10 @@ type ContactActionButtonsProps = {
   email?: string | null;
 };
 
-export default function ContactActionButtons({
+const ContactActionButtons = ({
   phoneNumber,
   email,
-}: ContactActionButtonsProps) {
+}: ContactActionButtonsProps) => {
   const handleCall = async () => {
     if (!phoneNumber) return;
     await Linking.openURL(`tel:${phoneNumber}`);
@@ -44,4 +44,6 @@ export default function ContactActionButtons({
       )}
     </View>
   );
-}
+};
+
+export default ContactActionButtons;

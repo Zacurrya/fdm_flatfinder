@@ -1,6 +1,6 @@
 import CityModal from "@components/auth/CityModal";
 import { Ionicons } from "@expo/vector-icons";
-import { fdmOfficeCitiesByRegion, OfficeCity } from "@lib/office-cities";
+import { OfficeCity, RegionCities } from "@lib/office-cities";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
@@ -10,30 +10,32 @@ type OfficeLocationSelectorProps = {
   placeholder?: string;
   selectedCity: OfficeCity | null;
   selectedRegion: string;
+  citiesByRegion: RegionCities[];
   disabled?: boolean;
   errorMessage?: string;
   onSelectCity: (region: string, city: OfficeCity) => void;
 };
 
-export default function OfficeLocationSelector({
+const OfficeLocationSelector = ({
   label = "City",
-  placeholder = "Choose your city",
+  placeholder = "Where to?",
   selectedCity,
   selectedRegion,
+  citiesByRegion,
   disabled = false,
   errorMessage,
   onSelectCity,
-}: OfficeLocationSelectorProps) {
+}: OfficeLocationSelectorProps) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
+  // Country flag image URL
   const selectedCityFlagUrl = selectedCity
     ? `https://flagsapi.com/${selectedCity.countryCode.toUpperCase()}/flat/32.png`
     : null;
 
+  // Label for the city and region
   const selectedLabel = useMemo(() => {
-    if (!selectedCity) {
-      return placeholder;
-    }
+    if (!selectedCity) { return placeholder }
 
     return `${selectedCity.name} (${selectedRegion})`;
   }, [placeholder, selectedCity, selectedRegion]);
@@ -61,7 +63,7 @@ export default function OfficeLocationSelector({
 
       <CityModal
         visible={isModalVisible}
-        citiesByRegion={fdmOfficeCitiesByRegion}
+        citiesByRegion={citiesByRegion}
         selectedCityName={selectedCity?.name ?? ""}
         onSelectCity={(region, city) => {
           onSelectCity(region, city);
@@ -71,4 +73,6 @@ export default function OfficeLocationSelector({
       />
     </View>
   );
-}
+};
+
+export default OfficeLocationSelector;

@@ -1,10 +1,11 @@
+import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@hooks/useAuth";
 import { Tabs } from "expo-router";
 import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function TabsLayout() {
+const TabsLayout = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const insets = useSafeAreaInsets();
@@ -15,10 +16,10 @@ export default function TabsLayout() {
   const tabBarContentHeight = isLandscape ? 40 : 50;
   const iconSizeOffset = isLandscape ? 0 : 2;
   const tabIconSize = (size?: number) => (size ?? 24) + iconSizeOffset;
-  const tabBackgroundColor = "#222222";
-  const tabBorderColor = "#ffffff15";
-  const tabActiveColor = "#ccff00";
-  const tabInactiveColor = "#ffffff50";
+  const tabBackgroundColor = Colors.tabBar.background;
+  const tabBorderColor = Colors.tabBar.border;
+  const tabActiveColor = Colors.tabBar.active;
+  const tabInactiveColor = Colors.tabBar.inactive;
 
   return (
     <Tabs
@@ -58,11 +59,13 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle-outline" size={tabIconSize(size)} color={color} />
           ),
+          // Admins don't upload listings
+          href: isAdmin ? null : "/(tabs)/add_listing",
         }}
       />
 
       <Tabs.Screen
-        name="search/index"
+        name="search"
         options={{
           tabBarLabel: "Search",
           tabBarIcon: ({ color, size }) => (
@@ -70,12 +73,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="favourites"
-        options={{
-          href: null,
-        }}
-      />
+
       <Tabs.Screen
         name="messages/index"
         options={{
@@ -87,12 +85,6 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="messages/[chatId]"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="messages/city/[cityChatId]"
         options={{
           href: null,
         }}
@@ -119,4 +111,6 @@ export default function TabsLayout() {
       />
     </Tabs>
   );
-}
+};
+
+export default TabsLayout;

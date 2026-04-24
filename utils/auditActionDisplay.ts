@@ -24,6 +24,6 @@ const ACTION_LABELS: Record<string, ActionDisplay> = {
   MESSAGE_DELETED: { label: "Message Deleted", color: "#fbbf24" },
 };
 
-export function getAuditActionDisplay(actionType: string): ActionDisplay {
+export const getAuditActionDisplay = (actionType: string): ActionDisplay => {
   return ACTION_LABELS[actionType] ?? { label: actionType, color: "#ccff00" };
 }

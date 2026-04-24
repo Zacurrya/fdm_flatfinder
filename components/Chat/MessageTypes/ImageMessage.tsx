@@ -2,13 +2,13 @@ import { IMAGE_URL_REGEX } from "@utils/mediaParser";
 import { Image, Text, View } from "react-native";
 import { MessageProps } from "./types";
 
-export default function ImageMessage({
+const ImageMessage = ({
   content,
   timeLabel,
   isMe,
   senderName,
   showSenderName = false,
-}: MessageProps) {
+}: MessageProps) => {
   const bubbleClassName = "max-w-[78%] py-1";
   const timestampClassName = `text-xs mt-1 text-fdm-fg/40 ${isMe ? "text-right" : ""}`;
 
@@ -40,4 +40,6 @@ export default function ImageMessage({
       <Text className={timestampClassName}>{timeLabel}</Text>
     </View>
   );
-}
+};
+
+export default ImageMessage;

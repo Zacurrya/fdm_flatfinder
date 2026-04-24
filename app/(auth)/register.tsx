@@ -1,178 +1,22 @@
 import RegisterForm from "@components/auth/RegisterForm";
 import BackButton from "@components/ui/BackButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
-import { emailRegex, hasSymbol, hasUppercaseLetter, internationalPhonePattern } from "@utils/authPatterns";
-import { useRouter } from "expo-router";
+import FDMLoader from "@components/ui/FDMLoader";
+import { useRegisterForm } from "@hooks/auth/useRegisterForm";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
 import { KeyboardAvoidingView, Platform, View, useWindowDimensions } from "react-native";
 
-export default function Register() {
-  const router = useRouter();
+const Register = () => {
   const { width, height } = useWindowDimensions();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [firstNameError, setFirstNameError] = useState("");
-  const [lastNameError, setLastNameError] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [phoneNumberError, setPhoneNumberError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [formError, setFormError] = useState("");
+  const form = useRegisterForm();
 
-  const handleFirstNameChange = (value: string) => {
-    setFirstName(value);
-    if (firstNameError) {
-      setFirstNameError("");
-    }
-    if (formError) {
-      setFormError("");
-    }
-  };
-
-  const handleLastNameChange = (value: string) => {
-    setLastName(value);
-    if (lastNameError) {
-      setLastNameError("");
-    }
-    if (formError) {
-      setFormError("");
-    }
-  };
-
-  const handleEmailChange = (value: string) => {
-    setEmail(value);
-    if (emailError) {
-      setEmailError("");
-    }
-    if (formError) {
-      setFormError("");
-    }
-  };
-
-  const handlePhoneNumberChange = (value: string) => {
-    setPhoneNumber(value);
-    if (phoneNumberError) {
-      setPhoneNumberError("");
-    }
-    if (formError) {
-      setFormError("");
-    }
-  };
-
-  const handlePasswordChange = (value: string) => {
-    setPassword(value);
-    if (passwordError) {
-      setPasswordError("");
-    }
-    if (confirmPasswordError) {
-      setConfirmPasswordError("");
-    }
-    if (formError) {
-      setFormError("");
-    }
-  };
-
-  const handleConfirmPasswordChange = (value: string) => {
-    setConfirmPassword(value);
-    if (confirmPasswordError) {
-      setConfirmPasswordError("");
-    }
-    if (formError) {
-      setFormError("");
-    }
-  };
-
-  const handleSubmitStepOne = () => {
-    const trimmedFirstName = firstName.trim();
-    const trimmedLastName = lastName.trim();
-    const trimmedEmail = email.trim();
-    const trimmedPhoneNumber = phoneNumber.trim();
-    const isFdmEmail = trimmedEmail.toLowerCase().endsWith("@fdmgroup.com");
-    let isValid = true;
-
-    setFormError("");
-
-    if (!trimmedFirstName) {
-      setFirstNameError("First name is required.");
-      isValid = false;
-    } else {
-      setFirstNameError("");
-    }
-
-    if (!trimmedLastName) {
-      setLastNameError("Last name is required.");
-      isValid = false;
-    } else {
-      setLastNameError("");
-    }
-
-    if (!trimmedEmail) {
-      setEmailError("Email is required.");
-      isValid = false;
-    } else if (!emailRegex.test(trimmedEmail)) {
-      setEmailError("Enter a valid email address.");
-      isValid = false;
-    } else if (!isFdmEmail) {
-      setEmailError("Use your @fdmgroup.com email address.");
-      isValid = false;
-    } else {
-      setEmailError("");
-    }
-
-    if (!trimmedPhoneNumber) {
-      setPhoneNumberError("Phone number is required.");
-      isValid = false;
-    } else if (!internationalPhonePattern.test(trimmedPhoneNumber)) {
-      setPhoneNumberError("Include a country code, e.g. +44 7700 900123.");
-      isValid = false;
-    } else {
-      setPhoneNumberError("");
-    }
-
-    if (!password) {
-      setPasswordError("Password is required.");
-      isValid = false;
-    } else if (password.length < 8 || !hasUppercaseLetter(password) || !hasSymbol(password)) {
-      setPasswordError(
-        "Password must be at least 8 characters and include an uppercase letter and a symbol."
-      );
-      isValid = false;
-    } else {
-      setPasswordError("");
-    }
-
-    if (!confirmPassword) {
-      setConfirmPasswordError("Please confirm your password.");
-      isValid = false;
-    } else if (confirmPassword !== password) {
-      setConfirmPasswordError("Passwords do not match.");
-      isValid = false;
-    } else {
-      setConfirmPasswordError("");
-    }
-
-    if (!isValid) {
-      setFormError("Please fix the highlighted fields before continuing.");
-      return;
-    }
-
-    // Pass validated form data to the office-location step via route params
-    router.push({
-      pathname: "/(auth)/office-location",
-      params: {
-        firstName: trimmedFirstName,
-        lastName: trimmedLastName,
-        email: trimmedEmail,
-        phoneNumber: trimmedPhoneNumber,
-        password,
-      },
-    });
-  };
+  if (form.isSubmitting) {
+    return (
+      <View className="flex-1 bg-fdm-bg p-6">
+        <FDMLoader />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -181,9 +25,8 @@ export default function Register() {
     >
       <StatusBar style="light" hidden={width > height} />
 
-      {/* Decorative Background Elements */}
-      <BackgroundCircle top={-100} right={-100} size={288} color="#CCFF001A" opacity={0.5} />
-      <BackgroundCircle bottom={-100} left={-100} size={384} color="#CCFF000D" opacity={0.4} />
+      <BackgroundCircle y={-100} x="90%" size={288} color="#CCFF001A" opacity={0.5} />
+      <BackgroundCircle y="90%" x={-100} size={384} color="#CCFF000D" opacity={0.4} />
 
       {/* Header */}
       <View className={`${width > height ? "pt-4" : "pt-10"} pb-2 w-full max-w-sm self-center flex-row items-center z-10`}>
@@ -191,29 +34,16 @@ export default function Register() {
       </View>
 
       <RegisterForm
-        firstName={firstName}
-        lastName={lastName}
-        email={email}
-        phoneNumber={phoneNumber}
-        password={password}
-        confirmPassword={confirmPassword}
-        firstNameError={firstNameError}
-        lastNameError={lastNameError}
-        emailError={emailError}
-        phoneNumberError={phoneNumberError}
-        passwordError={passwordError}
-        confirmPasswordError={confirmPasswordError}
-        formError={formError}
-        onFirstNameChange={handleFirstNameChange}
-        onLastNameChange={handleLastNameChange}
-        onEmailChange={handleEmailChange}
-        onPhoneNumberChange={handlePhoneNumberChange}
-        onPasswordChange={handlePasswordChange}
-        onConfirmPasswordChange={handleConfirmPasswordChange}
-        clearErrorMessage={() => setFormError("")}
-        onSubmit={handleSubmitStepOne}
-        onPressLogin={() => router.push("/(auth)/login")}
+        values={form.values}
+        errors={form.errors as any} // cast to avoid strict typing issues with FormErrors if any
+        isSubmitting={form.isSubmitting}
+        onChange={form.onChange}
+        clearErrorMessage={form.clearFormError}
+        onSubmit={form.handleSubmit}
+        onPressLogin={form.handleGoToLogin}
       />
     </KeyboardAvoidingView>
   );
-}
+};
+
+export default Register;

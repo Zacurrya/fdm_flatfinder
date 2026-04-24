@@ -1,83 +1,76 @@
-import * as RequestController from "@services/requests/requestController";
-import { RequestRecord, RequestStatus } from "@services/requests/types";
-import { useRealtime } from "@hooks/useRealtime";
-import { logger } from "@utils/logger";
-import { useCallback, useState } from "react";
+import { RequestService } from "@services/requests/requestService";
+import { RequestRecord } from "@/types/records";
+import { AdminRequest } from "@/types/views";
+import { RequestStatus } from "@/types/enums";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "./useAuth";
 
 /**
- * useRequests Hook
- * Manages the fetch/filter lifecycle and review orchestration for user requests.
- *
- * @returns Request list state, loading/error flags, and fetch/review helpers.
+ * useRequests
+ * Hook to manage and fetch request records for both users and admins.
  */
-export function useRequests({ enabled = true }: { enabled?: boolean } = {}) {
-  const [requests, setRequests] = useState<RequestRecord[]>([]);
-  const [loading, setLoading] = useState(false);
+export const useRequests = (options?: { enabled?: boolean }) => {
+  const { user } = useAuth();
+  const [requests, setRequests] = useState<AdminRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [processingId, setProcessingId] = useState<number | null>(null);
-  const [currentStatus, setCurrentStatus] = useState<RequestStatus | undefined>(undefined);
 
-  const fetchRequests = useCallback(async (status?: RequestStatus) => {
-    setCurrentStatus(status);
-    setLoading(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+
+  const fetchRequests = useCallback(async (statusFilter?: RequestStatus) => {
+    if (!user) return;
+    setIsLoading(true);
     setError(null);
     try {
-      const result = await RequestController.getAllRequests(status);
-      if (result.success && result.data) {
-        setRequests(result.data);
+      let data: AdminRequest[];
+      if (user.role === "ADMIN") {
+        data = await RequestService.getAllRequests(statusFilter);
       } else {
-        setRequests([]);
-        setError(result.error ?? "Failed to load requests.");
+        data = (await RequestService.getUserRequests(user.userId)) as AdminRequest[];
       }
-    } catch {
-      setError("An unexpected error occurred while fetching requests.");
+      setRequests(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch requests");
+      console.error("[useRequests] Failed to fetch requests:", err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
-  // Reviews a request with the given decision
-  const reviewRequest = useCallback(async (requestId: number, decision: "APPROVED" | "REJECTED") => {
+  useEffect(() => {
+    if (options?.enabled !== false) {
+      void fetchRequests();
+    }
+  }, [fetchRequests, options?.enabled]);
+
+  const handleDecision = async (requestId: number, decision: RequestStatus.APPROVED | RequestStatus.REJECTED) => {
+    setIsProcessing(true);
     setProcessingId(requestId);
     setError(null);
     try {
-      const result = await RequestController.reviewRequest({
-        requestId,
-        decision,
-      });
-
-      if (!result.success) {
-        throw new Error(result.error ?? "Failed to review request.");
-      }
-
-      return result;
-    } catch (err) {
-      const msg = (err as Error)?.message ?? "An unexpected error occurred.";
-      setError(msg);
-      return { success: false, error: msg };
+        await RequestService.reviewRequest({ requestId, decision });
+        return { success: true };
+    } catch (err: any) {
+        setError(err.message || "Failed to process request");
+        return { success: false, error: err.message };
     } finally {
-      setProcessingId(null);
-      logger.log(`Request complete. Decision: ${decision}`);
+        setIsProcessing(false);
+        setProcessingId(null);
     }
-  }, []);
+  };
 
-  useRealtime<RequestRecord>("Requests", {
-    onInsert: () => {
-      void fetchRequests(currentStatus);
-    },
-    onUpdate: () => {
-      void fetchRequests(currentStatus);
-    },
-    enabled,
-  });
+  const approveRequest = (requestId: number) => handleDecision(requestId, RequestStatus.APPROVED);
+  const rejectRequest = (requestId: number) => handleDecision(requestId, RequestStatus.REJECTED);
 
   return {
     requests,
-    loading,
+    isLoading,
     error,
-    processingId,
     fetchRequests,
-    reviewRequest,
-    setRequests, 
+    isProcessing,
+    processingId,
+    approveRequest,
+    rejectRequest,
   };
 }

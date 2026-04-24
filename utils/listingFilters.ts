@@ -1,4 +1,4 @@
-import { Listing } from "@services/listings/listingsService";
+import { Listing } from "@/types/views";
 
 export type ListingFilterInput = {
     searchQuery: string;
@@ -17,7 +17,7 @@ function toMonthlyPrice(listing: Listing): number {
 }
 
 // Reads the filters and returns a filtered listing array
-export function filterListings(listings: Listing[], filters: ListingFilterInput): Listing[] {
+export const filterListings = (listings: Listing[], filters: ListingFilterInput): Listing[] => {
     const {
         searchQuery,
         minPrice,
@@ -30,7 +30,7 @@ export function filterListings(listings: Listing[], filters: ListingFilterInput)
     return listings.filter((listing) => {
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            const address = listing.ListingLocations?.address || "";
+            const address = listing.address || "";
             if (
                 !listing.title.toLowerCase().includes(query) &&
                 !address.toLowerCase().includes(query)
@@ -42,9 +42,9 @@ export function filterListings(listings: Listing[], filters: ListingFilterInput)
         const monthlyPrice = toMonthlyPrice(listing);
         if (minPrice && monthlyPrice < parseInt(minPrice, 10)) { return false; }
         if (maxPrice && monthlyPrice > parseInt(maxPrice, 10)) { return false; }
-        if (bedrooms && listing.beds && listing.beds < bedrooms) { return false; }
-        if (bathrooms && listing.baths && listing.baths < bathrooms) { return false; }
-        if (sourceFilter && listing.source !== sourceFilter) { return false;}
+        if (bedrooms && listing.bedrooms && listing.bedrooms < bedrooms) { return false; }
+        if (bathrooms && listing.bathrooms && listing.bathrooms < bathrooms) { return false; }
+        if (sourceFilter && listing.source !== sourceFilter) { return false; }
 
         return true;
     });

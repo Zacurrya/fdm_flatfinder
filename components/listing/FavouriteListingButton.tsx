@@ -1,6 +1,6 @@
 import IconButton from "@components/listing/IconButton";
 import { StyleProp, ViewStyle } from "react-native";
- 
+
 type FavouriteListingButtonProps = {
   isFavourite?: boolean;
   toggleFavourite: () => void | Promise<void>;
@@ -8,14 +8,13 @@ type FavouriteListingButtonProps = {
   size?: number;
   stopPropagation?: boolean;
 };
- 
-export default function FavouriteListingButton({
-  isFavourite = false,
+
+const FavouriteListingButton = ({ isFavourite = false,
   toggleFavourite,
   style,
   size = 20,
   stopPropagation = false,
-}: FavouriteListingButtonProps) {
+}: FavouriteListingButtonProps) => {
   return (
     <IconButton
       iconName={isFavourite ? "heart" : "heart-outline"}
@@ -26,4 +25,5 @@ export default function FavouriteListingButton({
       style={style}
     />
   );
-}
+};
+export default FavouriteListingButton;

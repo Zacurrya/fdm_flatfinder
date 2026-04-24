@@ -2,8 +2,8 @@ import FavouriteListingButton from "@components/listing/FavouriteListingButton";
 import IconButton from "@components/listing/IconButton";
 import FDMLoader from "@components/ui/FDMLoader";
 import { Ionicons } from "@expo/vector-icons";
+import { useListing } from "@hooks/listings/useListing";
 import { useAuth } from "@hooks/useAuth";
-import { useListing } from "@hooks/useListing";
 import { useSavedListings } from "@hooks/useSavedListings";
 import { formatListingPrice } from "@utils/currency";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -11,7 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function ListingDetailScreen() {
+const ListingDetailScreen = () => {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -20,14 +20,14 @@ export default function ListingDetailScreen() {
 
   const {
     listing,
-    loading,
+    isLoading,
     signedPhotos,
     actions,
     isOwner,
   } = useListing(id as string);
 
-  const listingId = listing ? Number(listing.id) : null;
-  const isFavourite = listingId != null && favIds.includes(listingId);
+  const listingId = listing?.id!;
+  const isFavourite = favIds.includes(listingId);
 
   const windowWidth = Dimensions.get('window').width;
   const buttonSize = 28;
@@ -35,9 +35,9 @@ export default function ListingDetailScreen() {
   return (
     <View className="flex-1 bg-fdm-bg">
       <StatusBar style="light" />
-      {loading && <FDMLoader />}
+      {isLoading && <FDMLoader />}
 
-      {!loading && !listing && (
+      {!isLoading && !listing && (
         <View className="flex-1 bg-fdm-bg items-center justify-center relative">
           <TouchableOpacity
             className="absolute top-12 left-6 h-10 w-10 bg-fdm-fg/10 rounded-full items-center justify-center"
@@ -96,8 +96,8 @@ export default function ListingDetailScreen() {
             </TouchableOpacity>
 
             {/* Action buttons overlay */}
-            <View 
-              className="absolute right-6 flex-row items-center gap-3" 
+            <View
+              className="absolute right-6 flex-row items-center gap-3"
               style={{ top: insets.top || 48 }}
             >
               {/* -- Favourite listing button -- */}
@@ -112,7 +112,7 @@ export default function ListingDetailScreen() {
               {user?.userId && (
                 <IconButton
                   iconName="share-social-outline"
-                  onPress={actions.shareToGroupChat} 
+                  onPress={actions.shareToGroupChat}
                   size={buttonSize}
                 />
               )}
@@ -123,13 +123,13 @@ export default function ListingDetailScreen() {
                   iconColor="#ef4444"
                   size={28}
                   onPress={actions.deleteListing}   // wraps the Alert confirmation
-                  disabled={loading}
+                  disabled={isLoading}
                 />
               )}
             </View>
           </View>
 
-          {/* content body */}
+          {/* -- Content body -- */}
           <View className="px-6 pt-6 pb-20">
 
             <View className="flex-row justify-between items-start mb-2">
@@ -145,20 +145,22 @@ export default function ListingDetailScreen() {
               </View>
             </View>
 
+            {/* Location */}
             <View className="flex-row items-center mb-6">
               <Ionicons name="location" size={16} color="#ffffff60" />
-              <Text className="text-fdm-fg/60 text-base ml-1">{listing.ListingLocations?.address || "Address unavailable"}</Text>
+              <Text className="text-fdm-fg/60 text-base ml-1">{listing.address || "Address unavailable"}</Text>
             </View>
 
+            {/* Specs */}
             <View className="flex-row border-y border-white/10 py-5 mb-8 justify-around">
               <View className="items-center">
                 <Ionicons name="bed-outline" size={24} color="#ccff00" />
-                <Text className="text-white font-semibold mt-2">{listing.beds || 1} Bed</Text>
+                <Text className="text-white font-semibold mt-2">{listing.bedrooms || 1} Bed</Text>
               </View>
               <View className="h-full w-[1px] bg-white/10" />
               <View className="items-center">
                 <Ionicons name="water-outline" size={24} color="#ccff00" />
-                <Text className="text-white font-semibold mt-2">{listing.baths || 1} Bath</Text>
+                <Text className="text-white font-semibold mt-2">{listing.bathrooms || 1} Bath</Text>
               </View>
               <View className="h-full w-[1px] bg-white/10" />
               <View className="items-center">
@@ -169,6 +171,7 @@ export default function ListingDetailScreen() {
               </View>
             </View>
 
+            {/* Description */}
             {listing.description ? (
               <View className="mb-6">
                 <Text className="text-white text-lg font-bold mb-2">Description</Text>
@@ -192,4 +195,6 @@ export default function ListingDetailScreen() {
       )}
     </View>
   );
-}
+};
+
+export default ListingDetailScreen;

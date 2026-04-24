@@ -19,7 +19,7 @@ type FilterSidebarProps = {
 const BED_OPTIONS = [1, 2, 3, 4, 5];
 const BATH_OPTIONS = [1, 2, 3];
 
-export default function FilterSidebar({
+const FilterSidebar = ({
   minPrice,
   setMinPrice,
   maxPrice,
@@ -32,7 +32,7 @@ export default function FilterSidebar({
   setSourceFilter,
   onClose,
   onClearAll,
-}: FilterSidebarProps) {
+}: FilterSidebarProps) => {
   return (
     <View className="flex-1 bg-fdm-bg">
       <View className="px-6 pt-8 pb-4 flex-row items-center justify-between border-b border-fdm-fg/5">
@@ -220,4 +220,6 @@ export default function FilterSidebar({
       )}
     </View>
   );
-}
+};
+
+export default FilterSidebar;

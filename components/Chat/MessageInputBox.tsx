@@ -15,7 +15,7 @@ type MessageInputBoxProps = {
   onClearAttachment?: () => void;
 };
 
-export default function MessageInputBox({
+const MessageInputBox = ({
   value,
   onChangeText,
   placeholder = "Message",
@@ -27,7 +27,7 @@ export default function MessageInputBox({
   showActions = true,
   attachment,
   onClearAttachment,
-}: MessageInputBoxProps) {
+}: MessageInputBoxProps) => {
   const rightInsetClassName = showActions ? "pr-28" : "pr-12";
 
   return (
@@ -93,4 +93,6 @@ export default function MessageInputBox({
       </View>
     </View>
   );
-}
+};
+
+export default MessageInputBox;

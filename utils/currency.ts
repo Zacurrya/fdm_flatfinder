@@ -1,4 +1,4 @@
-import { SupportedCurrency } from "@services/settings/types";
+export type SupportedCurrency = "GBP" | "USD" | "EUR" | "CAD" | "AUD" | "SGD";
 
 const CURRENCY_SYMBOLS: Record<SupportedCurrency, string> = {
   GBP: "£",

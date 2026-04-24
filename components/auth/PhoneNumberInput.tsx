@@ -12,7 +12,7 @@ type PhoneNumberInputProps = {
   textContentType?: TextInputProps["textContentType"];
 };
 
-export default function PhoneNumberInput({
+const PhoneNumberInput = ({
   value,
   onChangeText,
   error,
@@ -21,7 +21,7 @@ export default function PhoneNumberInput({
   placeholder = "+44 7700 900123",
   autoComplete = "tel",
   textContentType = "telephoneNumber",
-}: PhoneNumberInputProps) {
+}: PhoneNumberInputProps) => {
   return (
     <View>
       <Text className="text-fdm-fg/80 font-medium mb-2 ml-1 text-sm uppercase tracking-wider">
@@ -42,4 +42,6 @@ export default function PhoneNumberInput({
       {error ? <Text className="text-red-400 text-sm mt-1">{error}</Text> : null}
     </View>
   );
-}
+};
+
+export default PhoneNumberInput;

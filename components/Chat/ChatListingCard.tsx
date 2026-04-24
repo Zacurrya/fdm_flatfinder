@@ -1,18 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useListing } from "@hooks/useListing";
+import { useListing } from "@hooks/listings/useListing";
 import { formatListingPrice } from "@utils/currency";
 import { useRouter } from "expo-router";
 import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";
 
 type ChatListingCardProps = {
-  listingId: number;
+  listingId: string;
 };
 
-export default function ChatListingCard({ listingId }: ChatListingCardProps) {
+const ChatListingCard = ({ listingId }: ChatListingCardProps) => {
   const router = useRouter();
-  const { listing, loading, firstPhotoUrl, locationLabel } = useListing(listingId);
+  const { listing, isLoading, firstPhotoUrl, locationLabel } = useListing(listingId);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View className="w-64 h-24 rounded-2xl bg-fdm-fg/5 border border-fdm-fg/10 items-center justify-center">
         <ActivityIndicator size="small" color="#9ca3af" />
@@ -61,4 +61,6 @@ export default function ChatListingCard({ listingId }: ChatListingCardProps) {
       </View>
     </TouchableOpacity>
   );
-}
+};
+
+export default ChatListingCard;

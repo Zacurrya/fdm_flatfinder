@@ -1,66 +1,58 @@
+import { ActionType } from "@/types/enums";
+import { AuditLogRecord } from "@/types/records";
+import { useAuth } from "@hooks/useAuth";
 import { useRealtime } from "@hooks/useRealtime";
-import * as AuditController from "@services/audit/auditController";
-import { ActionType, AuditLog } from "@services/audit/types";
+import { AuditService } from "@services/audit/auditService";
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * useAudit Hook
  * Subscribes to real-time audit log updates and manages local history.
  */
-export function useAudit() {
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const useAudit = () => {
+  const { user } = useAuth();
+  const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadInitialHistory = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setIsLoading(true);
     try {
-      const result = await AuditController.getHistory();
-      if (result.success && result.data) {
-        setAuditLogs(result.data);
-      } else {
-        setAuditLogs([]);
-        setError(result.error ?? "Failed to fetch initial audit history.");
-      }
+      const data = await AuditService.getAudits();
+      setAuditLogs(data);
     } catch (err) {
-      setError("An unexpected error occurred during initial fetch.");
+      console.error("[useAudit] Error loading audit history:", err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, []);
 
   const onNewLog = useCallback((payload: any) => {
-    const mappedLog: AuditLog = {
-      auditId: payload.id,
-      userId: payload.userId || "",
-      targetId: payload.targetId || "",
-      actionType: payload.actionType as ActionType,
-      timeStamp: payload.timestamp || new Date().toISOString(),
-    };
-    setAuditLogs((prev) => [mappedLog, ...prev]);
-  }, []);
+    // Refetch to ensure enrichment of the new log
+    loadInitialHistory();
+  }, [loadInitialHistory]);
 
-  // Subscribe to real-time updates
-  useRealtime<any>("AuditLogs", { onInsert: onNewLog, enabled: true });
-
+  // Subscribe to real-time updates for the audit_logs table
+  useRealtime<any>("audit_logs", { onInsert: onNewLog, enabled: true });
 
   useEffect(() => {
     void loadInitialHistory();
   }, [loadInitialHistory]);
 
   const logAction = useCallback(async (action: ActionType, targetId: string) => {
-    const result = await AuditController.logAudit(action, targetId);
-    if (!result.success) {
-      console.warn(`[useAudit] logAction failed:`, result.error);
+    if (!user) return;
+    try {
+      await AuditService.logAction({
+        userId: user.userId,
+        targetId,
+        actionType: action,
+      });
+    } catch (err) {
+      console.error("[useAudit] logAction failed:", err);
     }
-    return result;
-  }, []);
+  }, [user]);
 
   return {
     auditLogs,
-    loading,
-    error,
+    isLoading,
     logAction,
     fetchHistory: loadInitialHistory,
   };

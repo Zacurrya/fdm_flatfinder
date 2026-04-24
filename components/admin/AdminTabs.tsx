@@ -12,7 +12,7 @@ const TABS: { key: AdminTab; label: string }[] = [
   { key: "audits", label: "Audit Logs" },
 ];
 
-export default function AdminTabs({ activeTab, onChangeTab }: AdminTabsProps) {
+const AdminTabs = ({ activeTab, onChangeTab }: AdminTabsProps) => {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
@@ -39,4 +39,6 @@ export default function AdminTabs({ activeTab, onChangeTab }: AdminTabsProps) {
       ))}
     </View>
   );
-}
+};
+
+export default AdminTabs;

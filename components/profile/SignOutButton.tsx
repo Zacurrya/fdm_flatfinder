@@ -1,5 +1,5 @@
-import { useAuth } from "@hooks/useAuth";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@hooks/useAuth";
 import { Alert, Text, TouchableOpacity } from "react-native";
 
 const SignOutButton = () => {
@@ -11,20 +11,14 @@ const SignOutButton = () => {
             "Are you sure you want to sign out?",
             [
                 { text: "Cancel", style: "cancel" },
-                {
-                    text: "Sign Out",
-                    style: "destructive",
-                    onPress: async () => {
-                        await logout();
-                    },
-                },
+                { text: "Sign Out", style: "destructive", onPress: logout },
             ]
         );
     };
 
     return (
         <TouchableOpacity
-            className="w-[40%] bg-red-500/10 border border-red-500/20 py-4 rounded-2xl items-center flex-row justify-center gap-2 active:opacity-80"
+            className="py-4 rounded-2xl items-center flex-row justify-center gap-2 active:opacity-80"
             onPress={handleLogout}
         >
             <Ionicons name="log-out-outline" size={20} color="#ef4444" />

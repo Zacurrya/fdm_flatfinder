@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
 import { Alert, TouchableOpacity } from "react-native";
 
 type ShareListingButtonProps = {
@@ -20,11 +19,11 @@ const ShareListingButton: React.FC<ShareListingButtonProps> = ({ onShare, cityNa
       `Are you sure you want to share this listing to the ${cityName || 'city'} group chat?`,
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Share", 
+        {
+          text: "Share",
           onPress: async () => {
             await onShare();
-          } 
+          }
         },
       ]
     );

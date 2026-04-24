@@ -1,21 +1,24 @@
 import { User } from "@services/auth/types";
-import { getUserProfile } from "@services/user/userController";
+import { UserService } from "@services/user/userService";
 import { useEffect, useState } from "react";
-import { useUserAvatar } from "./useUserAvatar";
+import { useProfilePicture } from "./useProfilePicture";
 
-const userCache = new Map<string, User>(); // Cache user details by userId
+const userCache = new Map<string, User>();
 const pendingUserRequests = new Map<string, Promise<User>>(); // Store promises to prevent request racing
 
-export function useUserDetails(userId: string | null | undefined) {
+/**
+ * Fetches and caches user profiles.
+ */
+export const useUserDetails = (userId: string | null | undefined) => {
   const [userDetails, setUserDetails] = useState<User | null>(userCache.get(userId ?? "") ?? null);
-  const [loading, setLoading] = useState(!userCache.has(userId ?? ""));
+  const [isLoading, setIsLoading] = useState(!userCache.has(userId ?? ""));
 
-  const { avatarUrl, initials, hasProfilePicture, loading: avatarLoading } = useUserAvatar(userDetails);
+  const { profilePictureUri, initials, hasProfilePicture, isLoading: avatarLoading } = useProfilePicture(userDetails);
 
   useEffect(() => {
     if (!userId) {
       setUserDetails(null);
-      setLoading(false);
+      setIsLoading(false);
       return;
     }
 
@@ -23,7 +26,7 @@ export function useUserDetails(userId: string | null | undefined) {
     const cached = userCache.get(userId);
     if (cached) {
       setUserDetails(cached);
-      setLoading(false);
+      setIsLoading(false);
       return;
     }
 
@@ -37,27 +40,22 @@ export function useUserDetails(userId: string | null | undefined) {
         // Create the promise if it doesn't exist
         promise = (async () => {
           try {
-            const result = await getUserProfile(userId);
-            if (!result.success || !result.data) {
-              throw new Error(result.error ?? "Failed to load user details.");
-            }
-            userCache.set(userId, result.data);
-            return result.data;
+            const data = await UserService.getUserProfile(userId);
+            userCache.set(userId, data);
+            return data;
           } catch (error) {
             pendingUserRequests.delete(userId); // Clear failed promise so we can retry later
             throw error;
           } finally {
-            // We delete from pending after a small delay or once resolved
-            // to ensure simultaneous renders all catch the same promise
             pendingUserRequests.delete(userId);
           }
         })();
-        
+
         pendingUserRequests.set(userId, promise);
       }
 
       try {
-        setLoading(true);
+        setIsLoading(true);
         const data = await promise;
         if (isMounted) {
           setUserDetails(data);
@@ -68,7 +66,7 @@ export function useUserDetails(userId: string | null | undefined) {
           setUserDetails(null);
         }
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
@@ -81,10 +79,9 @@ export function useUserDetails(userId: string | null | undefined) {
 
   return {
     userDetails,
-    profilePicture: avatarUrl,
-    avatarUrl,
+    profilePictureUri,
     initials,
     hasProfilePicture,
-    loading: loading || avatarLoading,
+    isLoading: isLoading || avatarLoading,
   };
 }

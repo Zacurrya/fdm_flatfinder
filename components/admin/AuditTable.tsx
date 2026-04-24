@@ -1,5 +1,5 @@
+import { AuditLogEntry } from "@/types/views";
 import { Ionicons } from "@expo/vector-icons";
-import { AuditLog } from "@services/audit/types";
 import { getAuditActionDisplay } from "@utils/auditActionDisplay";
 import { useState } from "react";
 import {
@@ -15,9 +15,8 @@ import {
 import AdminTabs from "./AdminTabs";
 
 type AuditTableProps = {
-  auditLogs: AuditLog[];
+  auditLogs: AuditLogEntry[];
   isLoading: boolean;
-  auditError: string;
   auditSearchEmail: string;
   onChangeSearchEmail: (value: string) => void;
   onSearch: () => void;
@@ -27,10 +26,9 @@ type AuditTableProps = {
   onChangeTab?: (tab: "requests" | "audits") => void;
 };
 
-export default function AuditTable({
+const AuditTable = ({
   auditLogs,
   isLoading,
-  auditError,
   auditSearchEmail,
   onChangeSearchEmail,
   onSearch,
@@ -38,10 +36,11 @@ export default function AuditTable({
   showInlineTabs = false,
   activeTab = "audits",
   onChangeTab,
-}: AuditTableProps) {
+}: AuditTableProps) => {
   const [revealedIds, setRevealedIds] = useState<Record<string, boolean>>({});
-  const { width } = useWindowDimensions();
-  const tableMinWidth = Math.max(760, width - 48);
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  const tableMinWidth = isLandscape ? width * 0.95 : Math.max(960, width - 48);
 
   const toggleReveal = (key: string) => {
     setRevealedIds((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -83,10 +82,6 @@ export default function AuditTable({
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color="#ccff00" size="large" />
         </View>
-      ) : auditError ? (
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-red-400 text-sm text-center">{auditError}</Text>
-        </View>
       ) : auditLogs.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
           <Ionicons name="document-text-outline" size={48} color="#ccff0030" />
@@ -102,19 +97,23 @@ export default function AuditTable({
             <View className="rounded-2xl border border-fdm-fg/10 overflow-hidden" style={{ minWidth: tableMinWidth }}>
               {/* Table Header */}
               <View className="flex-row bg-fdm-fg/10 px-3 py-3">
-                <Text className="w-20 text-fdm-fg/60 text-xs font-semibold uppercase">ID</Text>
-                <Text className="w-52 text-fdm-fg/60 text-xs font-semibold uppercase">Timestamp</Text>
-                <Text className="w-52 text-fdm-fg/60 text-xs font-semibold uppercase">Action</Text>
-                <Text className="w-40 text-fdm-fg/60 text-xs font-semibold uppercase">User (actor)</Text>
-                <Text className="w-40 text-fdm-fg/60 text-xs font-semibold uppercase">Target</Text>
+                <Text className="w-16 text-fdm-fg/60 text-[10px] font-semibold uppercase">ID</Text>
+                <Text className="w-40 text-fdm-fg/60 text-[10px] font-semibold uppercase">Timestamp</Text>
+                <Text className="w-48 text-fdm-fg/60 text-[10px] font-semibold uppercase">Action</Text>
+                <Text className="w-56 text-fdm-fg/60 text-[10px] font-semibold uppercase">User (actor)</Text>
+                <Text className="w-56 text-fdm-fg/60 text-[10px] font-semibold uppercase">Target</Text>
               </View>
 
               {auditLogs.map((item) => {
-                const rowKey = `${item.auditId}-${item.timeStamp}`;
+                const rowKey = `${item.id}-${item.createdAt}`;
                 const userRevealKey = `${rowKey}-user`;
                 const targetRevealKey = `${rowKey}-target`;
                 const userEmail = item.userEmail || "Unknown";
+                const userName = item.userFirstName ? `${item.userFirstName} ${item.userLastName}` : "Unknown User";
+
                 const targetEmail = item.targetEmail || "Unknown";
+                const targetName = item.targetFirstName ? `${item.targetFirstName} ${item.targetLastName}` : "Unknown User";
+
                 const actionDisplay = getAuditActionDisplay(item.actionType);
 
                 // Self-action (requested events where actor = target)
@@ -122,35 +121,37 @@ export default function AuditTable({
 
                 return (
                   <View key={rowKey} className="flex-row border-t border-fdm-fg/10 px-3 py-3 items-start">
-                    <Text className="w-20 text-fdm-fg/50 text-xs" numberOfLines={1}>
-                      {String(item.auditId)}
+                    <Text className="w-16 text-fdm-fg/50 text-[10px]" numberOfLines={1}>
+                      {String(item.id)}
                     </Text>
-                    <Text className="w-52 text-fdm-fg/50 text-xs" numberOfLines={1}>
-                      {new Date(item.timeStamp).toLocaleString()}
+                    <Text className="w-40 text-fdm-fg/50 text-[10px]" numberOfLines={1}>
+                      {new Date(item.createdAt).toLocaleString()}
                     </Text>
-                    <View className="w-52">
-                      <Text style={{ color: actionDisplay.color }} className="text-xs font-medium" numberOfLines={1}>
+                    <View className="w-48">
+                      <Text style={{ color: actionDisplay.color }} className="text-[11px] font-medium" numberOfLines={1}>
                         {actionDisplay.label}
                       </Text>
                     </View>
-                    <View className="w-40 pr-3">
+                    <View className="w-56 pr-3">
                       <Pressable onPress={() => toggleReveal(userRevealKey)}>
-                        <Text className="text-fdm-fg text-xs underline" numberOfLines={1}>{userEmail}</Text>
+                        <Text className="text-fdm-fg text-[11px] font-semibold" numberOfLines={1}>{userName}</Text>
+                        <Text className="text-fdm-fg/50 text-[10px] underline" numberOfLines={1}>{userEmail}</Text>
                       </Pressable>
                       {revealedIds[userRevealKey] && (
-                        <Text className="text-fdm-fg/40 text-[11px] mt-1" numberOfLines={1}>{item.userId}</Text>
+                        <Text className="text-fdm-fg/30 text-[9px] mt-1" numberOfLines={1}>{item.userId}</Text>
                       )}
                     </View>
-                    <View className="w-40 pr-3">
+                    <View className="w-56 pr-3">
                       {isSelfAction ? (
-                        <Text className="text-fdm-fg/30 text-xs italic" numberOfLines={1}>self</Text>
+                        <Text className="text-fdm-fg/30 text-[11px] italic" numberOfLines={1}>self</Text>
                       ) : (
                         <>
                           <Pressable onPress={() => toggleReveal(targetRevealKey)}>
-                            <Text className="text-fdm-fg text-xs underline" numberOfLines={1}>{targetEmail}</Text>
+                            <Text className="text-fdm-fg text-[11px] font-semibold" numberOfLines={1}>{targetName}</Text>
+                            <Text className="text-fdm-fg/50 text-[10px] underline" numberOfLines={1}>{targetEmail}</Text>
                           </Pressable>
                           {revealedIds[targetRevealKey] && (
-                            <Text className="text-fdm-fg/40 text-[11px] mt-1" numberOfLines={1}>{item.targetId}</Text>
+                            <Text className="text-fdm-fg/30 text-[9px] mt-1" numberOfLines={1}>{item.targetId}</Text>
                           )}
                         </>
                       )}
@@ -164,4 +165,6 @@ export default function AuditTable({
       )}
     </View>
   );
-}
+};
+
+export default AuditTable;

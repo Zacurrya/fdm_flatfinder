@@ -1,12 +1,3 @@
-import { AuthResponse, ProfilePictureUploadDTO, User } from "@services/auth/types";
-
-export type { AuthResponse, ProfilePictureUploadDTO, User };
-
-export type UserEmailMapResult = {
-    success: boolean;
-    data?: Record<string, string>;
-    error?: string;
-};
 
 export type ResolvedProfilePictureSource = {
     path: string | null;
@@ -14,13 +5,37 @@ export type ResolvedProfilePictureSource = {
 };
 
 export type ProfilePictureFallbackOptions = {
-    firstName?: string | null;
-    lastName?: string | null;
-    email?: string | null;
+    firstName?: string;
+    lastName?: string;
     size?: number;
 };
 
 export type GetProfilePictureUrlOptions = ProfilePictureFallbackOptions & {
     profilePicture?: string | null;
     expiresInSeconds?: number;
+};
+
+// -- DTOs --
+
+export type SetCacheUrlDTO = {
+    path: string;
+    url: string;
+    expiresInSeconds: number;
+};
+
+export type ProfilePictureUploadDTO = {
+    imageUri: string;
+    mimeType?: string;
+    fileName?: string;
+};
+
+export type OfficeLocationChangeDTO = {
+    authUserId: string;
+    officeLocation: string;
+    oldCity: string;
+};
+
+export type FavouriteDTO = {
+    userId: string;
+    listingId: number;
 };

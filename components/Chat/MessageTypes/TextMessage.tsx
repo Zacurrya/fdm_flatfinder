@@ -1,13 +1,13 @@
 import { Text, View } from "react-native";
 import { MessageProps } from "./types";
 
-export default function TextMessage({
+const TextMessage = ({
   content,
   timeLabel,
   isMe,
   senderName,
   showSenderName = false,
-}: MessageProps) {
+}: MessageProps) => {
   const bubbleClassName = `max-w-[75%] px-2.5 py-2 rounded-2xl ${
     isMe
       ? "bg-fdm-accent rounded-tr-sm"
@@ -33,4 +33,6 @@ export default function TextMessage({
       <Text className={timestampClassName}>{timeLabel}</Text>
     </View>
   );
-}
+};
+
+export default TextMessage;

@@ -1,25 +1,27 @@
+import { UserRecord } from "@/types/records";
 import ProfilePic from "@components/profile/ProfilePic";
 import { Ionicons } from "@expo/vector-icons";
-import { User } from "@services/auth/types";
+import { useProfilePicture } from "@hooks/useProfilePicture";
 import { Modal, Pressable, Text, TouchableOpacity } from "react-native";
 
 type ProfilePicModalProps = {
   visible: boolean;
-  user: User | null;
+  user: UserRecord | null;
   isUploadingProfilePicture: boolean;
   onClose: () => void;
   onChangeProfilePicture: () => void;
   onRemoveProfilePicture: () => void;
 };
 
-export default function ProfilePicModal({
+const ProfilePicModal = ({
   visible,
   user,
   isUploadingProfilePicture,
   onClose,
   onChangeProfilePicture,
   onRemoveProfilePicture,
-}: ProfilePicModalProps) {
+}: ProfilePicModalProps) => {
+  const { profilePictureUri, initials } = useProfilePicture(user);
   const canRemoveProfilePicture = Boolean(user?.profilePicture);
 
   return (
@@ -38,7 +40,12 @@ export default function ProfilePicModal({
             <Ionicons name="close" size={18} color="#ffffff" />
           </TouchableOpacity>
 
-          <ProfilePic user={user} isUploadingProfilePicture={isUploadingProfilePicture} size={176} />
+          <ProfilePic
+            avatarUrl={profilePictureUri}
+            initials={initials}
+            isUploading={isUploadingProfilePicture}
+            size={176}
+          />
 
           {/* Change Profile Picture Button */}
           <TouchableOpacity
@@ -63,4 +70,6 @@ export default function ProfilePicModal({
       </Pressable>
     </Modal>
   );
-}
+};
+
+export default ProfilePicModal;

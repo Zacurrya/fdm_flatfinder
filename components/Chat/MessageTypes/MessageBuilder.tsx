@@ -1,4 +1,3 @@
-import { decodeListingShareMessage } from "@utils/chatListingShare";
 import {
   extractAuditMessage,
   isAuditPayload,
@@ -9,7 +8,6 @@ import MessageAvatar from "../MessageAvatar";
 import AuditMessage from "./AuditMessage";
 import DateMessage from "./DateMessage";
 import ImageMessage from "./ImageMessage";
-import ListingMessage from "./ListingMessage";
 import TextMessage from "./TextMessage";
 import { MessageProps } from "./types";
 
@@ -18,7 +16,7 @@ import { MessageProps } from "./types";
  * @param 
   * @returns Takes in a message and determines which type of message it is (text, image, listing share, audit) and renders the appropriate component for it. It also handles rendering the date separator and avatar for the message. 
  */
-export default function MessageBuilder(props: MessageProps) {
+const MessageBuilder = (props: MessageProps) => {
   const {
     content,
     isMe,
@@ -31,12 +29,7 @@ export default function MessageBuilder(props: MessageProps) {
   const trimmedContent = content.trim();
 
   const renderContent = () => {
-    // 1. Check if Listing Share
-    if (decodeListingShareMessage(trimmedContent)) {
-      return <ListingMessage {...props} />;
-    }
-
-    // 2. Check if Image
+    // 1. Check if Image
     if (isImagePayload(trimmedContent)) {
       return <ImageMessage {...props} />;
     }
@@ -76,4 +69,6 @@ export default function MessageBuilder(props: MessageProps) {
       </View>
     </>
   );
-}
+};
+
+export default MessageBuilder;

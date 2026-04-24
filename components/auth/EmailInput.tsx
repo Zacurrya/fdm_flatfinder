@@ -12,7 +12,7 @@ type EmailInputProps = {
   textContentType?: TextInputProps["textContentType"];
 };
 
-export default function EmailInput({
+const EmailInput = ({
   value,
   onChangeText,
   error,
@@ -21,7 +21,7 @@ export default function EmailInput({
   placeholder = "you@company.com",
   autoComplete = "email",
   textContentType = "emailAddress",
-}: EmailInputProps) {
+}: EmailInputProps) => {
   return (
     <View>
       <Text className="text-fdm-fg/80 font-medium mb-2 ml-1 text-sm uppercase tracking-wider">
@@ -42,4 +42,6 @@ export default function EmailInput({
       {error ? <Text className="text-red-400 text-sm mt-1">{error}</Text> : null}
     </View>
   );
-}
+};
+
+export default EmailInput;

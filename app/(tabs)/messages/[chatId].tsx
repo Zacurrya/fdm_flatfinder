@@ -1,112 +1,87 @@
-import ChatListingSubHeader from "@components/Chat/ChatListingSubHeader";
+import { MessageRecord } from "@/types/records";
 import ChatScreenLayout from "@components/Chat/ChatScreenLayout";
-import ContactActionButtons from "@components/Chat/ContactActionButtons";
-import MessageBuilder from "@components/Chat/MessageTypes/MessageBuilder";
+import { Message } from "@components/Chat/Message";
 import FDMLoader from "@components/ui/FDMLoader";
-import { useAuth } from "@hooks/useAuth";
-import { useChatInput } from "@hooks/useChatInput";
-import { DecoratedChatMessage } from "@hooks/useChatMessages";
-import { useChatMeta } from "@hooks/useChatMeta";
-import { useListing } from "@hooks/useListing";
-import { useUserDetails } from "@hooks/useUserDetails";
-import { sendMessage } from "@services/chat/chatController";
-import { formatTime, getInitials } from "@utils/formatters";
+import { useChatDetails } from "@hooks/chat/useChatDetails";
+import { useChatHeader } from "@hooks/chat/useChatHeader";
+import { useChatInput } from "@hooks/chat/useChatInput";
+import { useChatMessages } from "@hooks/chat/useChatMessages";
+import { ChatService } from "@services/chat/chatService";
 import { useLocalSearchParams } from "expo-router";
-import { useRef } from "react";
-import { FlatList, Image, Text, View } from "react-native";
+import React, { useRef } from "react";
+import { FlatList, View } from "react-native";
 
-export default function ChatScreen() {
+const ChatScreen = () => {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
-  const { user } = useAuth();
   const flatListRef = useRef<FlatList>(null);
 
-  const { otherUserId, listingId, loading: metaLoading } = useChatMeta(
-    chatId,
-    user?.userId
-  );
-  const { userDetails: otherUser, loading: otherUserLoading } = useUserDetails(otherUserId);
-  const { listing: listingData, loading: listingLoading } = useListing(listingId ?? undefined);
-  const loading = metaLoading || otherUserLoading || listingLoading;
+  const details = useChatDetails(chatId);
+  const { messages, isLoading: messagesLoading } = useChatMessages(chatId);
+
+  const {
+    isLoading: detailsLoading,
+    otherUserName,
+    initials,
+    currentUserName,
+    currentUserInitials,
+    user,
+    otherUser,
+  } = details;
+
+  const isLoading = detailsLoading || messagesLoading;
+
+  const { header, subHeader } = useChatHeader(details);
 
   // Chat send/upload logic
   const { inputProps } = useChatInput(async (content) => {
     if (!user?.userId || !chatId) return;
-    const result = await sendMessage({ chatId, senderId: user.userId, content });
-    if (!result.success) throw new Error(result.error ?? "Failed to send message.");
+    await ChatService.sendMessage({ chatId, senderId: user.userId, content });
   });
 
-  // Derived display values
-  const otherUserName = otherUser
-    ? [otherUser.firstName, otherUser.lastName].filter(Boolean).join(" ") || "User"
-    : "Chat";
-  const initials = getInitials(otherUserName);
-  const currentUserName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User";
-  const currentUserInitials = getInitials(currentUserName);
+  const renderMessage = (item: MessageRecord, index: number) => {
+    const isMe = item.senderId === user?.userId;
 
-  const renderMessage = (item: DecoratedChatMessage, _index: number) => {
-    const isMe = item.sender_id === user?.userId;
-    const senderName = isMe ? currentUserName : otherUserName;
-    const senderProfilePicture = isMe ? user?.profilePicture ?? null : otherUser?.profilePicture ?? null;
-    const senderInitials = isMe ? currentUserInitials : initials;
+    const prevMsg = index > 0 ? messages[index - 1] : null;
+    const isPreviousFromSameSender = prevMsg?.senderId === item.senderId;
+
+    let showDateSeparator = false;
+    if (!prevMsg) {
+      showDateSeparator = true;
+    } else {
+      const prevDate = new Date(prevMsg.createdAt).toDateString();
+      const currDate = new Date(item.createdAt).toDateString();
+      showDateSeparator = prevDate !== currDate;
+    }
+
     return (
-      <MessageBuilder
-        content={item.content}
-        timeLabel={formatTime(item.createdAt)} // Used for HH:MM message timestamp
+      <Message
+        item={item}
         isMe={isMe}
-        senderName={senderName}
-        showSenderName={false}
-        createdAt={item.createdAt}
-        showDateSeparator={item.showDateSeparator}
-        avatarProfilePicture={senderProfilePicture}
-        avatarInitials={senderInitials}
-        avatarVisible={!isMe && !item.isPreviousFromSameSender} // Only render other user's avatars
+        senderName={isMe ? currentUserName : otherUserName}
+        senderProfilePicture={isMe ? user?.profilePicture ?? null : otherUser?.profilePicture ?? null}
+        senderInitials={isMe ? currentUserInitials : initials}
+        showDateSeparator={showDateSeparator}
+        isPreviousFromSameSender={isPreviousFromSameSender}
       />
     );
   };
 
-  const headerContent = (
-    <>
-      <View className="w-10 h-10 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center mr-3 overflow-hidden">
-        {otherUser?.profilePicture ? (
-          <Image source={{ uri: otherUser.profilePicture }} style={{ width: 40, height: 40 }} />
-        ) : (
-          <Text className="text-fdm-accent font-bold text-sm">{initials}</Text>
-        )}
-      </View>
-
-      <View className="flex-1">
-        <Text className="text-fdm-fg text-base font-semibold" numberOfLines={1}>
-          {otherUserName}
-        </Text>
-        {otherUser?.phoneNumber ? (
-          <Text className="text-fdm-fg/40 text-xs mt-0.5">{otherUser.phoneNumber}</Text>
-        ) : otherUser?.email ? (
-          <Text className="text-fdm-fg/40 text-xs mt-0.5" numberOfLines={1}>
-            {otherUser.email}
-          </Text>
-        ) : null}
-      </View>
-
-      <ContactActionButtons
-        phoneNumber={otherUser?.phoneNumber}
-        email={otherUser?.email}
-      />
-    </>
-  );
-
   return (
     <View style={{ flex: 1 }}>
-      {loading && <FDMLoader />}
+      {isLoading && <FDMLoader />}
       <ChatScreenLayout
         chatId={chatId}
-        source="PRIVATE"
-        headerContent={headerContent}
-        subHeader={<ChatListingSubHeader listingId={listingId ?? undefined} initialData={listingData} />}
+        headerContent={header}
+        subHeader={subHeader}
         flatListRef={flatListRef}
         renderMessage={renderMessage}
+        messages={messages}
+        isLoading={isLoading}
         listEmptyText="Send a message to get started"
         inputProps={{ ...inputProps, }}
       />
     </View>
   );
-}
+};
+
+export default ChatScreen;

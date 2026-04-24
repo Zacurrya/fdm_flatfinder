@@ -1,8 +1,7 @@
+import AuthButton from "@components/auth/AuthButton";
 import EmailInput from "@components/auth/EmailInput";
 import PasswordInput from "@components/auth/PasswordInput";
-import React from "react";
 import {
-  ActivityIndicator,
   Text,
   TouchableOpacity,
   View,
@@ -22,7 +21,7 @@ type LoginFormProps = {
   onPressRegister: () => void;
 };
 
-export default function LoginForm({
+const LoginForm = ({
   email,
   password,
   emailError,
@@ -34,7 +33,7 @@ export default function LoginForm({
   onSubmit,
   onPressResetPassword,
   onPressRegister,
-}: LoginFormProps) {
+}: LoginFormProps) => {
   return (
     <View className="flex-1 w-full max-w-sm self-center justify-center z-10 mb-12">
       <View className="items-center mt-3 mb-10 w-full">
@@ -79,17 +78,15 @@ export default function LoginForm({
 
       {errorMessage ? <Text className="text-red-400 text-sm mt-4">{errorMessage}</Text> : null}
 
-      <TouchableOpacity
-        className="w-2/3 self-center bg-fdm-accent py-4 rounded-2xl items-center shadow-lg shadow-fdm-accent/20 active:opacity-80 transition-opacity mt-8"
+      <AuthButton
+        label="Log In"
         onPress={onSubmit}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? (
-          <ActivityIndicator color="#1b1b1b" />
-        ) : (
-          <Text className="text-fdm-bg font-bold tracking-wide uppercase">Log In</Text>
-        )}
-      </TouchableOpacity>
+        isLoading={isSubmitting}
+        backgroundColour="#ccff00"
+        textColour="#1b1b1b"
+        width="66.666667%" // matches w-2/3
+        style={{ alignSelf: 'center', marginTop: 32 }} // mt-8
+      />
 
       <TouchableOpacity
         className="self-center mt-6"
@@ -102,4 +99,6 @@ export default function LoginForm({
       </TouchableOpacity>
     </View>
   );
-}
+};
+
+export default LoginForm;

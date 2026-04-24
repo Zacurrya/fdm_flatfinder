@@ -1,318 +1,279 @@
-import { supabase } from "@lib/supabase";
-import { Listing } from "@services/listings/listingController";
-import { isNonEmptyString, isPositiveInteger } from "@utils/validation";
+import { MessageRecord } from '@/types/records';
+import { supabase } from '@lib/supabase';
 import {
-    Chat,
-    ChatValidationResult,
-    ChatWithUser,
-    GetChatDetailsDTO,
-    GetChatMessagesDTO,
-    GetChatsDTO,
-    GetOrCreateChatDTO,
-    Message,
-    OtherUserProfile,
-    SendChatMessageDTO,
-} from "./types";
+  ChatMetadata,
+  ChatPreview,
+  CreateChatDTO,
+  GetMessagesDTO,
+  SendMessageDTO
+} from './types';
 
+export const ChatService = {
+  /**
+   * Returns all chat previews for the messages screen
+   */
+  async getChats(userId: string): Promise<ChatPreview[]> {
+    // Gets all user's chat IDs
+    const { data: participations, error: pError } = await supabase
+      .from('chat_participants')
+      .select('chat_id')
+      .eq('user_id', userId);
+    if (pError) throw pError;
 
-export const validateGetOrCreateChatRequest = (
-  request: GetOrCreateChatDTO
-): ChatValidationResult => {
-  if (!isNonEmptyString(request.currentUserId)) {
-    return { valid: false, error: "Current user ID is required." };
-  }
+    const chatIdList = (participations ?? [])
+      .map(p => p.chat_id)
+      .filter((id): id is string => !!id);
 
-  if (!isNonEmptyString(request.otherUserId)) {
-    return { valid: false, error: "Other user ID is required." };
-  }
+    if (chatIdList.length === 0) return [];
 
-  if (request.currentUserId === request.otherUserId) {
-    return { valid: false, error: "You cannot start a chat with yourself." };
-  }
+    // Fetch the basic chat rows
+    const { data: chatRows, error: chatError } = await supabase
+      .from('chats')
+      .select('id, display_name, listing_id, last_message_id')
+      .in('id', chatIdList);
 
-  if (typeof request.listingId !== "undefined" && !isPositiveInteger(request.listingId)) {
-    return { valid: false, error: "Listing ID must be a positive integer." };
-  }
+    if (chatError) throw chatError;
 
-  return { valid: true };
-};
-
-export const validateGetChatsRequest = (
-  request: GetChatsDTO
-): ChatValidationResult => {
-  if (!isNonEmptyString(request.userId)) {
-    return { valid: false, error: "User ID is required." };
-  }
-
-  return { valid: true };
-};
-
-export const validateGetChatDetailsRequest = (
-  request: GetChatDetailsDTO
-): ChatValidationResult => {
-  if (!isNonEmptyString(request.chatId)) {
-    return { valid: false, error: "Chat ID is required." };
-  }
-
-  if (!isNonEmptyString(request.currentUserId)) {
-    return { valid: false, error: "Current user ID is required." };
-  }
-
-  return { valid: true };
-};
-
-export const validateGetChatMessagesRequest = (
-  request: GetChatMessagesDTO
-): ChatValidationResult => {
-  if (!isNonEmptyString(request.chatId)) {
-    return { valid: false, error: "Chat ID is required." };
-  }
-
-  return { valid: true };
-};
-
-export const validateSendChatMessageRequest = (
-  request: SendChatMessageDTO
-): ChatValidationResult => {
-  if (!isNonEmptyString(request.chatId)) {
-    return { valid: false, error: "Chat ID is required." };
-  }
-
-  if (!isNonEmptyString(request.senderId)) {
-    return { valid: false, error: "Sender ID is required." };
-  }
-
-  if (!isNonEmptyString(request.content)) {
-    return { valid: false, error: "Message content cannot be empty." };
-  }
-
-  return { valid: true };
-};
-
-// Get or create a chat between two users, optionally linked to a listing.
-export const getOrCreateChat = async (
-  currentUserId: string,
-  otherUserId: string,
-  listingId?: number
-): Promise<Chat> => {
-  let query = supabase
-    .from("Conversations")
-    .select("*")
-    .or(
-      `and(user1_id.eq.${currentUserId},user2_id.eq.${otherUserId}),and(user1_id.eq.${otherUserId},user2_id.eq.${currentUserId})`
-    )
-    .order("created_at", { ascending: false })
-    .limit(1);
-
-  if (typeof listingId === "number") {
-    query = query.eq("listing_id", listingId);
-  }
-
-  const { data: existingRows, error: existingError } = await query;
-
-  if (existingError) {
-    console.error("Error checking existing chat:", existingError);
-    throw existingError;
-  }
-
-  if (existingRows && existingRows.length > 0) {
-    return existingRows[0];
-  }
-
-  const { data, error } = await supabase
-    .from("Conversations")
-    .insert({
-      user1_id: currentUserId,
-      user2_id: otherUserId,
-      listing_id: listingId ?? null,
-    })
-    .select()
-    .single();
-
-  if (error || !data) {
-    console.error("Error creating chat:", error);
-    throw error ?? new Error("Chat was not created.");
-  }
-
-  return data;
-};
-
-// Get all chats for the current user with counterparty profile and full listing.
-export const getChats = async (userId: string): Promise<ChatWithUser[]> => {
-  const { data, error } = await supabase
-    .from("Conversations")
-    .select("*")
-    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-    .order("last_message_at", { ascending: false });
-
-  if (error) {
-    console.error("Error fetching chats:", error);
-    throw error;
-  }
-
-  if (!data || data.length === 0) return [];
-
-  const enriched = await Promise.all(
-    data.map(async (conv) => {
-      const otherUserId = conv.user1_id === userId ? conv.user2_id : conv.user1_id;
-
-      const [otherUserResult, listingResult] = await Promise.all([
-        supabase
-          .from("Users")
-          .select("userId, firstName, lastName, profilePicture, phoneNumber, email")
-          .eq("userId", otherUserId)
-          .single(),
-        conv.listing_id
-          ? supabase
-            .from("Listings")
-            .select("*, ListingLocations(*)")
-            .eq("id", conv.listing_id)
-            .single()
-          : Promise.resolve({ data: null, error: null }),
-      ]);
-
-      if (otherUserResult.error) {
-        console.warn("Could not load other user profile for chat", conv.id, otherUserResult.error);
-      }
-
-      if ((listingResult as any).error) {
-        console.warn("Could not load listing for chat", conv.id, (listingResult as any).error);
-      }
+    // For each chat, fetch the latest message details
+    return Promise.all((chatRows ?? []).map(async chat => {
+      const { data: lastMsg } = await supabase
+        .from('messages')
+        .select('content, created_at, sender_id')
+        .eq('chat_id', chat.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       return {
-        ...conv,
-        otherUser: otherUserResult.data ?? {
-          userId: otherUserId,
-          firstName: "Unknown",
-          lastName: "",
-          profilePicture: null,
-          phoneNumber: null,
-          email: null,
-        },
-        listing: (listingResult as any).data as Listing | null,
-      };
-    })
-  );
+        id: chat.id,
+        displayName: chat.display_name ?? null,
+        listingId: chat.listing_id ?? null,
+        displayPicture: null,
+        lastMessage: lastMsg?.content ?? null,
+        lastMessageAt: lastMsg?.created_at ?? null,
+        lastMessengerId: lastMsg?.sender_id ?? null,
+      } satisfies ChatPreview;
+    }));
+  },
 
-  return enriched;
-};
+  /**
+   * Returns the raw metadata for a single chat.
+   */
+  async getChatMetadata(chatId: string): Promise<ChatMetadata> {
+    // Gets chat ID, name, listing ID, and participant IDs
+    const { data, error } = await supabase
+      .from('chats')
+      .select('id, display_name, listing_id, participants:chat_participants(user_id)')
+      .eq('id', chatId)
+      .single();
+    if (error || !data) throw new Error(error?.message ?? 'Chat not found.');
 
-// Get profile and listing details for a specific chat.
-export const getChatDetails = async (
-  chatId: string,
-  currentUserId: string
-): Promise<{ otherUser: OtherUserProfile; listing: Listing | null; listingId: number | null }> => {
-  const { data: conv, error } = await supabase
-    .from("Conversations")
-    .select("user1_id, user2_id, listing_id")
-    .eq("id", chatId)
-    .single();
 
-  if (error || !conv) {
-    console.error("Error fetching chat details:", error);
-    throw error ?? new Error("Chat not found.");
-  }
+    const participantIds = data?.participants.map((p: any) => p.user_id);
+    const isGroupChat = (participantIds?.length ?? 0) > 2;
+    return {
+      id: data.id,
+      displayName: data.display_name ?? null,
+      displayPicture: null,
+      listingId: data.listing_id ?? null,
+      participantIds: participantIds!,
+      participantCount: participantIds?.length ?? 0,
+      isGroupChat,
+    };
+  },
 
-  const otherUserId = conv.user1_id === currentUserId ? conv.user2_id : conv.user1_id;
+  async getChatPicture(chatId: string, isGroupChat: boolean, userId: string, citiesByRegion?: import("@lib/office-cities").RegionCities[]): Promise<string | null> {
+    // Check if this chat is a city chat
+    // citiesByRegion must be provided for city chat lookup
+    if (citiesByRegion) {
+      const { getCityByChatId } = await import("@lib/office-cities");
+      const city = getCityByChatId(chatId, citiesByRegion);
+      if (city?.imagePath) return city.imagePath;
+    }
+    if (!isGroupChat) {
+      // For 1-on-1 chats, use the other participant's profile picture
+      const { data, error } = await supabase
+        .from('chat_participants')
+        .select('user_id')
+        .eq('chat_id', chatId)
+        .neq('user_id', userId)
+        .single();
 
-  const [otherUserResult, listingResult] = await Promise.all([
-    supabase
-      .from("Users")
-      .select("userId, firstName, lastName, profilePicture, phoneNumber, email")
-      .eq("userId", otherUserId)
-      .single(),
-    conv.listing_id
-      ? supabase
-        .from("Listings")
-        .select("*, ListingLocations(*)")
-        .eq("id", conv.listing_id)
-        .single()
-      : Promise.resolve({ data: null, error: null }),
-  ]);
+      if (error || !data) return null;
+      // Fetches the other user's avatar_url
+      const otherUserId = data.user_id;
+      const { data: otherUserProfilePic, error: userError } = await supabase
+        .from('users')
+        .select('avatar_url')
+        .eq('id', otherUserId)
+        .single();
+      if (userError || !otherUserProfilePic) return null;
+      return otherUserProfilePic.avatar_url ?? null;
+    }
+    // For group chats that are not city chats, return null
+    return null;
+  },
 
-  return {
-    otherUser: otherUserResult.data ?? {
-      userId: otherUserId,
-      firstName: "Unknown",
-      lastName: "",
-      profilePicture: null,
-      phoneNumber: null,
-      email: null,
-    },
-    listing: (listingResult as any).data as Listing | null,
-    listingId: conv.listing_id ?? null,
-  };
-};
+  /**
+   * Returns all messages for a chat in ascending chronological order.
+   */
+  async getMessages(dto: GetMessagesDTO): Promise<MessageRecord[]> {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('chat_id', dto.chatId)
+      .order('created_at', { ascending: true });
 
-export const getChatMeta = async (
-  chatId: string,
-  currentUserId: string
-): Promise<{ otherUserId: string; listingId: number | null }> => {
-  const { data: conv, error } = await supabase
-    .from("Conversations")
-    .select("user1_id, user2_id, listing_id")
-    .eq("id", chatId)
-    .single();
+    if (error) throw error;
 
-  if (error || !conv) {
-    console.error("Error fetching chat meta:", error);
-    throw error ?? new Error("Chat not found.");
-  }
+    return (data ?? []).map((msg): MessageRecord => ({
+      id: msg.id,
+      chatId: msg.chat_id,
+      senderId: msg.sender_id,
+      content: msg.content,
+      createdAt: msg.created_at,
+    }));
+  },
 
-  const otherUserId = conv.user1_id === currentUserId ? conv.user2_id : conv.user1_id;
+  /**
+   * Creates a new chat.
+   */
+  async createChat(dto: CreateChatDTO): Promise<string> {
+    const { data: chatData, error: chatError } = await supabase
+      .from('chats')
+      .insert({ listing_id: dto.listingId })
+      .select()
+      .single();
 
-  return {
-    otherUserId,
-    listingId: conv.listing_id ?? null,
-  };
-};
+    if (chatError || !chatData) throw new Error(chatError?.message ?? 'Failed to create chat.');
 
-export const getMessages = async (chatId: string): Promise<Message[]> => {
-  const { data, error } = await supabase
-    .from("Messages")
-    .select("*")
-    .eq("conversation_id", chatId)
-    .order("created_at", { ascending: true });
+    const participants = dto.participantIds.map(uid => ({
+      chat_id: chatData.id,
+      user_id: uid,
+    }));
 
-  if (error) {
-    console.error("Error fetching chat messages:", error);
-    throw error;
-  }
+    const { error: participantsError } = await supabase
+      .from('chat_participants')
+      .insert(participants);
 
-  return data ?? [];
-};
+    if (participantsError) throw participantsError;
 
-export const sendMessage = async (
-  chatId: string,
-  senderId: string,
-  content: string
-): Promise<Message> => {
-  const { data, error } = await supabase
-    .from("Messages")
-    .insert({
-      conversation_id: chatId,
-      sender_id: senderId,
-      content,
-    })
-    .select()
-    .single();
+    return chatData.id;
+  },
 
-  if (error || !data) {
-    console.error("Error sending chat message:", error);
-    throw error ?? new Error("Message was not created.");
-  }
+  /**
+   * Inserts a message and updates the parent chat's metadata.
+   */
+  async sendMessage(dto: SendMessageDTO): Promise<void> {
+    const { data: msgData, error: msgError } = await supabase
+      .from('messages')
+      .insert({
+        chat_id: dto.chatId,
+        sender_id: dto.senderId,
+        content: dto.content,
+        listing_id: dto.listingId as any,
+      })
+      .select('id')
+      .single();
 
-  const { error: updateError } = await supabase
-    .from("Conversations")
-    .update({
-      last_message: content,
-      last_message_at: new Date().toISOString(),
-    })
-    .eq("id", chatId);
+    if (msgError || !msgData) throw msgError;
 
-  if (updateError) {
-    console.warn("Failed to update chat preview:", updateError);
-  }
+    const { error: updateError } = await supabase
+      .from('chats')
+      .update({ last_message_id: msgData.id, last_message_at: new Date().toISOString() })
+      .eq('id', dto.chatId);
 
-  return data;
+    if (updateError) throw updateError;
+  },
+
+  /**
+   * Gets an existing chat between two users for a listing, or creates one if it doesn't exist.
+   */
+  async getOrCreateChat(dto: { currentUserId: string, otherUserId: string, listingId?: string }): Promise<{ success: boolean, data?: { id: string }, error?: string }> {
+    try {
+      // 1. Check for existing chat
+      // This is a bit complex in Supabase without a RPC or a specific table for 1-on-1 chats.
+      // We'll search for chats where both users are participants and listing matches.
+
+      const { data: existingChats, error: fetchError } = await supabase
+        .from('chat_participants')
+        .select('chat_id')
+        .eq('user_id', dto.currentUserId);
+
+      if (fetchError) throw fetchError;
+
+      const chatIds = (existingChats ?? []).map(c => c.chat_id);
+
+      if (chatIds.length > 0) {
+        const { data: match, error: matchError } = await supabase
+          .from('chat_participants')
+          .select('chat_id, chats!inner(*)')
+          .in('chat_id', chatIds)
+          .eq('user_id', dto.otherUserId)
+          .eq('chats.listing_id', dto.listingId || "")
+          .limit(1)
+          .maybeSingle();
+        if (matchError) throw matchError;
+        if (match) {
+          return { success: true, data: { id: match.chat_id } };
+        }
+      }
+
+      // 2. Create new chat if not found
+      const chatId = await this.createChat({
+        participantIds: [dto.currentUserId, dto.otherUserId],
+        listingId: dto.listingId?.toString(),
+      });
+
+      return { success: true, data: { id: chatId } };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+  /**
+   * Assigns a user to the city group chat for their office location.
+   * Finds or creates a city_chat for the given city name, then adds the user as a participant.
+   */
+  async assignToCityGroupChat(userId: string, cityName: string): Promise<{ success: boolean; chatId?: string; error?: string }> {
+    try {
+      const chatName = `${cityName} Chat`;
+
+      // Find existing city chat by name
+      const { data: existingChat, error: findError } = await supabase
+        .from("chats")
+        .select("id")
+        .eq("display_name", chatName)
+        .maybeSingle();
+
+      if (findError) throw findError;
+
+      let chatId: string;
+
+      if (existingChat) {
+        chatId = existingChat.id;
+      } else {
+        // Create a new city_chat
+        const { data: newChat, error: createError } = await supabase
+          .from("chats")
+          .insert({ display_name: chatName })
+          .select("id")
+          .single();
+
+        if (createError || !newChat) throw createError ?? new Error("Failed to create city chat.");
+        chatId = newChat.id;
+      }
+
+      // Add user as participant (upsert to avoid duplicates)
+      const { error: participantError } = await supabase
+        .from("chat_participants")
+        .upsert({ chat_id: chatId, user_id: userId }, { onConflict: "chat_id,user_id" });
+
+      if (participantError) throw participantError;
+
+      return { success: true, chatId };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  },
+
 };

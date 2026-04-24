@@ -1,8 +1,8 @@
+import { MessageRecord } from "@/types/records";
 import ComposerActionsModal from "@components/Chat/ComposerActionsModal";
 import MessageInputBox from "@components/Chat/MessageInputBox";
 import FDMLoader from "@components/ui/FDMLoader";
 import { Ionicons } from "@expo/vector-icons";
-import { DecoratedChatMessage, useChatMessages } from "@hooks/useChatMessages";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ReactNode, RefObject, useState } from "react";
@@ -24,34 +24,33 @@ type MessageInputProps = React.ComponentProps<typeof MessageInputBox> & {
 
 type ChatScreenLayoutProps = {
     chatId: string | number;
-    source: "PRIVATE" | "CITY";
     headerContent: ReactNode; // Left-side avatar + title/subtitle block inside the header row
     subHeader?: ReactNode; // Optional card shown beneath the header (e.g. the listing card)
     footerExtra?: ReactNode; // Extra node rendered after the KeyboardAvoidingView (e.g. modals)
     flatListRef: RefObject<FlatList | null>;
-    renderMessage: (item: DecoratedChatMessage, index: number) => ReactNode;
+    messages: MessageRecord[];
+    isLoading: boolean;
     listEmptyText?: string;
     inputProps: MessageInputProps; // Spread the props from MessageInputBox
+    renderMessage: (item: MessageRecord, index: number) => ReactNode;
     messageGap?: number | string; // Spacing between messages.
 };
 
-export default function ChatScreenLayout({
-    chatId,
-    source,
+const ChatScreenLayout = ({
     headerContent,
     subHeader,
     flatListRef,
-    renderMessage,
+    messages,
+    isLoading,
     listEmptyText = "Send a message to get started",
     inputProps,
+    renderMessage,
     messageGap = 2.5,
-}: ChatScreenLayoutProps) {
+}: ChatScreenLayoutProps) => {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const [actionsVisible, setActionsVisible] = useState(false);
     const { onPressImage, ...messageInputProps } = inputProps;
-
-    const { messages, loading } = useChatMessages(chatId, source);
 
     const handlePressPlus = () => {
         if (inputProps.onPressPlus) {
@@ -60,7 +59,7 @@ export default function ChatScreenLayout({
         setActionsVisible(true);
     };
 
-    const renderItem: ListRenderItem<DecoratedChatMessage> = ({ item, index }) => {
+    const renderItem: ListRenderItem<MessageRecord> = ({ item, index }) => {
         return (
             <View
                 style={{
@@ -104,7 +103,7 @@ export default function ChatScreenLayout({
             {subHeader}
 
             {/* -- Body -- */}
-            {loading ? (
+            {isLoading ? (
                 <FDMLoader />
             ) : (
                 <KeyboardAvoidingView
@@ -144,4 +143,6 @@ export default function ChatScreenLayout({
             )}
         </View>
     );
-}
+};
+
+export default ChatScreenLayout;

@@ -1,103 +1,91 @@
+import { ActionType } from "@/types/enums";
+import { AuditLogEntry } from "@/types/views";
 import { supabase } from "@lib/supabase";
-import { getUserEmailMapByIds } from "@services/user/userService";
-import { ActionType, AuditLog, AuditResponse } from "./types";
-
-const TABLE = "AuditLogs";
+import { CreateAuditLogDTO } from "./types";
 
 
-/**
- * Logs an audit entry.
- */
+export const AuditService = {
+	/**
+	 * Logs an audit entry.
+	 * @params userId, targetId: nullable, actionType
+	 */
+	async logAction(dto: CreateAuditLogDTO) {
+		// Inserts audit log into table and returns it
+		const { data, error } = await supabase
+			.from('audit_logs')
+			.insert({
+				action_type: dto.actionType as any,
+				user_id: dto.userId,
+				target_id: dto.targetId
+			})
+			.select()
+			.single();
 
-export const logAudit = async (
-	action: ActionType,
-	targetId: string
-): Promise<AuditResponse<AuditLog>> => {
-	const { data: sessionData } = await supabase.auth.getSession();
-	const userId = sessionData?.session?.user?.id;
+		if (error || !data) throw new Error(error?.message ?? "Failed to create audit log.");
 
-	if (!userId) {
-		return { success: false, error: "No authenticated user." };
-	}
+		return {
+			id: data.id,
+			userId: data.user_id,
+			targetId: data.target_id || null,
+			actionType: data.action_type as ActionType,
+			createdAt: data.timestamp,
+		};
+	},
 
-	const { data, error } = await supabase
-		.from(TABLE)
-		.insert({ actionType: action, userId, targetId })
-    .select()
-    .single();
+	/**
+	 * Fetches all rows from audit_logs, adds user emails, and returns them.
+	 */
+	async getAudits(): Promise<AuditLogEntry[]> {
+		// Fetch all audit rows in descending order
+		const { data: rows, error } = await supabase
+			.from('audit_logs')
+			.select("*")
+			.order("timestamp", { ascending: false });
 
-	if (error || !data) {
-		return { success: false, error: error?.message || "Failed to create audit log." };
-	}
+		if (error) { throw error; };
+		if (!rows || rows.length === 0) { return []; } // No audits
 
-	return {
-		success: true,
-		data: {
-			auditId: data.id,
-			userId: data.userId ?? "",
-			targetId: data.targetId ?? "",
-			actionType: data.actionType as ActionType,
-			timeStamp: data.timestamp ?? new Date().toISOString(),
-		},
-	};
-};
+		// Map rows to AuditLog shape
+		const logs: AuditLogEntry[] = rows.map((row) => ({
+			id: row.id.toString(),
+			userId: row.user_id ?? "",
+			targetId: row.target_id ?? "",
+			actionType: row.action_type as ActionType,
+			createdAt: row.timestamp ?? new Date().toISOString(),
+		}));
 
-/**
- * Fetches ALL rows from AuditLogs, enriches with user emails, and returns them.
- */
-export const getHistory = async (): Promise<AuditResponse<AuditLog[]>> => {
-	console.log("[AuditService] Fetching all from AuditLogs...");
+		// Add user emails, first names and last names
+		const allUserIds = [
+			...new Set(
+				logs
+					.flatMap((l) => [l.userId, l.targetId])
+					.filter(Boolean)
+			),
+		];
 
-	// 1. Fetch all audit rows
-	const { data: rows, error } = await supabase
-		.from(TABLE)
-		.select("*")
-		.order("timestamp", { ascending: false });
+		if (allUserIds.length > 0) {
+			// Fetch user emails and names
+			const { data: users, error: userError } = await supabase
+				.from("users")
+				.select("user_id, email, first_name, last_name")
+				.in("user_id", allUserIds);
 
-	console.log("[AuditService] Query result:", { rowCount: rows?.length ?? 0, error: error?.message ?? null });
-
-	if (error) {
-		console.error("[AuditService] Fetch error:", error);
-		return { success: false, error: error.message };
-	}
-
-	if (!rows || rows.length === 0) {
-		console.log("[AuditService] No rows returned.");
-		return { success: true, data: [] };
-	}
-
-	console.log("[AuditService] First row sample:", JSON.stringify(rows[0]));
-
-	// 2. Map rows to AuditLog shape
-	const logs: AuditLog[] = rows.map((row) => ({
-		auditId: row.id,
-		userId: row.userId ?? "",
-		targetId: row.targetId ?? "",
-		actionType: row.actionType as ActionType,
-		timeStamp: row.timestamp ?? new Date().toISOString(),
-	}));
-
-	// 3. Enrich with user emails
-	const allUserIds = [
-		...new Set(
-			logs
-				.flatMap((l) => [l.userId, l.targetId])
-				.filter(Boolean)
-		),
-	];
-
-	console.log("[AuditService] Unique user IDs to resolve:", allUserIds.length);
-
-	if (allUserIds.length > 0) {
-		const emailMapResult = await getUserEmailMapByIds(allUserIds);
-		const emailMap = emailMapResult.data ?? {};
-
-		for (const log of logs) {
-			log.userEmail = emailMap[log.userId] ?? "";
-			log.targetEmail = emailMap[log.targetId] ?? "";
+			if (!userError && users) {
+				const userMap = Object.fromEntries(users.map(u => [u.user_id, u]));
+				for (const log of logs) {
+					const actor = userMap[log.userId];
+					const target = userMap[log.targetId];
+					log.userEmail = actor?.email ?? "";
+					log.userFirstName = actor?.first_name ?? "";
+					log.userLastName = actor?.last_name ?? "";
+					log.targetEmail = target?.email ?? "";
+					log.targetFirstName = target?.first_name ?? "";
+					log.targetLastName = target?.last_name ?? "";
+				}
+			}
 		}
-	}
 
-	console.log("[AuditService] Returning", logs.length, "audit logs.");
-	return { success: true, data: logs };
+		return logs;
+	},
+
 };

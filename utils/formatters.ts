@@ -1,3 +1,5 @@
+import { PropertyType, RentPeriod } from "@/types/enums";
+
 /**
  * Extracts the first two initials from a full name string, capitalised.
  * Useful for user avatars.
@@ -65,9 +67,9 @@ export const formatRelativeDate = (isoString: string): string => {
  */
 export const parsePhotoUrls = (photos: any): string[] => {
   if (!photos) return [];
-  
+
   let rawPhotos: string[] = [];
-  
+
   if (Array.isArray(photos)) {
     rawPhotos = photos;
   } else if (typeof photos === 'string') {
@@ -84,3 +86,20 @@ export const parsePhotoUrls = (photos: any): string[] => {
     .map(url => url ? String(url).replace(/^"|"$/g, '').trim() : '')
     .filter(url => url.startsWith('http'));
 };
+
+/**
+ * Formats the rent period for display.
+ */
+export const formatRentPeriod = (period: RentPeriod) => {
+  if (period === RentPeriod.WEEKLY) return "pw";
+  if (period === RentPeriod.BIWEEKLY) return "biwk";
+  return "pcm";
+}
+
+/**
+ * Formats the property type for display.
+ */
+export const formatPropertyType = (type: PropertyType) => {
+  if (!type) return "Property";
+  return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+}

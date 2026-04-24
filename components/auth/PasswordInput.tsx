@@ -13,7 +13,7 @@ type PasswordInputProps = {
 	textContentType?: TextInputProps["textContentType"];
 };
 
-export default function PasswordInput({
+const PasswordInput = ({
 	label,
 	value,
 	onChangeText,
@@ -22,7 +22,7 @@ export default function PasswordInput({
 	editable = true,
 	autoComplete,
 	textContentType,
-}: PasswordInputProps) {
+}: PasswordInputProps) => {
 	const [isVisible, setIsVisible] = useState(false);
 
 	return (
@@ -63,4 +63,6 @@ export default function PasswordInput({
 			{error ? <Text className="text-red-400 text-sm mt-1">{error}</Text> : null}
 		</View>
 	);
-}
+};
+
+export default PasswordInput;

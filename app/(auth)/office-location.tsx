@@ -1,74 +1,28 @@
+import AuthButton from "@components/auth/AuthButton";
 import BackButton from "@components/ui/BackButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import OfficeLocationSelector from "@components/ui/OfficeLocationSelector";
-import { useAuth } from "@hooks/useAuth";
-import { OfficeCity } from "@lib/office-cities";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useOfficeLocations } from "@hooks/useOfficeLocations";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    Text,
-    TouchableOpacity,
-    View,
-    useWindowDimensions,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  View,
+  useWindowDimensions
 } from "react-native";
 
-export default function OfficeLocation() {
-  const router = useRouter();
+const OfficeLocation = () => {
   const { width, height } = useWindowDimensions();
-  const { register } = useAuth();
-
-  // Receive form data from the register step
-  const params = useLocalSearchParams<{
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber: string;
-    password: string;
-  }>();
-
-  const [selectedCity, setSelectedCity] = useState<OfficeCity | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSelectCity = (region: string, city: OfficeCity) => {
-    setSelectedRegion(region);
-    setSelectedCity(city);
-    setErrorMessage("");
-  };
-
-  const handleCompleteSignup = async () => {
-    if (!selectedCity) {
-      setErrorMessage("Please choose your FDM office city before continuing.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrorMessage("");
-
-    const result = await register({
-      firstName: params.firstName,
-      lastName: params.lastName,
-      email: params.email,
-      password: params.password,
-      phoneNumber: params.phoneNumber,
-      officeLocation: selectedCity.name,
-    });
-
-    setIsSubmitting(false);
-
-    if (!result.success) {
-      setErrorMessage(result.error ?? "Registration failed. Please try again.");
-      return;
-    }
-
-    // Registration successful - continue to app (all screens say "awaiting approval")
-    router.replace("/(tabs)/home");
-  };
+  const {
+    citiesByRegion,
+    selectedCity,
+    selectedRegion,
+    errorMessage,
+    isSubmitting,
+    handleSelectCity,
+    handleCompleteSignup,
+  } = useOfficeLocations();
 
   return (
     <KeyboardAvoidingView
@@ -78,8 +32,8 @@ export default function OfficeLocation() {
       <StatusBar style="light" hidden={width > height} />
 
       {/* Decorative Background Elements */}
-      <BackgroundCircle top={-100} right={-100} size={288} color="#CCFF001A" opacity={0.5} />
-      <BackgroundCircle bottom={-100} left={-100} size={384} color="#CCFF000D" opacity={0.4} />
+      <BackgroundCircle y={-100} x="90%" size={288} color="#CCFF001A" opacity={0.5} />
+      <BackgroundCircle y="90%" x={-100} size={384} color="#CCFF000D" opacity={0.4} />
 
       {/* Header */}
       <View className={`${width > height ? "pt-4" : "pt-10"} pb-2 w-full max-w-sm self-center flex-row items-center z-10`}>
@@ -97,6 +51,7 @@ export default function OfficeLocation() {
         </View>
 
         <OfficeLocationSelector
+          citiesByRegion={citiesByRegion}
           selectedCity={selectedCity}
           selectedRegion={selectedRegion}
           onSelectCity={handleSelectCity}
@@ -104,18 +59,18 @@ export default function OfficeLocation() {
           errorMessage={errorMessage}
         />
 
-        <TouchableOpacity
-          className="w-2/3 self-center bg-fdm-accent py-4 rounded-2xl items-center shadow-lg shadow-fdm-accent/20 active:opacity-80 transition-opacity mt-8"
+        <AuthButton
+          label="Finish Sign Up"
           onPress={handleCompleteSignup}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#1b1b1b" />
-          ) : (
-            <Text className="text-fdm-bg font-bold tracking-wide uppercase">Finish Sign Up</Text>
-          )}
-        </TouchableOpacity>
+          isLoading={isSubmitting}
+          backgroundColour="#ccff00"
+          textColour="#1b1b1b"
+          width="66.666667%" // matches w-2/3
+          style={{ alignSelf: 'center', marginTop: 32 }} // mt-8
+        />
       </View>
     </KeyboardAvoidingView>
   );
-}
+};
+
+export default OfficeLocation;

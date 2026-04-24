@@ -1,23 +1,23 @@
+import { Listing } from "@/types/views";
 import { Ionicons } from "@expo/vector-icons";
-import { useListing } from "@hooks/useListing";
-import { Listing } from "@services/listings/listingController";
+import { useListing } from "@hooks/listings/useListing";
 import { formatListingPrice } from "@utils/currency";
 import { useRouter } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 type ChatListingSubHeaderProps = {
-  listingId?: number;
+  listingId?: string;
   initialData?: Listing | null;
 };
 
-export default function ChatListingSubHeader({ 
-  listingId, 
-  initialData 
-}: ChatListingSubHeaderProps) {
+const ChatListingSubHeader = ({
+  listingId,
+  initialData
+}: ChatListingSubHeaderProps) => {
   const router = useRouter();
-  const { listing, listingSold, firstPhotoUrl, loading, locationLabel } = useListing(listingId, initialData);
+  const { listing, listingSold, firstPhotoUrl, isLoading, locationLabel } = useListing(listingId, initialData);
 
-  if (loading) return null;
+  if (isLoading) return null;
 
   if (listingSold && !listing) {
     return (
@@ -93,4 +93,6 @@ export default function ChatListingSubHeader({
       </View>
     </TouchableOpacity>
   );
-}
+};
+
+export default ChatListingSubHeader;

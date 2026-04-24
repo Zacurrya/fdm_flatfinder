@@ -1,23 +1,37 @@
-import { Database } from "@/types/database.types";
+import { ListingSource, PropertyType, RentPeriod } from "@/types/enums";
 
-export type ListingLocationRow = Database["public"]["Tables"]["ListingLocations"]["Row"];
+// Shows in the search listing list
+export type ListingPreview = {
+  id: string;
+  title: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  location: string;
+  media_urls: string[];
+}
 
-export type Listing = Database["public"]["Tables"]["Listings"]["Row"] & {
-  ListingLocations?: ListingLocationRow | null;
-};
+// -- DTOs --
 
-export type InsertListing = Database["public"]["Tables"]["Listings"]["Insert"];
-
-export type ListingIdDTO = {
-  id: number | string;
-};
-
-export type UploadListingPhotoDTO = {
-  uri: string;
-};
+export type FilterListingsDTO = {
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  sources?: ListingSource[];
+}
 
 export type CreateListingDTO = {
-  listing: InsertListing;
+  userId: string;
+  title: string;
+  description: string;
+  price: number;
+  rent_period: RentPeriod;
+  property_type: PropertyType;
+  bedrooms: number;
+  bathrooms: number;
+  source: ListingSource;
+  photos: string[];
   city: string;
   address: string;
 };

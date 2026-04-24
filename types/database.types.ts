@@ -7,399 +7,419 @@ export type Json =
   | Json[]
 
 export type Database = {
-
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
-      AuditLogs: {
+      audit_logs: {
         Row: {
-          actionType: Database["public"]["Enums"]["ActionType"] | null
+          action_type: Database["public"]["Enums"]["action_type"]
           id: number
-          targetId: string | null
+          target_id: string
           timestamp: string
-          userId: string | null
+          user_id: string
         }
         Insert: {
-          actionType?: Database["public"]["Enums"]["ActionType"] | null
+          action_type: Database["public"]["Enums"]["action_type"]
           id?: number
-          targetId?: string | null
+          target_id: string
           timestamp?: string
-          userId?: string | null
+          user_id: string
         }
         Update: {
-          actionType?: Database["public"]["Enums"]["ActionType"] | null
+          action_type?: Database["public"]["Enums"]["action_type"]
           id?: number
-          targetId?: string | null
+          target_id?: string
           timestamp?: string
-          userId?: string | null
+          user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "AuditLogs_targetId_fkey"
-            columns: ["targetId"]
+            columns: ["target_id"]
             isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "AuditLogs_userId_fkey"
-            columns: ["userId"]
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
           },
         ]
       }
-      Conversations: {
+      chat_participants: {
         Row: {
-          id: string
-          user1_id: string
-          user2_id: string
-          listing_id: number | null
-          last_message: string | null
-          last_message_at: string
+          chat_id: string
           created_at: string
+          id: string
+          user_id: string
         }
         Insert: {
-          id?: string
-          user1_id: string
-          user2_id: string
-          listing_id?: number | null
-          last_message?: string | null
-          last_message_at?: string
+          chat_id?: string
           created_at?: string
+          id?: string
+          user_id?: string
         }
         Update: {
-          id?: string
-          user1_id?: string
-          user2_id?: string
-          listing_id?: number | null
-          last_message?: string | null
-          last_message_at?: string
+          chat_id?: string
           created_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "Conversations_listing_id_fkey"
+            foreignKeyName: "chat_participants_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      chats: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          last_message_id: string | null
+          listing_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          last_message_id?: string | null
+          listing_id?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          last_message_id?: string | null
+          listing_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chats_last_message_id_fkey"
+            columns: ["last_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chats_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
-            referencedRelation: "Listings"
+            referencedRelation: "listings"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "Conversations_user1_id_fkey"
-            columns: ["user1_id"]
-            isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "Conversations_user2_id_fkey"
-            columns: ["user2_id"]
-            isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
           },
         ]
       }
-      Messages: {
+      listing_locations: {
         Row: {
-          id: string
-          city_chat_id: number | null
-          conversation_id: string | null
-          sender_id: string
-          content: string
+          address: string
+          city: string
           created_at: string
-          read_at: string | null
+          id: string
         }
         Insert: {
-          id?: string
-          city_chat_id?: number | null
-          conversation_id?: string | null
-          sender_id: string
-          content: string
+          address: string
+          city: string
           created_at?: string
-          read_at?: string | null
+          id?: string
         }
         Update: {
-          id?: string
-          city_chat_id?: number | null
-          conversation_id?: string | null
-          sender_id?: string
-          content?: string
+          address?: string
+          city?: string
           created_at?: string
-          read_at?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      listings: {
+        Row: {
+          bathrooms: number
+          bedrooms: number
+          created_at: string
+          description: string | null
+          id: string
+          is_approved: boolean
+          location_id: string
+          media_urls: string[]
+          owner_id: string
+          price: number
+          rent_period: Database["public"]["Enums"]["rent_period"] | null
+          source: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bathrooms: number
+          bedrooms: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_approved?: boolean
+          location_id?: string
+          media_urls: string[]
+          owner_id: string
+          price: number
+          rent_period?: Database["public"]["Enums"]["rent_period"] | null
+          source?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bathrooms?: number
+          bedrooms?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_approved?: boolean
+          location_id?: string
+          media_urls?: string[]
+          owner_id?: string
+          price?: number
+          rent_period?: Database["public"]["Enums"]["rent_period"] | null
+          source?: string
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "Messages_city_chat_id_fkey"
-            columns: ["city_chat_id"]
+            foreignKeyName: "listings_location_id_fkey"
+            columns: ["location_id"]
             isOneToOne: false
-            referencedRelation: "CityChats"
+            referencedRelation: "listing_locations"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      locations: {
+        Row: {
+          country_code: string
+          created_at: string | null
+          id: string
+          name: string
+          region: string
+        }
+        Insert: {
+          country_code: string
+          created_at?: string | null
+          id?: string
+          name: string
+          region: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          region?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          chat_id: string
+          content: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          chat_id?: string
+          content: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          chat_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "Messages_conversation_id_fkey"
-            columns: ["conversation_id"]
+            foreignKeyName: "messages_chat_id_fkey"
+            columns: ["chat_id"]
             isOneToOne: false
-            referencedRelation: "Conversations"
+            referencedRelation: "chats"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "Messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
           },
         ]
       }
-      Requests: {
+      requests: {
         Row: {
-          id: number
-          userId: string | null
-          requestType: Database["public"]["Enums"]["RequestType"]
-          status: Database["public"]["Enums"]["RequestStatus"]
-          listingId: number | null
-          oldCity: string | null
-          newCity: string | null
-          reviewedBy: string | null
-          reviewedAt: string | null
           created_at: string
+          id: number
+          listing_id: number | null
+          new_city: string | null
+          old_city: string | null
+          request_type: Database["public"]["Enums"]["request_type"]
+          reviewed_At: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["request_status"]
+          user_id: string
         }
         Insert: {
-          id?: number
-          userId?: string | null
-          requestType: Database["public"]["Enums"]["RequestType"]
-          status?: Database["public"]["Enums"]["RequestStatus"]
-          listingId?: number | null
-          oldCity?: string | null
-          newCity?: string | null
-          reviewedBy?: string | null
-          reviewedAt?: string | null
           created_at?: string
+          id?: number
+          listing_id?: number | null
+          new_city?: string | null
+          old_city?: string | null
+          request_type: Database["public"]["Enums"]["request_type"]
+          reviewed_At?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          user_id: string
         }
         Update: {
-          id?: number
-          userId?: string | null
-          requestType?: Database["public"]["Enums"]["RequestType"]
-          status?: Database["public"]["Enums"]["RequestStatus"]
-          listingId?: number | null
-          oldCity?: string | null
-          newCity?: string | null
-          reviewedBy?: string | null
-          reviewedAt?: string | null
           created_at?: string
+          id?: number
+          listing_id?: number | null
+          new_city?: string | null
+          old_city?: string | null
+          request_type?: Database["public"]["Enums"]["request_type"]
+          reviewed_At?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "Requests_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
-          },
-          {
             foreignKeyName: "Requests_reviewedBy_fkey"
-            columns: ["reviewedBy"]
+            columns: ["reviewed_by"]
             isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "Requests_listingId_fkey"
-            columns: ["listingId"]
+            foreignKeyName: "Requests_userId_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "Listings"
-            referencedColumns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
           },
         ]
       }
-      // all the users signed up in our app
-      Users: {
+      user_favourites: {
         Row: {
-          approvalStatus: Database["public"]["Enums"]["ApprovalStatus"] | null
           created_at: string
-          email: string | null
-          firstName: string | null
-          lastName: string | null
-          officeLocation: string | null
-          phoneNumber: string | null
-          profilePicture: string | null
-          role: Database["public"]["Enums"]["Role"]
-          userId: string
+          id: number
+          listing_id: string
+          user_id: string
         }
         Insert: {
-          approvalStatus?: Database["public"]["Enums"]["ApprovalStatus"] | null
           created_at?: string
-          email?: string | null
-          firstName?: string | null
-          lastName?: string | null
-          officeLocation?: string | null
-          phoneNumber?: string | null
-          profilePicture?: string | null
-          role?: Database["public"]["Enums"]["Role"]
-          userId?: string
+          id?: number
+          listing_id?: string
+          user_id: string
         }
         Update: {
-          approvalStatus?: Database["public"]["Enums"]["ApprovalStatus"] | null
           created_at?: string
-          email?: string | null
-          firstName?: string | null
-          lastName?: string | null
-          officeLocation?: string | null
-          phoneNumber?: string | null
-          profilePicture?: string | null
-          role?: Database["public"]["Enums"]["Role"]
-          userId?: string
+          id?: number
+          listing_id?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_favourites_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "UserFavourites_userId_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
-      UserSettings: {
+      user_settings: {
         Row: {
           created_at: string
           currency: string | null
-          userId: string | null
+          id: string
         }
         Insert: {
           created_at?: string
           currency?: string | null
-          userId?: string | null
+          id?: string
         }
         Update: {
           created_at?: string
           currency?: string | null
-          userId?: string | null
+          id?: string
         }
         Relationships: []
       }
-      UserFavourites: {
+      users: {
         Row: {
-          id: number
-          userId: string
-          listingId: number
+          approval_status: Database["public"]["Enums"]["approval_status"]
+          avatar_url: string | null
           created_at: string
+          email: string
+          first_name: string
+          last_name: string
+          office_location: string
+          phone_number: string
+          role: Database["public"]["Enums"]["role"]
+          user_id: string
         }
         Insert: {
-          id?: number
-          userId: string
-          listingId: number
+          approval_status?: Database["public"]["Enums"]["approval_status"]
+          avatar_url?: string | null
           created_at?: string
+          email: string
+          first_name: string
+          last_name: string
+          office_location?: string
+          phone_number: string
+          role?: Database["public"]["Enums"]["role"]
+          user_id?: string
         }
         Update: {
-          id?: number
-          userId?: string
-          listingId?: number
+          approval_status?: Database["public"]["Enums"]["approval_status"]
+          avatar_url?: string | null
           created_at?: string
+          email?: string
+          first_name?: string
+          last_name?: string
+          office_location?: string
+          phone_number?: string
+          role?: Database["public"]["Enums"]["role"]
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "UserFavourites_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "UserFavourites_listingId_fkey"
-            columns: ["listingId"]
-            isOneToOne: false
-            referencedRelation: "Listings"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      ListingLocations: {
-        Row: {
-          id: number
-          listingId: number
-          city: string
-          address: string
-          created_at: string
-        }
-        Insert: {
-          id?: number
-          listingId: number
-          city: string
-          address: string
-          created_at?: string
-        }
-        Update: {
-          id?: number
-          listingId?: number
-          city?: string
-          address?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ListingLocations_listingId_fkey"
-            columns: ["listingId"]
-            isOneToOne: true
-            referencedRelation: "Listings"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      // the main table for all the flats people upload
-      Listings: {
-        Row: {
-          approvalStatus: Database["public"]["Enums"]["ApprovalStatus"]
-          baths?: number
-          beds?: number
-          created_at: string
-          // we added these to show more info and where the flat came from
-          description?: string | null
-          id: number
-          photos?: string[]
-          price: number
-          propertyType: Database["public"]["Enums"]["PropertyType"]
-          rentPeriod: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
-          source: "FDM" | "RIGHTMOVE" | "OPENRENT" | "ZOOPLA"
-          title: string
-          userId: string
-        }
-        Insert: {
-          approvalStatus?: Database["public"]["Enums"]["ApprovalStatus"]
-          baths?: number
-          beds?: number
-          created_at?: string
-          description?: string | null
-          id?: number
-          photos?: string[]
-          price: number
-          propertyType: Database["public"]["Enums"]["PropertyType"]
-          rentPeriod: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
-          source?: "FDM" | "RIGHTMOVE" | "OPENRENT" | "ZOOPLA"
-          title: string
-          userId: string
-        }
-        Update: {
-          approvalStatus?: Database["public"]["Enums"]["ApprovalStatus"]
-          baths?: number
-          beds?: number
-          created_at?: string
-          description?: string | null
-          id?: number
-          photos?: string[]
-          price?: number
-          propertyType?: Database["public"]["Enums"]["PropertyType"]
-          rentPeriod?: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
-          source?: "FDM" | "RIGHTMOVE" | "OPENRENT" | "ZOOPLA"
-          title?: string
-          userId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "Listings_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "Users"
-            referencedColumns: ["userId"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -409,32 +429,37 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      ActionType:
+      action_type:
         | "USER_APPROVED"
         | "USER_DENIED"
         | "USER_BANNED"
         | "MESSAGE_DELETED"
-        | "SIGN_UP_REQUESTED"
-        | "SIGN_UP_APPROVED"
-        | "SIGN_UP_DENIED"
-        | "CITY_CHANGE_REQUESTED"
         | "CITY_CHANGE_APPROVED"
         | "CITY_CHANGE_DENIED"
+        | "SIGN_UP_APPROVED"
+        | "SIGN_UP_DENIED"
         | "CITY_CHANGED"
         | "LISTING_UPLOAD_REQUESTED"
         | "LISTING_UPLOAD_APPROVED"
         | "LISTING_UPLOAD_DENIED"
-        | "LISTING_DELETED"
-      ApprovalStatus: "PENDING" | "APPROVED" | "REJECTED"
-      PropertyType:
+      approval_status: "PENDING" | "APPROVED" | "REJECTED"
+      listing_source:
+        | "FDM"
+        | "RIGHTMOVE"
+        | "OPENRENT"
+        | "ZOOPLA"
+        | "PROPERTYGURU"
+      listing_status: "AVAILABLE" | "DRAFT" | "SOLD"
+      property_type:
         | "FLAT"
         | "STUDIO"
         | "TERRACEDHOUSE"
         | "SEMIDETACHED"
         | "DETACHED"
-      Role: "ADMIN" | "CONSULTANT"
-      RequestType: "SIGN_UP" | "CITY_CHANGE" | "LISTING_UPLOAD"
-      RequestStatus: "PENDING" | "APPROVED" | "REJECTED"
+      rent_period: "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+      request_status: "PENDING" | "APPROVED" | "REJECTED"
+      request_type: "SIGN_UP" | "CITY_CHANGE" | "LISTING_UPLOAD"
+      role: "ADMIN" | "CONSULTANT"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -562,34 +587,40 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      ActionType: [
+      action_type: [
         "USER_APPROVED",
         "USER_DENIED",
         "USER_BANNED",
         "MESSAGE_DELETED",
-        "SIGN_UP_REQUESTED",
-        "SIGN_UP_APPROVED",
-        "SIGN_UP_DENIED",
-        "CITY_CHANGE_REQUESTED",
         "CITY_CHANGE_APPROVED",
         "CITY_CHANGE_DENIED",
+        "SIGN_UP_APPROVED",
+        "SIGN_UP_DENIED",
         "CITY_CHANGED",
         "LISTING_UPLOAD_REQUESTED",
         "LISTING_UPLOAD_APPROVED",
         "LISTING_UPLOAD_DENIED",
-        "LISTING_DELETED",
       ],
-      ApprovalStatus: ["PENDING", "APPROVED", "REJECTED"],
-      PropertyType: [
+      approval_status: ["PENDING", "APPROVED", "REJECTED"],
+      listing_source: [
+        "FDM",
+        "RIGHTMOVE",
+        "OPENRENT",
+        "ZOOPLA",
+        "PROPERTYGURU",
+      ],
+      listing_status: ["AVAILABLE", "DRAFT", "SOLD"],
+      property_type: [
         "FLAT",
         "STUDIO",
         "TERRACEDHOUSE",
         "SEMIDETACHED",
         "DETACHED",
       ],
-      Role: ["ADMIN", "CONSULTANT"],
-      RequestType: ["SIGN_UP", "CITY_CHANGE", "LISTING_UPLOAD"],
-      RequestStatus: ["PENDING", "APPROVED", "REJECTED"],
+      rent_period: ["WEEKLY", "BIWEEKLY", "MONTHLY"],
+      request_status: ["PENDING", "APPROVED", "REJECTED"],
+      request_type: ["SIGN_UP", "CITY_CHANGE", "LISTING_UPLOAD"],
+      role: ["ADMIN", "CONSULTANT"],
     },
   },
 } as const

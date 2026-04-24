@@ -1,122 +1,81 @@
-import { User } from "@services/auth/types";
-import {
-    getFallbackProfilePictureInitials,
-    getFallbackProfilePictureUrl,
-    getProfilePictureUrl,
-} from "@services/user/userController";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import FDMLoader from "@components/ui/FDMLoader";
+import { Text, TouchableOpacity, View } from "react-native";
 
 type ProfilePicProps = {
-  user: User | null;
-  onPress?: () => void;
-  isUploadingProfilePicture?: boolean;
+  avatarUrl: string | null;
+  initials: string;
   size?: number;
+  onPress?: () => void;
+  isUploading?: boolean;
+  showEditIcon?: boolean;
 };
 
-export default function ProfilePic({
-  user,
-  onPress,
-  isUploadingProfilePicture = false,
+const ProfilePic = ({
+  avatarUrl,
+  initials,
   size = 64,
-}: ProfilePicProps) {
-  const fallbackProfilePictureUrl = getFallbackProfilePictureUrl({
-    firstName: user?.firstName,
-    lastName: user?.lastName,
-    email: user?.email,
-    size,
-  });
-  const fallbackInitials = getFallbackProfilePictureInitials({
-    firstName: user?.firstName,
-    lastName: user?.lastName,
-    email: user?.email,
-  });
-
-  const [resolvedProfilePictureUrl, setResolvedProfilePictureUrl] = useState<string | null>(null);
-  const [hasProfilePictureLoadError, setHasProfilePictureLoadError] = useState(false);
-  const [hasFallbackProfilePictureLoadError, setHasFallbackProfilePictureLoadError] = useState(false);
-
-  useEffect(() => {
-    setHasProfilePictureLoadError(false);
-    setHasFallbackProfilePictureLoadError(false);
-
-    let cancelled = false;
-
-    const loadSignedProfilePictureUrl = async () => {
-      const resolvedUrl = await getProfilePictureUrl({
-        profilePicture: user?.profilePicture,
-        firstName: user?.firstName,
-        lastName: user?.lastName,
-        email: user?.email,
-        size,
-      });
-
-      if (cancelled) {
-        return;
-      }
-
-      setResolvedProfilePictureUrl(resolvedUrl);
-    };
-
-    void loadSignedProfilePictureUrl();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.email, user?.firstName, user?.lastName, user?.profilePicture, size]);
-
-  const isUsingResolvedProfilePicture = !hasProfilePictureLoadError && Boolean(resolvedProfilePictureUrl);
-
-  const profilePictureUrl = isUsingResolvedProfilePicture
-    ? resolvedProfilePictureUrl
-    : fallbackProfilePictureUrl;
-
-  const safeProfilePictureUrl = profilePictureUrl ?? fallbackProfilePictureUrl;
-
-  const radius = size / 2;
-
-  const handleImageError = () => {
-    if (isUsingResolvedProfilePicture) {
-      setHasProfilePictureLoadError(true);
-      return;
-    }
-
-    setHasFallbackProfilePictureLoadError(true);
+  onPress,
+  isUploading = false,
+  showEditIcon = false,
+}: ProfilePicProps) => {
+  const containerStyle = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
   };
 
-  return (
-    <TouchableOpacity
-      className="rounded-full bg-fdm-accent/15 border border-fdm-accent/20 items-center justify-center"
-      style={{ width: size, height: size, borderRadius: radius }}
-      onPress={onPress}
-      disabled={!onPress || isUploadingProfilePicture}
-      accessibilityLabel="Open profile picture"
-      accessibilityRole="button"
+  const Content = (
+    <View
+      style={containerStyle}
+      className="bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center overflow-hidden"
     >
-      {hasFallbackProfilePictureLoadError ? (
-        <Text className="text-fdm-bg font-bold" style={{ fontSize: Math.max(14, size * 0.3) }}>
-          {fallbackInitials}
-        </Text>
-      ) : (
+      {avatarUrl ? (
         <Image
-          key={safeProfilePictureUrl}
-          source={{ uri: safeProfilePictureUrl }}
-          style={{ width: size, height: size, borderRadius: radius }}
+          source={{ uri: avatarUrl }}
+          style={{ width: "100%", height: "100%" }}
           contentFit="cover"
-          cachePolicy="memory-disk"
-          onError={handleImageError}
+          transition={200}
         />
+      ) : (
+        <Text
+          style={{ fontSize: size * 0.4 }}
+          className="text-fdm-accent font-bold"
+        >
+          {initials}
+        </Text>
       )}
 
-      {isUploadingProfilePicture && (
-        <View
-          className="absolute inset-0 rounded-full bg-black/35 items-center justify-center"
-          pointerEvents="none"
-        >
-          <ActivityIndicator size="small" color="#ffffff" />
+      {/* Uploading Overlay */}
+      {isUploading && (
+        <View className="absolute inset-0 bg-black/40 items-center justify-center">
+          <FDMLoader fullScreen={false} />
         </View>
       )}
-    </TouchableOpacity>
+    </View>
   );
-}
+
+  if (onPress) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.8}
+        className="relative"
+      >
+        {Content}
+        {showEditIcon && (
+          <View className="absolute -bottom-1 -right-1 w-7 h-7 bg-fdm-bg rounded-full items-center justify-center border border-white/5">
+            <View className="w-6 h-6 bg-fdm-accent rounded-full items-center justify-center">
+              <Ionicons name="camera" size={14} color="#1b1b1b" />
+            </View>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  }
+
+  return Content;
+};
+
+export default ProfilePic;

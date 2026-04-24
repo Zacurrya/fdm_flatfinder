@@ -1,246 +1,185 @@
-import { supabase } from "@lib/supabase";
+import { ActionType, ApprovalStatus, RequestStatus, RequestType, Role } from '@/types/enums';
+import { UserRecord } from '@/types/records';
+import { supabase } from '@lib/supabase';
+import { AuditService } from '@services/audit/auditService';
+import { logger } from '@utils/logger';
 import {
-    ApprovalDTO,
-    AuthResponse,
-    DeletionDTO,
-    PasswordResetDTO,
-    RegistrationDTO,
-    User,
-} from "./types";
-import { Session } from "@supabase/supabase-js";
+    loginDTO,
+    registerDTO,
+} from './types';
 
-const AUDIT_TABLE = "AuditLogs";
+export const AuthService = {
+    /**
+     * Authenticates a user with email and password.
+     * Returns the whole user record and session so it can be stored in the auth context.
+     */
+    async login(dto: loginDTO): Promise<{ user: UserRecord; session: any }> {
+        // Signs in using Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword(dto);
+        if (authError) throw authError;
 
-const createUserDecisionAudit = async (
-    actionType: "USER_APPROVED" | "USER_DENIED",
-    targetId: string
-): Promise<AuthResponse> => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const actorUserId = sessionData?.session?.user?.id;
+        // Gets the user profile from the users table
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', authData.user.id)
+            .single();
 
-    if (!actorUserId) {
-        return { success: false, error: "No authenticated user available for audit logging." };
-    }
+        if (userError || !user) throw new Error(userError?.message ?? 'User profile not found.');
 
-    const { error } = await supabase
-        .from(AUDIT_TABLE)
-        .insert({ actionType, userId: actorUserId, targetId });
+        logger.log(`Login successful`)
 
-    if (error) {
-        return { success: false, error: error.message };
-    }
+        return {
+            user: {
+                userId: user.user_id,
+                email: user.email,
+                firstName: user.first_name,
+                lastName: user.last_name,
+                officeLocation: user.office_location, // FDM office city
+                phoneNumber: user.phone_number,
+                profilePicture: user.avatar_url ?? null,
+                role: user.role as Role,
+                approvalStatus: user.approval_status as ApprovalStatus,
+                createdAt: user.created_at,
+            },
+            session: authData.session,
+        };
+    },
 
-    return { success: true };
+    /**
+     * Logs out the current user.
+     */
+    async logout() {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        logger.log('Logout successful');
+    },
+
+    /**
+     * Registers a new consultant user pending admin approval.
+     */
+    async register(dto: registerDTO) {
+        const { data: auth, error } = await supabase.auth.signUp({
+            email: dto.email,
+            password: dto.password,
+        });
+
+        if (error || !auth.user) throw new Error(error?.message ?? 'Registration failed.');
+
+        // Pre-generate the initials-based fallback avatar URL
+        const initials = (
+            (dto.firstName?.[0] ?? 'U') +
+            (dto.lastName?.[0] ?? 'U')
+        ).toUpperCase();
+        const fallbackAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&size=128&background=ccff00&color=1b1b1b&bold=true&format=png`;
+
+        // Inserts the created user into the user table with a default avatar
+        const { error: profileError } = await supabase.from('users').insert({
+            user_id: auth.user.id,
+            email: dto.email,
+            first_name: dto.firstName,
+            last_name: dto.lastName,
+            office_location: dto.officeLocation,
+            phone_number: dto.phoneNumber,
+            role: Role.CONSULTANT,
+            approval_status: ApprovalStatus.PENDING,
+            avatar_url: fallbackAvatarUrl,
+        });
+
+        if (profileError) throw profileError;
+
+        const { error: requestError } = await supabase.from('requests').insert({
+            user_id: auth.user.id,
+            request_type: RequestType.SIGN_UP,
+            status: RequestStatus.PENDING,
+        });
+
+        if (requestError) throw requestError;
+
+        // Logs the new registration
+        await AuditService.logAction({
+            actionType: ActionType.SIGN_UP_REQUESTED,
+            targetId: auth.user.id,
+            userId: auth.user.id,
+        });
+
+        logger.log('User registered and approval request created');
+    },
+
+    /**
+     * Sends a password reset email.
+     */
+    async resetPassword(email: string) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        if (error) throw error;
+        logger.log('Password reset email sent');
+    },
+
+    /**
+     * Checks if an email already exists in the system.
+     */
+    async emailExists(email: string): Promise<boolean> {
+        const { count, error } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true })
+            .eq('email', email);
+
+        if (error) {
+            logger.log('Error checking if email exists:', error);
+            throw new Error('Could not verify email uniqueness.');
+        }
+
+        return (count ?? 0) > 0;
+    },
+
+    /**
+     * Checks if a phone number already exists in the system.
+     */
+    async phoneNumberExists(phoneNumber: string): Promise<boolean> {
+        const { count, error } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true })
+            .eq('phone_number', phoneNumber);
+
+        if (error) {
+            logger.log('Error checking if phone number exists:', error);
+            throw new Error('Could not verify phone number uniqueness.');
+        }
+
+        return (count ?? 0) > 0;
+    },
+
+    /**
+     * Returns the current user's profile and session if they exist.
+     * Otherwise, returns null.
+     */
+    async getSession() {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (!session) throw sessionError;
+
+        // Fetches the current user's profile from the user table
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+
+        if (userError || !user) throw new Error(userError?.message ?? 'User profile not found.');
+
+        return {
+            userProfile: {
+                userId: user.user_id,
+                email: user.email,
+                firstName: user.first_name,
+                lastName: user.last_name,
+                officeLocation: user.office_location,
+                phoneNumber: user.phone_number,
+                profilePicture: user.avatar_url ?? null,
+                role: user.role as Role,
+                approvalStatus: user.approval_status as ApprovalStatus,
+                createdAt: user.created_at,
+            },
+            session
+        };
+    },
 };
-
-// Register 
-
-// Creates a Supabase auth account, then inserts a profile row into the Users
-// table with approvalStatus = 'PENDING' and role = 'CONSULTANT'.
-export const register = async (
-    dto: RegistrationDTO
-): Promise<AuthResponse> => {
-    // 1. Create the Supabase auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: dto.email,
-        password: dto.password,
-    });
-
-    if (authError) {
-        return { success: false, error: authError.message };
-    }
-
-    const authUserId = authData.user?.id;
-    if (!authUserId) {
-        return { success: false, error: "Registration failed. Please try again." };
-    }
-
-    // 2. Insert profile row into Users table
-    const { error: insertError } = await supabase.from("Users").insert({
-        userId: authUserId,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        email: dto.email,
-        phoneNumber: dto.phoneNumber,
-        officeLocation: dto.officeLocation,
-        role: "CONSULTANT",
-        approvalStatus: "PENDING",
-    });
-
-    if (insertError) {
-        // Rollback: clean up the auth user if profile insert fails.
-        // Note: This requires admin privileges or a server-side function.
-        // For now, sign out the partial user.
-        console.error("Users insert failed:", insertError);
-        await supabase.auth.signOut();
-        return { success: false, error: `Failed to create user profile: ${insertError.message}` };
-    }
-
-    // 3. Create a SIGN_UP request for admin tracking
-    const { error: requestError } = await supabase.from("Requests").insert({
-        userId: authUserId,
-        requestType: "SIGN_UP" as const,
-        status: "PENDING" as const,
-        newCity: dto.officeLocation,
-    });
-
-    if (requestError) {
-        console.warn("Failed to create sign-up request:", requestError.message);
-    }
-
-    // 4. Audit the sign-up request creation
-    await supabase.from("AuditLogs").insert({
-        actionType: "SIGN_UP_REQUESTED",
-        userId: authUserId,
-        targetId: authUserId,
-    });
-
-    return { success: true };
-};
-
-// Login 
-
-// Authenticates via Supabase, then checks the Users table for approval status.
-// Pending and rejected users are allowed to sign in so UI can reflect status.
-export const login = async (
-    email: string,
-    password: string
-): Promise<AuthResponse<{ session: Session; user: User }>> => {
-    // 1. Authenticate with Supabase
-    const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({ email, password });
-
-    if (authError) {
-        return { success: false, error: authError.message };
-    }
-
-    if (!authData.session || !authData.user) {
-        return { success: false, error: "Login failed. Please try again." };
-    }
-
-    // 2. Fetch user profile from the Users table
-    console.log("Login: looking up userId =", authData.user.id);
-    const { data: profile, error: profileError } = await supabase
-        .from("Users")
-        .select("*")
-        .eq("userId", authData.user.id)
-        .single();
-
-    if (profileError || !profile) {
-        console.error("Profile lookup failed:", { profileError, authUserId: authData.user.id });
-        await supabase.auth.signOut();
-        return { success: false, error: `Auth ID: ${authData.user.id}. Error: ${profileError?.message ?? "no row"}` };
-    }
-
-    // 3. Build the User entity
-    const user: User = {
-        userId: profile.userId,
-        firstName: profile.firstName ?? "",
-        lastName: profile.lastName ?? "",
-        profilePicture: profile.profilePicture ?? null,
-        email: authData.user.email ?? email,
-        phoneNumber: profile.phoneNumber ?? "",
-        officeLocation: profile.officeLocation ?? "",
-        role: profile.role as User["role"],
-        approvalStatus: profile.approvalStatus as User["approvalStatus"],
-        createdAt: profile.created_at,
-    };
-
-    return {
-        success: true,
-        data: { session: authData.session, user },
-    };
-};
-
-// Logout 
-
-// Signs out the current Supabase session and clears persisted auth state.
-export const logout = async (): Promise<AuthResponse> => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-        return { success: false, error: error.message };
-    }
-
-    return { success: true };
-};
-
-// Password Reset 
-
-// Sends a password reset email via Supabase Auth.
-export const resetPassword = async (
-    dto: PasswordResetDTO
-): Promise<AuthResponse> => {
-    const { error } = await supabase.auth.resetPasswordForEmail(dto.email);
-
-    if (error) {
-        return { success: false, error: error.message };
-    }
-
-    return { success: true };
-};
-
-// Approve User (Admin) 
-
-// Updates a user's approvalStatus to 'APPROVED'.
-export const approveUser = async (
-    dto: ApprovalDTO
-): Promise<AuthResponse> => {
-    const { error } = await supabase
-        .from("Users")
-        .update({ approvalStatus: "APPROVED" })
-        .eq("userId", dto.userId);
-
-    if (error) {
-        return { success: false, error: error.message };
-    }
-
-    const auditResult = await createUserDecisionAudit("USER_APPROVED", dto.userId);
-    if (!auditResult.success) {
-        return auditResult;
-    }
-
-    return { success: true };
-};
-
-// Reject User (Admin) 
-
-// Updates a user's approvalStatus to 'REJECTED'.
-export const rejectUser = async (
-    dto: ApprovalDTO
-): Promise<AuthResponse> => {
-    const { error } = await supabase
-        .from("Users")
-        .update({ approvalStatus: "REJECTED" })
-        .eq("userId", dto.userId);
-
-    if (error) {
-        return { success: false, error: error.message };
-    }
-
-    const auditResult = await createUserDecisionAudit("USER_DENIED", dto.userId);
-    if (!auditResult.success) {
-        return auditResult;
-    }
-
-    return { success: true };
-};
-
-// Delete User (Admin)
-
-// Deletes a user's profile from the Users table.
-export const deleteUser = async (
-    dto: DeletionDTO
-): Promise<AuthResponse> => {
-    const { error } = await supabase
-        .from("Users")
-        .delete()
-        .eq("userId", dto.userId);
-
-    if (error) {
-        return { success: false, error: error.message };
-    }
-
-    return { success: true };
-};
-

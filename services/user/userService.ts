@@ -1,16 +1,11 @@
+import { ActionType, ApprovalStatus, RequestType, Role } from "@/types/enums";
+import { UserRecord } from "@/types/records";
 import { supabase } from "@lib/supabase";
-import { File } from "expo-file-system";
 import {
-    AuthResponse,
-    GetProfilePictureUrlOptions,
-    ProfilePictureFallbackOptions,
     ProfilePictureUploadDTO,
-    ResolvedProfilePictureSource,
-    User,
-    UserEmailMapResult,
-} from "./types";
-
-const PROFILE_PICTURE_BUCKET = "profile-pictures";
+    ResolvedProfilePictureSource
+} from "@services/user/types";
+import { File } from "expo-file-system";
 
 type CachedProfilePictureUrl = {
     url: string;
@@ -18,424 +13,313 @@ type CachedProfilePictureUrl = {
 };
 
 const profilePictureUrlCache = new Map<string, CachedProfilePictureUrl>();
+const PROFILE_PICTURE_BUCKET = "profile-pictures";
 
-function getCachedProfilePictureUrl(path: string): string | null {
-    const cached = profilePictureUrlCache.get(path);
-    if (!cached) {
-        return null;
-    }
+export const UserService = {
 
-    if (Date.now() >= cached.expiresAtMs) {
-        profilePictureUrlCache.delete(path);
-        return null;
-    }
+    // Helper function to fetch the user details
+    async getUser(userId: string) {
+        const { data: profile, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("user_id", userId)
+            .single();
 
-    return cached.url;
-}
+        if (error || !profile) throw new Error("Error getting user record.");
+        return profile;
+    },
 
-function setCachedProfilePictureUrl(path: string, url: string, expiresInSeconds: number): void {
-    profilePictureUrlCache.set(path, {
-        url,
-        expiresAtMs: Date.now() + expiresInSeconds * 1000,
-    });
-}
+    // Parses a user's name into it's capitalised initials
+    async getUserInitials(user: UserRecord) {
+        return user.firstName[0]?.toUpperCase() + user.lastName[0]?.toUpperCase();
+    },
 
-function getFallbackProfilePictureName(options: ProfilePictureFallbackOptions = {}): string {
-    const fullName = `${options.firstName ?? ""} ${options.lastName ?? ""}`.trim();
-    if (fullName) {
-        return fullName;
-    }
+    // Gets a default profile picture URL via ui-avatars by passing in user initials
+    async getFallbackProfilePictureUrl(user: UserRecord) {
+        const fallbackName = await this.getUserInitials(user);
+        const avatarSize = Math.max(128, 64 * 2);
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&size=${avatarSize}&background=ccff00&color=1b1b1b&bold=true&format=png`;
+    },
 
-    const emailDisplayName = options.email?.split("@")[0]?.replace(/[._-]+/g, " ")?.trim();
-    if (emailDisplayName) {
-        return emailDisplayName;
-    }
+    // Returns user profile picture URL, falling back to an initials avatar if none is set
+    async getUserProfilePicture(user: UserRecord): Promise<string | null> {
+        // No stored picture — return the fallback initials avatar
+        if (!user.profilePicture) {
+            return this.getFallbackProfilePictureUrl(user);
+        }
 
-    return "User";
-}
+        // If its a full URL, return it directly
+        if (user.profilePicture.startsWith("http")) return user.profilePicture;
 
-export function getFallbackProfilePictureInitials(options: ProfilePictureFallbackOptions = {}): string {
-    const fallbackName = getFallbackProfilePictureName(options);
-    const parts = fallbackName
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2);
+        // Check cache
+        const cached = await this.getCachedProfilePictureUrl(user.profilePicture);
+        if (cached) return cached;
 
-    const initials = parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
+        // Get from Supabase storage
+        const { data } = supabase.storage.from(PROFILE_PICTURE_BUCKET).getPublicUrl(user.profilePicture);
+        const url = data?.publicUrl ?? null;
 
-    return initials || "U";
-}
+        if (url) {
+            // Cache for 1 hour
+            await this.setCachedProfilePictureUrl(user.profilePicture, url, 3600);
+        }
 
-export function getFallbackProfilePictureUrl(options: ProfilePictureFallbackOptions = {}): string {
-    const fallbackName = getFallbackProfilePictureName(options);
-    const requestedSize = options.size ?? 64;
-    const avatarSize = Math.max(128, requestedSize * 2);
+        return url;
+    },
 
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&size=${avatarSize}&background=ccff00&color=1b1b1b&bold=true&format=png`;
-}
+    async getCachedProfilePictureUrl(path: string): Promise<string | null> {
+        const cached = profilePictureUrlCache.get(path);
+        if (!cached) return null;
+        if (Date.now() >= cached.expiresAtMs) {
+            profilePictureUrlCache.delete(path);
+            return null;
+        }
+        return cached.url;
+    },
 
-export function resolveProfilePictureSource(
-    profilePicture?: string | null
-): ResolvedProfilePictureSource {
-    const value = profilePicture?.trim();
-    if (!value) {
-        return { path: null, directUrl: null };
-    }
+    async setCachedProfilePictureUrl(path: string, url: string, expiresInSeconds: number): Promise<void> {
+        profilePictureUrlCache.set(path, {
+            url,
+            expiresAtMs: Date.now() + expiresInSeconds * 1000,
+        });
+    },
 
-    if (!/^https?:\/\//i.test(value)) {
-        let normalizedPath = decodeURIComponent(value).replace(/^\/+/, "");
-        normalizedPath = normalizedPath.replace(new RegExp(`^${PROFILE_PICTURE_BUCKET}\/`, "i"), "");
+    async resolveProfilePictureSource(profilePicture?: string | null): Promise<ResolvedProfilePictureSource> {
+        const value = profilePicture?.trim();
+        if (!value) return { path: null, directUrl: null };
+
+        if (!/^https?:\/\//i.test(value)) {
+            let normalizedPath = decodeURIComponent(value).replace(/^\/+/, "");
+            normalizedPath = normalizedPath.replace(new RegExp(`^${PROFILE_PICTURE_BUCKET}\/`, "i"), "");
+            return { path: normalizedPath || null, directUrl: null };
+        }
+
+        const publicMarker = `/storage/v1/object/public/${PROFILE_PICTURE_BUCKET}/`;
+        const signedMarker = `/storage/v1/object/sign/${PROFILE_PICTURE_BUCKET}/`;
+        const marker = value.includes(publicMarker) ? publicMarker : value.includes(signedMarker) ? signedMarker : null;
+
+        if (!marker) return { path: null, directUrl: value };
+
+        const encodedPath = value.split(marker)[1]?.split("?")[0] ?? "";
+        return { path: decodeURIComponent(encodedPath).replace(/^\/+/, "") || null, directUrl: null };
+    },
+
+    /**
+     * @returns An array of all users with pending approval status
+     */
+    async getPendingUsers(): Promise<UserRecord[]> {
+        const { data, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("approval_status", "PENDING")
+            .order("created_at", { ascending: true });
+
+        if (error) throw error;
+
+        return (data ?? []).map((user) => ({
+            userId: user.user_id,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            email: user.email,
+            phoneNumber: user.phone_number,
+            officeLocation: user.office_location,
+            profilePicture: user.avatar_url ?? null,
+            role: user.role as Role,
+            approvalStatus: user.approval_status as ApprovalStatus,
+            createdAt: user.created_at,
+        }));
+    },
+
+    async getUserRecord(userId: string): Promise<UserRecord> {
+        const { data: profile, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("user_id", userId)
+            .single();
+
+        if (error || !profile) throw new Error(error?.message ?? "User profile not found.");
+
         return {
-            path: normalizedPath || null,
-            directUrl: null,
+            userId: profile.user_id,
+            firstName: profile.first_name,
+            lastName: profile.last_name,
+            email: profile.email,
+            phoneNumber: profile.phone_number,
+            officeLocation: profile.office_location,
+            profilePicture: profile.avatar_url ?? null,
+            role: profile.role as Role,
+            approvalStatus: profile.approval_status as ApprovalStatus,
+            createdAt: profile.created_at,
         };
-    }
+    },
 
-    const publicMarker = `/storage/v1/object/public/${PROFILE_PICTURE_BUCKET}/`;
-    const signedMarker = `/storage/v1/object/sign/${PROFILE_PICTURE_BUCKET}/`;
-    const marker = value.includes(publicMarker)
-        ? publicMarker
-        : value.includes(signedMarker)
-            ? signedMarker
-            : null;
+    // Gets a user profile by a given ID
+    async getUserProfile(userId: string): Promise<UserRecord> {
+        return this.getUserRecord(userId);
+    },
 
-    if (!marker) {
-        return { path: null, directUrl: value };
-    }
-
-    const encodedPath = value.split(marker)[1]?.split("?")[0] ?? "";
-    return {
-        path: decodeURIComponent(encodedPath).replace(/^\/+/, "") || null,
-        directUrl: null,
-    };
-}
-
-export const getProfilePictureUrl = async (
-    options: GetProfilePictureUrlOptions = {}
-): Promise<string> => {
-    const {
-        profilePicture,
-        expiresInSeconds = 60 * 60,
-        ...fallbackOptions
-    } = options;
-
-    const fallbackUrl = getFallbackProfilePictureUrl(fallbackOptions);
-    const source = resolveProfilePictureSource(profilePicture);
-    if (source.directUrl) {
-        return source.directUrl;
-    }
-
-    if (!source.path) {
-        return fallbackUrl;
-    }
-
-    const cachedUrl = getCachedProfilePictureUrl(source.path);
-    if (cachedUrl) {
-        return cachedUrl;
-    }
-
-    const { data, error } = await supabase.storage
-        .from(PROFILE_PICTURE_BUCKET)
-        .createSignedUrl(source.path, expiresInSeconds);
-
-    if (error || !data?.signedUrl) {
-        return fallbackUrl;
-    }
-
-    setCachedProfilePictureUrl(source.path, data.signedUrl, expiresInSeconds);
-
-    return data.signedUrl;
-}
-
-// Fetches all users with approvalStatus = 'PENDING'.
-// Used by the admin approval screen.
-export const getPendingUsers = async (): Promise<
-    AuthResponse<User[]>
-> => {
-    const { data, error } = await supabase
-        .from("Users")
-        .select("*")
-        .eq("approvalStatus", "PENDING")
-        .order("created_at", { ascending: true });
-
-    if (error) {
-        return { success: false, error: error.message };
-    }
-
-    const users = (data ?? []).map((row) => ({
-        userId: row.userId,
-        firstName: row.firstName ?? "",
-        lastName: row.lastName ?? "",
-        profilePicture: row.profilePicture ?? null,
-        email: row.email ?? "",
-        phoneNumber: row.phoneNumber ?? "",
-        officeLocation: row.officeLocation ?? "",
-        role: row.role as User["role"],
-        approvalStatus: row.approvalStatus as User["approvalStatus"],
-        createdAt: row.created_at,
-    }));
-
-    return { success: true, data: users };
-};
-
-// Fetches a user's profile from the Users table by their auth UUID.
-export const getUserProfile = async (
-    authUserId: string
-): Promise<AuthResponse<User>> => {
-    const { data: profile, error } = await supabase
-        .from("Users")
-        .select("*")
-        .eq("userId", authUserId)
-        .single();
-
-    if (error || !profile) {
-        return { success: false, error: "User profile not found." };
-    }
-
-    const user: User = {
-        userId: profile.userId,
-        firstName: profile.firstName ?? "",
-        lastName: profile.lastName ?? "",
-        profilePicture: profile.profilePicture ?? null,
-        email: profile.email ?? "",
-        phoneNumber: profile.phoneNumber ?? "",
-        officeLocation: profile.officeLocation ?? "",
-        role: profile.role as User["role"],
-        approvalStatus: profile.approvalStatus as User["approvalStatus"],
-        createdAt: profile.created_at,
-    };
-
-    return { success: true, data: user };
-};
-
-export const getUserEmailMapByIds = async (
-    userIds: string[]
-): Promise<UserEmailMapResult> => {
-    const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
-
-    if (uniqueUserIds.length === 0) {
-        return { success: true, data: {} };
-    }
-
-    const { data, error } = await supabase
-        .from("Users")
-        .select("userId, email")
-        .in("userId", uniqueUserIds);
-
-    if (error) {
-        return { success: false, error: error.message };
-    }
-
-    const emailMap = Object.fromEntries(
-        (data ?? []).map((row) => [row.userId, row.email ?? ""])
-    );
-
-    return { success: true, data: emailMap };
-};
-
-// Uploads a local image URI to Supabase Storage and stores the public URL
-// in the Users.profilePicture column for the current user.
-export const uploadProfilePicture = async (
-    authUserId: string,
-    upload: ProfilePictureUploadDTO
-): Promise<AuthResponse<string>> => {
-    try {
+    async uploadProfilePicture(authUserId: string, upload: ProfilePictureUploadDTO): Promise<string> {
         const uri = upload.imageUri;
         const explicitMimeType = upload.mimeType?.toLowerCase() ?? "";
-        const explicitExtension = upload.fileName?.split(".").pop()?.toLowerCase() ?? "";
-        const uriExtension = uri.split(".").pop()?.split("?")[0]?.toLowerCase() ?? "";
-        const extension = explicitExtension || uriExtension || (explicitMimeType.split("/")[1] ?? "jpg");
+        const extension = upload.fileName?.split(".").pop()?.toLowerCase() || uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
         const safeExtension = /^[a-z0-9]+$/.test(extension) ? extension : "jpg";
         const filePath = `${authUserId}/${Date.now()}.${safeExtension}`;
 
-        // Ensure we can read the new profile picture before mutating storage state.
         const imageFile = new File(uri);
         const arrayBuffer = await imageFile.arrayBuffer();
         const contentType = explicitMimeType || `image/${safeExtension}`;
 
         const { data: existingProfile, error: existingProfileError } = await supabase
-            .from("Users")
-            .select("profilePicture")
-            .eq("userId", authUserId)
+            .from("users")
+            .select("avatar_url")
+            .eq("user_id", authUserId)
             .single();
 
-        if (existingProfileError) {
-            return { success: false, error: existingProfileError.message };
-        }
+        if (existingProfileError) throw existingProfileError;
 
-        const oldPath = resolveProfilePictureSource(existingProfile?.profilePicture).path;
-        if (oldPath) {
-            const { error: removeOldImageError } = await supabase.storage
-                .from(PROFILE_PICTURE_BUCKET)
-                .remove([oldPath]);
-
-            if (removeOldImageError && !/not found/i.test(removeOldImageError.message)) {
-                return { success: false, error: removeOldImageError.message };
-            }
-
-            profilePictureUrlCache.delete(oldPath);
+        const source = await this.resolveProfilePictureSource(existingProfile?.avatar_url);
+        if (source.path) {
+            await supabase.storage.from(PROFILE_PICTURE_BUCKET).remove([source.path]);
+            profilePictureUrlCache.delete(source.path);
         }
 
         const { error: uploadError } = await supabase.storage
             .from(PROFILE_PICTURE_BUCKET)
-            .upload(filePath, arrayBuffer, {
-                upsert: true,
-                cacheControl: "3600",
-                contentType,
-            });
+            .upload(filePath, arrayBuffer, { upsert: true, cacheControl: "3600", contentType });
 
-        if (uploadError) {
-            return { success: false, error: uploadError.message };
-        }
+        if (uploadError) throw uploadError;
 
         const { error: updateError } = await supabase
-            .from("Users")
-            .update({ profilePicture: filePath })
-            .eq("userId", authUserId);
+            .from("users")
+            .update({ avatar_url: filePath })
+            .eq("user_id", authUserId);
 
-        if (updateError) {
-            return { success: false, error: updateError.message };
-        }
+        if (updateError) throw updateError;
 
         profilePictureUrlCache.delete(filePath);
+        return filePath;
+    },
 
-        return { success: true, data: filePath };
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown upload error.";
 
-        return { success: false, error: message };
-    }
-};
-
-export const removeProfilePicture = async (
-    authUserId: string
-): Promise<AuthResponse> => {
-    try {
+    async removeProfilePicture(authUserId: string): Promise<void> {
         const { data: existingProfile, error: existingProfileError } = await supabase
-            .from("Users")
-            .select("profilePicture")
-            .eq("userId", authUserId)
+            .from("users")
+            .select("avatar_url")
+            .eq("user_id", authUserId)
             .single();
 
-        if (existingProfileError) {
-            return { success: false, error: existingProfileError.message };
+        if (existingProfileError) throw existingProfileError;
+
+        // Delete old file from storage if it's a storage path (not an external URL)
+        const source = await this.resolveProfilePictureSource(existingProfile?.avatar_url);
+        if (source.path) {
+            await supabase.storage.from(PROFILE_PICTURE_BUCKET).remove([source.path]);
+            profilePictureUrlCache.delete(source.path);
         }
 
-        const oldPath = resolveProfilePictureSource(existingProfile?.profilePicture).path;
-        if (oldPath) {
-            const { error: removeOldImageError } = await supabase.storage
-                .from(PROFILE_PICTURE_BUCKET)
-                .remove([oldPath]);
+        const user = await this.getUserProfile(authUserId);
+        // Reset to the initials-based fallback URL rather than null
+        const initials = (
+            (user.firstName[0]) +
+            (user.lastName[0])
+        ).toUpperCase();
+        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&size=128&background=ccff00&color=1b1b1b&bold=true&format=png`;
 
-            if (removeOldImageError && !/not found/i.test(removeOldImageError.message)) {
-                return { success: false, error: removeOldImageError.message };
+        const { error: updateError } = await supabase
+            .from("users")
+            .update({ avatar_url: fallbackUrl })
+            .eq("user_id", authUserId);
+
+        if (updateError) throw updateError;
+    },
+
+    async requestOfficeLocationChange(authUserId: string, officeLocation: string, oldCity: string): Promise<{ success: boolean; error?: string }> {
+        try {
+            const { data: existingPending } = await supabase
+                .from("requests")
+                .select("id")
+                .eq("user_id", authUserId)
+                .eq("request_type", "CITY_CHANGE")
+                .eq("status", "PENDING")
+                .limit(1);
+
+            if (existingPending && existingPending.length > 0) {
+                return { success: false, error: "You already have a pending city change request." };
             }
 
-            profilePictureUrlCache.delete(oldPath);
+            const { error: requestError } = await supabase.from("requests").insert({
+                user_id: authUserId,
+                request_type: RequestType.CITY_CHANGE,
+                status: ApprovalStatus.PENDING,
+                old_city: oldCity,
+                new_city: officeLocation,
+            });
+
+            if (requestError) throw requestError;
+
+            await supabase.from("audit_logs").insert({
+                action_type: ActionType.CITY_CHANGE_REQUESTED,
+                user_id: authUserId,
+                target_id: authUserId,
+            });
+
+            return { success: true };
+        } catch (e: any) {
+            return { success: false, error: e.message };
         }
+    },
 
-        const { error: updateError } = await supabase
-            .from("Users")
-            .update({ profilePicture: null })
-            .eq("userId", authUserId);
+    /**
+     * Adds a listing to a user's saved listings.
+     */
+    async addSavedListing(userId: string, listingId: string): Promise<void> {
+        const { error } = await supabase.from("user_favourites").insert({ user_id: userId, listing_id: listingId });
+        if (error) throw error;
+    },
 
-        if (updateError) {
-            return { success: false, error: updateError.message };
-        }
+    /**
+     * Removes a listing from a user's saved listings.
+     */
+    async removeSavedListing(userId: string, listingId: string): Promise<void> {
+        // Finds the user_favourite in the junction table
+        const { error } = await supabase.from("user_favourites")
+            .delete()
+            .eq("user_id", userId)
+            .eq("listing_id", listingId);
+        if (error) throw error;
+    },
 
-        return { success: true };
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown remove profile picture error.";
+    /**
+     * Gets a user's favourited listings.
+     * @param userId - The ID of the user.
+     */
+    async getSavedListings(userId: string): Promise<string[]> {
+        const { data, error } = await supabase
+            .from("user_favourites")
+            .select("listing_id")
+            .eq("user_id", userId);
 
-        return { success: false, error: message };
+        if (error) throw error;
+
+        return data.map((d) => d.listing_id);
+    },
+
+    /**
+     * Updates a user's profile record.
+     */
+    async updateUserProfile(userId: string, updates: Partial<UserRecord>): Promise<void> {
+        const mappedUpdates = {
+            first_name: updates.firstName,
+            last_name: updates.lastName,
+            email: updates.email,
+            phone_number: updates.phoneNumber,
+            office_location: updates.officeLocation,
+            avatar_url: updates.profilePicture,
+            approval_status: updates.approvalStatus,
+        };
+
+        const { error } = await supabase.from("users").update(mappedUpdates).eq("user_id", userId);
+
+        if (error) throw error;
     }
 };
-
-export const requestOfficeLocationChange = async (
-    authUserId: string,
-    officeLocation: string,
-    profileContext?: { oldCity: string; role: User["role"] }
-): Promise<AuthResponse> => {
-    let oldCity = profileContext?.oldCity ?? "";
-    let role = profileContext?.role;
-
-    if (role === "ADMIN") {
-        // Admins bypass approval: update city immediately
-        const { error: updateError } = await supabase
-            .from("Users")
-            .update({ officeLocation })
-            .eq("userId", authUserId);
-            
-        if (updateError) {
-            return { success: false, error: updateError.message };
-        }
-
-        // Audit the direct update
-        await supabase.from("AuditLogs").insert({
-            actionType: "CITY_CHANGED",
-            userId: authUserId,
-            targetId: authUserId,
-        });
-
-        return { success: true };
-    }
-
-    // Check for existing pending city change request
-    const { data: existingPending } = await supabase
-        .from("Requests")
-        .select("id")
-        .eq("userId", authUserId)
-        .eq("requestType", "CITY_CHANGE")
-        .eq("status", "PENDING")
-        .limit(1);
-
-    if (existingPending && existingPending.length > 0) {
-        return { success: false, error: "You already have a pending city change request." };
-    }
-
-    // Create the city change request
-    const { error: requestError } = await supabase.from("Requests").insert({
-        userId: authUserId,
-        requestType: "CITY_CHANGE" as const,
-        status: "PENDING" as const,
-        oldCity,
-        newCity: officeLocation,
-    });
-
-    if (requestError) {
-        return { success: false, error: requestError.message };
-    }
-
-    // Audit the city change request creation
-    await supabase.from("AuditLogs").insert({
-        actionType: "CITY_CHANGE_REQUESTED",
-        userId: authUserId,
-        targetId: authUserId,
-    });
-
-    return { success: true };
-};
-
-export const addFavourite = async (userId: string, listingId: number): Promise<AuthResponse> => {
-    const { error } = await supabase.from("UserFavourites").insert({
-        userId,
-        listingId,
-    });
-    if (error) return { success: false, error: error.message };
-    return { success: true };
-};
-
-export const removeFavourite = async (userId: string, listingId: number): Promise<AuthResponse> => {
-    const { error } = await supabase.from("UserFavourites").delete()
-        .eq("userId", userId)
-        .eq("listingId", listingId);
-    if (error) return { success: false, error: error.message };
-    return { success: true };
-};
-
-export const getUserFavourites = async (userId: string): Promise<AuthResponse<number[]>> => {
-    const { data, error } = await supabase.from("UserFavourites").select("listingId").eq("userId", userId);
-    if (error) return { success: false, error: error.message };
-    return { success: true, data: data.map(d => d.listingId) };
-};
-

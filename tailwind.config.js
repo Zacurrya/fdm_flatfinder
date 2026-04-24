@@ -1,3 +1,5 @@
+const { Colors } = require("./constants/Colors");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -10,9 +12,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'fdm-accent': '#ccff00',
-        'fdm-bg': '#1b1b1b',
-        'fdm-fg': '#ffffff',
+        'fdm-accent': Colors.accent,
+        'fdm-bg': Colors.bg,
+        'fdm-fg': Colors.fg,
+        'fdm-black': Colors.black,
       },
       fontFamily: {
         michroma: ['Michroma_400Regular'],

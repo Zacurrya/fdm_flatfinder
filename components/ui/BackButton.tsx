@@ -8,7 +8,6 @@ const HIERARCHY: Record<string, string> = {
     "register": "/",      // register → login
     "office-location": "/(auth)/register",   // office-location → register
     "[chatId]": "/(tabs)/messages",   // chat → messages
-    "[cityChatId]": "/(tabs)/messages",   // chat → messages
 };
 
 type BackButtonProps = {
@@ -16,7 +15,7 @@ type BackButtonProps = {
     fallback?: string;
 };
 
-export default function BackButton({ fallback }: BackButtonProps) {
+const BackButton = ({ fallback }: BackButtonProps) => {
     const router = useRouter();
     const segments = useSegments();
 
@@ -48,4 +47,6 @@ export default function BackButton({ fallback }: BackButtonProps) {
             <Ionicons name="arrow-back" size={20} color="#ffffff" />
         </TouchableOpacity>
     );
-}
+};
+
+export default BackButton;

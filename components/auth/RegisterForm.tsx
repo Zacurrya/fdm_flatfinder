@@ -1,120 +1,54 @@
+import AuthButton from "@components/auth/AuthButton";
 import EmailInput from "@components/auth/EmailInput";
 import PasswordInput from "@components/auth/PasswordInput";
 import PhoneNumberInput from "@components/auth/PhoneNumberInput";
-import React from "react";
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import Field from "@components/ui/Field";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
-type RegisterFormProps = {
+// -- Types --
+
+type FormValues = {
   firstName: string;
   lastName: string;
   email: string;
   phoneNumber: string;
   password: string;
   confirmPassword: string;
-  firstNameError?: string;
-  lastNameError?: string;
-  emailError?: string;
-  phoneNumberError?: string;
-  passwordError?: string;
-  confirmPasswordError?: string;
-  formError?: string;
-  onFirstNameChange: (value: string) => void;
-  onLastNameChange: (value: string) => void;
-  onEmailChange: (value: string) => void;
-  onPhoneNumberChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
-  onConfirmPasswordChange: (value: string) => void;
+};
+
+type FormErrors = {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
+  password?: string;
+  confirmPassword?: string;
+  form?: string;
+};
+
+type RegisterFormProps = {
+  values: FormValues;
+  errors: FormErrors;
+  isSubmitting?: boolean;
+  onChange: (field: keyof FormValues, value: string) => void;
   onSubmit: () => void;
   onPressLogin: () => void;
   clearErrorMessage?: () => void;
 };
 
-type FieldProps = {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  placeholder: string;
-  error?: string;
-  keyboardType?: "default" | "email-address" | "phone-pad";
-  autoComplete?:
-  | "name"
-  | "given-name"
-  | "family-name"
-  | "email"
-  | "tel"
-  | "password"
-  | "new-password";
-  textContentType?:
-  | "name"
-  | "givenName"
-  | "familyName"
-  | "emailAddress"
-  | "telephoneNumber"
-  | "password"
-  | "newPassword";
-};
-
-function Field({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  error,
-  keyboardType = "default",
-  autoComplete,
-  textContentType,
-}: FieldProps) {
-  return (
-    <View>
-      <Text className="text-fdm-fg/80 font-medium mb-2 ml-1 text-sm uppercase tracking-wider">
-        {label}
-      </Text>
-      <TextInput
-        className="h-14 bg-fdm-fg/5 border-[1.5px] border-fdm-fg/10 rounded-2xl px-4 text-fdm-fg"
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="#ffffff66"
-        autoCapitalize="none"
-        keyboardType={keyboardType}
-        autoComplete={autoComplete}
-        textContentType={textContentType}
-      />
-      {error ? <Text className="text-red-400 text-sm mt-1">{error}</Text> : null}
-    </View>
-  );
-}
-
-export default function RegisterForm({
-  firstName,
-  lastName,
-  email,
-  phoneNumber,
-  password,
-  confirmPassword,
-  firstNameError,
-  lastNameError,
-  emailError,
-  phoneNumberError,
-  passwordError,
-  confirmPasswordError,
-  formError,
-  onFirstNameChange,
-  onLastNameChange,
-  onEmailChange,
-  onPhoneNumberChange,
-  onPasswordChange,
-  onConfirmPasswordChange,
+const RegisterForm = ({
+  values,
+  errors,
+  isSubmitting = false,
+  onChange,
   onSubmit,
   onPressLogin,
   clearErrorMessage,
-}: RegisterFormProps) {
-  const handleChangeWithClear =
-    (onChange: (value: string) => void) =>
-      (value: string) => {
-        onChange(value);
-        clearErrorMessage?.();
-      };
+}: RegisterFormProps) => {
+  const handleChange = (field: keyof FormValues) => (value: string) => {
+    onChange(field, value);
+    clearErrorMessage?.();
+  };
 
   return (
     <ScrollView
@@ -136,68 +70,84 @@ export default function RegisterForm({
       </View>
 
       <View className="w-full gap-4">
-        <Field
-          label="First Name"
-          value={firstName}
-          onChangeText={handleChangeWithClear(onFirstNameChange)}
-          placeholder="Jane"
-          error={firstNameError}
-          autoComplete="given-name"
-          textContentType="givenName"
-        />
-        <Field
-          label="Last Name"
-          value={lastName}
-          onChangeText={handleChangeWithClear(onLastNameChange)}
-          placeholder="Doe"
-          error={lastNameError}
-          autoComplete="family-name"
-          textContentType="familyName"
-        />
+        {/* Name fields */}
+        <View className="flex-row gap-4">
+          <Field
+            label="First Name"
+            value={values.firstName}
+            onChangeText={handleChange("firstName")}
+            placeholder="Jane"
+            error={errors.firstName}
+            autoComplete="given-name"
+            textContentType="givenName"
+            editable={!isSubmitting}
+            containerClassName="flex-1"
+          />
+          <Field
+            label="Last Name"
+            value={values.lastName}
+            onChangeText={handleChange("lastName")}
+            placeholder="Doe"
+            error={errors.lastName}
+            autoComplete="family-name"
+            textContentType="familyName"
+            editable={!isSubmitting}
+            containerClassName="flex-1"
+          />
+        </View>
+
         <EmailInput
-          value={email}
-          onChangeText={handleChangeWithClear(onEmailChange)}
-          error={emailError}
+          value={values.email}
+          onChangeText={handleChange("email")}
+          error={errors.email}
+          editable={!isSubmitting}
         />
         <PhoneNumberInput
-          value={phoneNumber}
-          onChangeText={handleChangeWithClear(onPhoneNumberChange)}
-          error={phoneNumberError}
+          value={values.phoneNumber}
+          onChangeText={handleChange("phoneNumber")}
+          error={errors.phoneNumber}
+          editable={!isSubmitting}
         />
         <PasswordInput
           label="Password"
-          value={password}
-          onChangeText={handleChangeWithClear(onPasswordChange)}
+          value={values.password}
+          onChangeText={handleChange("password")}
           placeholder="Minimum 8 characters"
-          error={passwordError}
+          error={errors.password}
           autoComplete="new-password"
           textContentType="newPassword"
+          editable={!isSubmitting}
         />
         <PasswordInput
           label="Confirm Password"
-          value={confirmPassword}
-          onChangeText={handleChangeWithClear(onConfirmPasswordChange)}
+          value={values.confirmPassword}
+          onChangeText={handleChange("confirmPassword")}
           placeholder="Re-enter your password"
-          error={confirmPasswordError}
+          error={errors.confirmPassword}
           autoComplete="new-password"
           textContentType="newPassword"
+          editable={!isSubmitting}
         />
       </View>
 
-      {formError ? <Text className="text-red-400 text-sm mt-4">{formError}</Text> : null}
+      {errors.form ? <Text className="text-red-400 text-sm mt-4">{errors.form}</Text> : null}
 
-      <TouchableOpacity
-        className="w-2/3 self-center bg-fdm-accent py-4 rounded-2xl items-center shadow-lg shadow-fdm-accent/20 active:opacity-80 transition-opacity mt-8"
+      <AuthButton
+        label="Continue"
         onPress={onSubmit}
-      >
-        <Text className="text-fdm-bg font-bold tracking-wide uppercase">Continue</Text>
-      </TouchableOpacity>
+        isLoading={isSubmitting}
+        backgroundColour="#ccff00"
+        textColour="#1b1b1b"
+      />
 
-      <TouchableOpacity className="self-center mt-6" onPress={onPressLogin}>
+      <TouchableOpacity className="self-center mt-6" onPress={onPressLogin} disabled={isSubmitting}>
         <Text className="text-fdm-fg/70">
-          Already have an account? <Text className="text-fdm-accent font-semibold">Log in</Text>
+          Already have an account?{" "}
+          <Text className="text-fdm-accent font-semibold">Log in</Text>
         </Text>
       </TouchableOpacity>
     </ScrollView>
   );
-}
+};
+
+export default RegisterForm;

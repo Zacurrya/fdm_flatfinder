@@ -20,13 +20,13 @@ const regionIconMap: Record<string, number> = {
   Africa: require("@assets/images/region-icons/africa.svg"),
 };
 
-export default function CityModal({
+const CityModal = ({
   visible,
   citiesByRegion,
   selectedCityName,
   onSelectCity,
   onClose,
-}: CityModalProps) {
+}: CityModalProps) => {
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
 
   const selectedRegionGroup = useMemo(
@@ -112,4 +112,6 @@ export default function CityModal({
       </Pressable>
     </Modal>
   );
-}
+};
+
+export default CityModal;

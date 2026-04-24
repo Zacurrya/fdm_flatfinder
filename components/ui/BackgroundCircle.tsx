@@ -1,46 +1,35 @@
-import type { DimensionValue } from "react-native";
-import { useColorScheme, View } from "react-native";
-
-type PositionValue = DimensionValue;
+import { DimensionValue, View } from "react-native";
 
 type BackgroundCircleProps = {
-  top?: PositionValue;
-  right?: PositionValue;
-  bottom?: PositionValue;
-  left?: PositionValue;
+  x?: DimensionValue;
+  y?: DimensionValue;
   color?: string;
   darkColor?: string;
   opacity?: number;
   size?: number;
 };
 
-export default function BackgroundCircle({
-  top,
-  right,
-  bottom,
-  left,
-  color = "#CCFF001A",
-  darkColor,
-  opacity = 0.5,
-  size = 256,
-}: BackgroundCircleProps) {
-  const colorScheme = useColorScheme();
-  const resolvedColor = colorScheme === "dark" && darkColor ? darkColor : color;
-
+const BackgroundCircle = ({
+  size = 300,
+  color = "#ccff00",
+  opacity = 0.1,
+  x = 0,
+  y = 0,
+}: BackgroundCircleProps) => {
   return (
     <View
-      pointerEvents="none"
-      className="absolute rounded-full blur-3xl"
       style={{
-        top,
-        right,
-        bottom,
-        left,
+        position: "absolute",
         width: size,
         height: size,
-        backgroundColor: resolvedColor,
+        borderRadius: 1000,
+        backgroundColor: color,
         opacity,
+        left: x,
+        top: y,
       }}
     />
   );
-}
+};
+
+export default BackgroundCircle;

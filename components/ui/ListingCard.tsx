@@ -7,7 +7,7 @@ import { Image, Text, TouchableOpacity, TouchableOpacityProps, View } from "reac
 
 // listing card component
 // shows the photo, price, location, beds and baths
-import { Listing } from "@services/listings/listingController";
+import { Listing } from "@/types/views";
 
 export type ListingCardData = Listing;
 
@@ -52,9 +52,9 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        const photos = parsePhotoUrls(listing.photos);
+        const photos = parsePhotoUrls(listing.mediaUrls);
         setPhotoUrl(photos.length > 0 ? photos[0] : null);
-    }, [listing.photos]);
+    }, [listing.mediaUrls]);
 
     const src = listing.source ?? "FDM";
     const sourceConfig = SOURCE_CONFIG[src] ?? SOURCE_CONFIG.FDM;
@@ -146,7 +146,7 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
                                     color="#ffffff60"
                                 />
                                 <Text className="text-fdm-fg/50 text-xs">
-                                    {listing.ListingLocations?.address || "Unknown location"}
+                                    {listing.address || "Unknown location"}
                                 </Text>
                             </View>
                         </View>
@@ -161,13 +161,13 @@ const ListingCard = forwardRef<View, ListingCardProps>(({ listing, isFavourite, 
                         <View className="flex-row items-center gap-1">
                             <Ionicons name="bed-outline" size={14} color="#ffffff50" />
                             <Text className="text-fdm-fg/50 text-xs">
-                                {listing.beds} bed
+                                {listing.bedrooms} bed
                             </Text>
                         </View>
                         <View className="flex-row items-center gap-1">
                             <Ionicons name="water-outline" size={14} color="#ffffff50" />
                             <Text className="text-fdm-fg/50 text-xs">
-                                {listing.baths} bath
+                                {listing.bathrooms} bath
                             </Text>
                         </View>
 

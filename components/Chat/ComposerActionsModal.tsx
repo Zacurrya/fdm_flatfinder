@@ -16,11 +16,11 @@ type ComposerActionsModalProps = {
   onSendLocation?: () => void;
 };
 
-export default function ComposerActionsModal({
+const ComposerActionsModal = ({
   visible,
   onClose,
   onSelectImage,
-}: ComposerActionsModalProps) {
+}: ComposerActionsModalProps) => {
   const actions: ComposerActionItem[] = [
     {
       icon: "image",
@@ -63,4 +63,6 @@ export default function ComposerActionsModal({
       </Pressable>
     </Modal>
   );
-}
+};
+
+export default ComposerActionsModal;

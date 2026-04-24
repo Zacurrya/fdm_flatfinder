@@ -1,6 +1,3 @@
-NOW:
-Complete useFavourites hook
-
 listings:
 - Edit listings
 - Mark listings as sold

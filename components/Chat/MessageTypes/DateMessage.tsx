@@ -4,7 +4,7 @@ type DateMessageProps = {
   date: string | Date;
 };
 
-export default function DateMessage({ date }: DateMessageProps) {
+const DateMessage = ({ date }: DateMessageProps) => {
   const dateObj = typeof date === "string" ? new Date(date) : date;
   
   return (
@@ -18,4 +18,6 @@ export default function DateMessage({ date }: DateMessageProps) {
       </Text>
     </View>
   );
-}
+};
+
+export default DateMessage;

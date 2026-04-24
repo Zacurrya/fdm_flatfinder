@@ -8,12 +8,12 @@ type SearchBarProps = {
   onPressFilter?: () => void;
 };
 
-export default function SearchBar({
+const SearchBar = ({
   value,
   onChangeText,
   showFilterButton = false,
   onPressFilter,
-}: SearchBarProps) {
+}: SearchBarProps) => {
   return (
     <View className="flex-row items-center gap-3">
       <View className="flex-1 flex-row items-center bg-fdm-fg/5 rounded-2xl px-4 py-3 border border-fdm-fg/10">
@@ -44,4 +44,6 @@ export default function SearchBar({
       ) : null}
     </View>
   );
-}
+};
+
+export default SearchBar;

@@ -1,0 +1,72 @@
+/**
+ * Centrally defined enums for the application to maintain consistency
+ * and provide a single source of truth for type values.
+ */
+
+export enum ActionType {
+  SIGN_UP_REQUESTED = "SIGN_UP_REQUESTED",
+  SIGN_UP_APPROVED = "SIGN_UP_APPROVED",
+  SIGN_UP_REJECTED = "SIGN_UP_REJECTED",
+  LISTING_CREATED = "LISTING_CREATED",
+  LISTING_UPDATED = "LISTING_UPDATED",
+  LISTING_DELETED = "LISTING_DELETED",
+  LISTING_UPLOAD_REQUESTED = "LISTING_UPLOAD_REQUESTED",
+  FAVOURITE_ADDED = "FAVOURITE_ADDED",
+  FAVOURITE_REMOVED = "FAVOURITE_REMOVED",
+  MESSAGE_SENT = "MESSAGE_SENT",
+  LOGIN = "LOGIN",
+  LOGOUT = "LOGOUT",
+  CITY_CHANGE_REQUESTED = "CITY_CHANGE_REQUESTED",
+  CITY_CHANGE_APPROVED = "CITY_CHANGE_APPROVED",
+  CITY_CHANGE_REJECTED = "CITY_CHANGE_REJECTED",
+}
+
+export enum ApprovalStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+}
+
+export enum Role {
+  CONSULTANT = "CONSULTANT",
+  ADMIN = "ADMIN",
+}
+
+export enum RequestType {
+  SIGN_UP = "SIGN_UP",
+  CITY_CHANGE = "CITY_CHANGE",
+  LISTING_UPLOAD = "LISTING_UPLOAD",
+}
+
+export enum RequestStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+}
+
+export enum RentPeriod {
+  WEEKLY = "WEEKLY",
+  BIWEEKLY = "BIWEEKLY",
+  MONTHLY = "MONTHLY",
+}
+
+export enum PropertyType {
+  FLAT = "FLAT",
+  STUDIO = "STUDIO",
+  TERRACEDHOUSE = "TERRACEDHOUSE",
+  SEMIDETACHED = "SEMIDETACHED",
+  DETACHED = "DETACHED",
+}
+
+export enum ListingSource {
+  FDM = "FDM",
+  RIGHTMOVE = "RIGHTMOVE",
+  OPENRENT = "OPENRENT",
+  ZOOPLA = "ZOOPLA",
+}
+
+export enum ListingStatus {
+  AVAILABLE = "AVAILABLE",
+  SOLD = "SOLD",
+  DRAFT = "DRAFT",
+}

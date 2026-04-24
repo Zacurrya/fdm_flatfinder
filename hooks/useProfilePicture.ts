@@ -1,106 +1,128 @@
-
+import { UserRecord } from "@/types/records";
 import { useAuth } from "@hooks/useAuth";
-import { File } from "expo-file-system";
-import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
-import { Alert } from "react-native";
+import { useUploadPhotos } from "@hooks/useUploadPhotos";
+import { UserService } from "@services/user/userService";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * useProfilePicture
- * Custom hook to handle the logic for selecting, uploading, and removing 
- * a user's profile picture.
+ * Resolves and caches a user's profile picture URL.
+ * Handles both UserRecord objects and raw userId strings.
+ * Subscribes to realtime updates on the users table so that
+ * the picture URL refreshes automatically wherever the hook is used.
+ * Also exposes changeProfilePicture and deleteProfilePicture for
+ * screens that need mutation capabilities (formerly useProfilePictureManager).
  */
+export const useProfilePicture = (user: UserRecord | null | undefined) => {
+    const { user: authUser, refreshUser } = useAuth();
+    const [profilePictureUri, setProfilePictureUri] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
 
-export function useProfilePicture() {
-  const { user, updateProfilePicture, removeProfilePicture } = useAuth();
-  const [isUploading, setIsUploading] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
+    const userId = user?.userId ?? null;
 
-  const isBusy = isUploading || isRemoving;
+    const resolveProfilePicture = useCallback(async (forceFetch = false) => {
+        if (!user) {
+            setProfilePictureUri(null);
+            setIsLoading(false);
+            return;
+        }
 
-  // -- Profile picture update flow --
-  const handleUpdate = async () => {
-    // Check permissions
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(
-        "Permission required",
-        "Please allow photo library access to upload a profile picture."
-      );
-      return;
-    }
-    // Launch Picker
-    const pickerResult = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-      base64: false,
-      exif: false,
-    });
+        setIsLoading(true);
+        try {
+            const record = forceFetch
+                ? await UserService.getUserRecord(user.userId)
+                : user;
 
-    if (pickerResult.canceled || !pickerResult.assets?.length) {
-      return;
-    }
+            const pic = await UserService.getUserProfilePicture(record);
+            setProfilePictureUri(pic);
+        } catch (e) {
+            console.error("[useProfilePicture] Failed to resolve profile picture:", e);
+            setProfilePictureUri(null);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user]);
 
-    const asset = pickerResult.assets[0];
-    const imageUri = asset.uri;
+    useEffect(() => {
+        void resolveProfilePicture();
+    }, [resolveProfilePicture]);
 
-    // File Safety Check
-    try {
-      await new File(imageUri).arrayBuffer();
-    } catch {
-      Alert.alert("Upload failed", "Selected profile picture could not be read.");
-      return;
-    }
+    const initials = user
+        ? (user.firstName[0] || "") + (user.lastName[0] || "")
+        : "";
+    const hasProfilePicture = !!(user?.profilePicture);
 
-    // Trigger Upload 
-    setIsUploading(true);
-    try {
-      const result = await updateProfilePicture({
-        imageUri,
-        mimeType: asset.mimeType,
-        fileName: asset.fileName,
-      });
+    const { pickImages } = useUploadPhotos({ bucket: "profile-pictures", multiple: false, squareCrop: true, quality: 0.5 });
 
-      if (!result.success) {
-        Alert.alert("Upload failed", result.error || "Please try again.");
-      }
-    } finally {
-      setIsUploading(false);
-    }
-  };
+    /**
+     * Handles the selection and upload of a new profile picture.
+     */
+    const changeProfilePicture = async () => {
+        if (!userId) return { success: false, error: "No user logged in" };
 
-  // -- Profile picture removal flow --
-  const handleRemove = () => {
-    if (!user?.profilePicture) return;
-    Alert.alert(
-      "Remove profile picture?",
-      "This will reset your profile picture to the fallback avatar.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            setIsRemoving(true);
-            try {
-              const result = await removeProfilePicture();
-              if (!result.success) {
-                Alert.alert("Remove failed", result.error || "Please try again.");
-              }
-            } finally {
-              setIsRemoving(false);
+        try {
+            const uris = await pickImages();
+            if (uris.length === 0) return { success: false, error: "Cancelled" };
+
+            setIsUpdating(true);
+            const selectedUri = uris[0];
+
+            await UserService.uploadProfilePicture(userId, {
+                imageUri: selectedUri,
+            });
+
+            // If updating current user, refresh the auth context
+            if (userId === authUser?.userId) {
+                await refreshUser();
             }
-          },
-        },
-      ]
-    );
-  };
 
-  return {
-    isBusy,
-    handleUpdate,
-    handleRemove,
-  };
-}
+            // Force fetch to bypass stale closure of userOrId
+            await resolveProfilePicture(true);
+
+            return { success: true };
+        } catch (e: any) {
+            return { success: false, error: e.message };
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    /**
+     * Handles the removal of the current profile picture.
+     */
+    const deleteProfilePicture = async () => {
+        if (!userId) return { success: false, error: "No user logged in" };
+
+        setIsUpdating(true);
+        try {
+            await UserService.removeProfilePicture(userId);
+            // If updating current user, refresh the auth context
+            if (userId === authUser?.userId) {
+                await refreshUser();
+            }
+
+            // Force fetch to bypass stale closure of userOrId
+            await resolveProfilePicture(true);
+            
+            return { success: true };
+        } catch (e: any) {
+            return { success: false, error: e.message };
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    return {
+        // Picture state
+        profilePictureUri,
+        isLoading,
+        initials: initials.toUpperCase(),
+        hasProfilePicture,
+        refresh: resolveProfilePicture,
+        // Mutation state & actions
+        isUpdating,
+        changeProfilePicture,
+        deleteProfilePicture,
+    };
+};

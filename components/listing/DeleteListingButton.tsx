@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
 import { Alert, TouchableOpacity } from "react-native";
 
 type DeleteListingButtonProps = {
@@ -7,8 +6,6 @@ type DeleteListingButtonProps = {
   loading?: boolean;
 };
 
-
-// A reusable button with built-in confirmation for removing a property listing.
 const DeleteListingButton: React.FC<DeleteListingButtonProps> = ({ onDelete, loading }) => {
   const handleDeletePress = () => {
     Alert.alert(
