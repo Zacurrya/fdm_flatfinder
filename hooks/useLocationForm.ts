@@ -5,22 +5,19 @@ import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 
 /**
- * Consolidated hook for office/city location selection and (optionally) registration flow.
- * If registration is needed, pass enableRegistration=true.
+ * Combines location fetching with the registration signup-flow logic.
  */
-export const useLocationForm = (options?: {
-  initialCity?: OfficeCity | null;
-  initialRegion?: string;
-  enableRegistration?: boolean;
-}) => {
+export const useOfficeLocations = () => {
   const { register } = useAuth();
-  const params = options?.enableRegistration ? useLocalSearchParams<{
+
+  // Receive form data passed from the register step as route params
+  const params = useLocalSearchParams<{
     firstName: string;
     lastName: string;
     email: string;
     phoneNumber: string;
     password: string;
-  }>() : undefined;
+  }>();
 
   // -- Location list --
   const [citiesByRegion, setCitiesByRegion] = useState<RegionCities[]>([]);
@@ -38,12 +35,13 @@ export const useLocationForm = (options?: {
         setIsLoadingLocations(false);
       }
     };
+
     void fetchLocations();
   }, []);
 
-  // -- City selection --
-  const [selectedCity, setSelectedCity] = useState<OfficeCity | null>(options?.initialCity ?? null);
-  const [selectedRegion, setSelectedRegion] = useState(options?.initialRegion ?? "");
+  // -- City selection & signup flow --
+  const [selectedCity, setSelectedCity] = useState<OfficeCity | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -53,28 +51,29 @@ export const useLocationForm = (options?: {
     setErrorMessage("");
   };
 
-  // Optional registration flow
-  const handleCompleteSignup = options?.enableRegistration ? async () => {
+  const handleCompleteSignup = async () => {
     if (!selectedCity) {
       setErrorMessage("Please choose your FDM office city before continuing.");
       return;
     }
+
     setIsSubmitting(true);
     try {
       await register({
-        firstName: params?.firstName,
-        lastName: params?.lastName,
-        email: params?.email,
-        password: params?.password,
-        phoneNumber: params?.phoneNumber,
+        firstName: params.firstName,
+        lastName: params.lastName,
+        email: params.email,
+        password: params.password,
+        phoneNumber: params.phoneNumber,
         officeLocation: selectedCity.name,
       });
+
     } catch (error: any) {
       setErrorMessage(error.message ?? "Registration failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
-  } : undefined;
+  };
 
   return {
     // Location list
@@ -84,13 +83,9 @@ export const useLocationForm = (options?: {
     // City selection
     selectedCity,
     selectedRegion,
-    setSelectedCity,
-    setSelectedRegion,
-    handleSelectCity,
     errorMessage,
-    setErrorMessage,
     isSubmitting,
-    // Registration (if enabled)
+    handleSelectCity,
     handleCompleteSignup,
   };
 };
