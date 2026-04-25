@@ -1,5 +1,4 @@
 import { supabase } from "@lib/supabase";
-import { logger } from "@utils/logger";
 import { useEffect, useRef } from "react";
 
 /**
@@ -87,7 +86,7 @@ export const useRealtime = <T>(
       )
       .subscribe();
     channelRef.current = channel;
-    logger.log(`Subscribed to realtime channel: ${tableName}`, { filter: filterString });
+    console.log(`Subscribed to realtime channel: ${tableName}`, { filter: filterString });
 
     return () => {
       const activeChannel = channelRef.current;
@@ -95,9 +94,9 @@ export const useRealtime = <T>(
 
       if (activeChannel) {
         void supabase.removeChannel(activeChannel);
-        logger.log(`Unsubscribed from realtime channel: ${tableName}`, { filter: filterString });
+        console.log(`Unsubscribed from realtime channel: ${tableName}`, { filter: filterString });
       } else {
-        logger.warn(`Trying to unsubscribe from non-existent channel: ${tableName}`, { filter: filterString });
+        console.warn(`Trying to unsubscribe from non-existent channel: ${tableName}`, { filter: filterString });
       }
       
     };

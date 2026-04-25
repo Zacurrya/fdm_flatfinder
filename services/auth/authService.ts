@@ -2,7 +2,8 @@ import { ActionType, ApprovalStatus, RequestStatus, RequestType, Role } from '@/
 import { UserRecord } from '@/types/records';
 import { supabase } from '@lib/supabase';
 import { AuditService } from '@services/audit/auditService';
-import { logger } from '@utils/logger';
+import { LocationService } from '@services/locations/locationService';
+import { getInitials } from '@utils/formatters';
 import {
     loginDTO,
     registerDTO,
@@ -27,7 +28,7 @@ export const AuthService = {
 
         if (userError || !user) throw new Error(userError?.message ?? 'User profile not found.');
 
-        logger.log(`Login successful`)
+        console.log(`Login successful`)
 
         return {
             user: {
@@ -35,9 +36,9 @@ export const AuthService = {
                 email: user.email,
                 firstName: user.first_name,
                 lastName: user.last_name,
-                officeLocation: user.office_location, // FDM office city
+                officeLocation: await LocationService.resolveOfficeCityName(user.office_location),
                 phoneNumber: user.phone_number,
-                profilePicture: user.avatar_url ?? null,
+                avatarUrl: user.avatar_url ?? null,
                 role: user.role as Role,
                 approvalStatus: user.approval_status as ApprovalStatus,
                 createdAt: user.created_at,
@@ -52,7 +53,7 @@ export const AuthService = {
     async logout() {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
-        logger.log('Logout successful');
+        console.log('Logout successful');
     },
 
     /**
@@ -67,10 +68,7 @@ export const AuthService = {
         if (error || !auth.user) throw new Error(error?.message ?? 'Registration failed.');
 
         // Pre-generate the initials-based fallback avatar URL
-        const initials = (
-            (dto.firstName?.[0] ?? 'U') +
-            (dto.lastName?.[0] ?? 'U')
-        ).toUpperCase();
+        const initials = getInitials(dto.firstName, dto.lastName);
         const fallbackAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&size=128&background=ccff00&color=1b1b1b&bold=true&format=png`;
 
         // Inserts the created user into the user table with a default avatar
@@ -103,7 +101,7 @@ export const AuthService = {
             userId: auth.user.id,
         });
 
-        logger.log('User registered and approval request created');
+        console.log('User registered and approval request created');
     },
 
     /**
@@ -112,7 +110,7 @@ export const AuthService = {
     async resetPassword(email: string) {
         const { error } = await supabase.auth.resetPasswordForEmail(email);
         if (error) throw error;
-        logger.log('Password reset email sent');
+        console.log('Password reset email sent');
     },
 
     /**
@@ -125,7 +123,7 @@ export const AuthService = {
             .eq('email', email);
 
         if (error) {
-            logger.log('Error checking if email exists:', error);
+            console.log('Error checking if email exists:', error);
             throw new Error('Could not verify email uniqueness.');
         }
 
@@ -142,7 +140,7 @@ export const AuthService = {
             .eq('phone_number', phoneNumber);
 
         if (error) {
-            logger.log('Error checking if phone number exists:', error);
+            console.log('Error checking if phone number exists:', error);
             throw new Error('Could not verify phone number uniqueness.');
         }
 
@@ -153,7 +151,7 @@ export const AuthService = {
      * Returns the current user's profile and session if they exist.
      * Otherwise, returns null.
      */
-    async getSession() {
+    async getSession(): Promise<{ userProfile: UserRecord; session: any } | null> {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (!session) throw sessionError;
 
@@ -165,16 +163,16 @@ export const AuthService = {
             .single();
 
         if (userError || !user) throw new Error(userError?.message ?? 'User profile not found.');
-
+        const officeLocation = await LocationService.resolveOfficeCityName(user.office_location);
         return {
             userProfile: {
                 userId: user.user_id,
                 email: user.email,
                 firstName: user.first_name,
                 lastName: user.last_name,
-                officeLocation: user.office_location,
+                officeLocation,
                 phoneNumber: user.phone_number,
-                profilePicture: user.avatar_url ?? null,
+                avatarUrl: user.avatar_url ?? null,
                 role: user.role as Role,
                 approvalStatus: user.approval_status as ApprovalStatus,
                 createdAt: user.created_at,

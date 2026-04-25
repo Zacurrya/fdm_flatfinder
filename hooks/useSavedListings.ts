@@ -15,7 +15,7 @@ export const useSavedListings = () => {
         }
         setIsLoading(true);
         try {
-            const ids = await UserService.getSavedListings(user.userId);
+            const ids = await UserService.getSavedListingIds(user.userId);
             setFavIds(ids);
         } finally {
             setIsLoading(false);

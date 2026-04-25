@@ -1,11 +1,14 @@
 import { ActionType, ApprovalStatus, RequestType, Role } from "@/types/enums";
 import { UserRecord } from "@/types/records";
 import { supabase } from "@lib/supabase";
+import { AuditService } from "@services/audit/auditService";
+import { LocationService } from "@services/locations/locationService";
 import {
     ProfilePictureUploadDTO,
     ResolvedProfilePictureSource
 } from "@services/user/types";
 import { File } from "expo-file-system";
+import { getInitials } from "@utils/formatters";
 
 type CachedProfilePictureUrl = {
     url: string;
@@ -16,6 +19,32 @@ const profilePictureUrlCache = new Map<string, CachedProfilePictureUrl>();
 const PROFILE_PICTURE_BUCKET = "profile-pictures";
 
 export const UserService = {
+
+    /**
+     * Fetches all users with PENDING status.
+     */
+    async getPendingUsers(): Promise<UserRecord[]> {
+        const { data, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("approval_status", "PENDING")
+            .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        return Promise.all((data || []).map(async (user: any) => ({
+            userId: user.user_id,
+            email: user.email,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            officeLocation: await LocationService.resolveOfficeCityName(user.office_location),
+            phoneNumber: user.phone_number,
+            avatarUrl: user.avatar_url ?? null,
+            role: user.role as Role,
+            approvalStatus: user.approval_status as ApprovalStatus,
+            createdAt: user.created_at,
+        })));
+    },
 
     // Helper function to fetch the user details
     async getUser(userId: string) {
@@ -31,7 +60,7 @@ export const UserService = {
 
     // Parses a user's name into it's capitalised initials
     async getUserInitials(user: UserRecord) {
-        return user.firstName[0]?.toUpperCase() + user.lastName[0]?.toUpperCase();
+        return getInitials(user.firstName, user.lastName);
     },
 
     // Gets a default profile picture URL via ui-avatars by passing in user initials
@@ -44,24 +73,24 @@ export const UserService = {
     // Returns user profile picture URL, falling back to an initials avatar if none is set
     async getUserProfilePicture(user: UserRecord): Promise<string | null> {
         // No stored picture — return the fallback initials avatar
-        if (!user.profilePicture) {
+        if (!user.avatarUrl) {
             return this.getFallbackProfilePictureUrl(user);
         }
 
         // If its a full URL, return it directly
-        if (user.profilePicture.startsWith("http")) return user.profilePicture;
+        if (user.avatarUrl.startsWith("http")) return user.avatarUrl;
 
         // Check cache
-        const cached = await this.getCachedProfilePictureUrl(user.profilePicture);
+        const cached = await this.getCachedProfilePictureUrl(user.avatarUrl);
         if (cached) return cached;
 
         // Get from Supabase storage
-        const { data } = supabase.storage.from(PROFILE_PICTURE_BUCKET).getPublicUrl(user.profilePicture);
+        const { data } = supabase.storage.from(PROFILE_PICTURE_BUCKET).getPublicUrl(user.avatarUrl);
         const url = data?.publicUrl ?? null;
 
         if (url) {
             // Cache for 1 hour
-            await this.setCachedProfilePictureUrl(user.profilePicture, url, 3600);
+            await this.setCachedProfilePictureUrl(user.avatarUrl, url, 3600);
         }
 
         return url;
@@ -84,8 +113,8 @@ export const UserService = {
         });
     },
 
-    async resolveProfilePictureSource(profilePicture?: string | null): Promise<ResolvedProfilePictureSource> {
-        const value = profilePicture?.trim();
+    async resolveProfilePictureSource(avatarUrl?: string | null): Promise<ResolvedProfilePictureSource> {
+        const value = avatarUrl?.trim();
         if (!value) return { path: null, directUrl: null };
 
         if (!/^https?:\/\//i.test(value)) {
@@ -104,52 +133,20 @@ export const UserService = {
         return { path: decodeURIComponent(encodedPath).replace(/^\/+/, "") || null, directUrl: null };
     },
 
-    /**
-     * @returns An array of all users with pending approval status
-     */
-    async getPendingUsers(): Promise<UserRecord[]> {
-        const { data, error } = await supabase
-            .from("users")
-            .select("*")
-            .eq("approval_status", "PENDING")
-            .order("created_at", { ascending: true });
+    async getUserRecord(userId: string): Promise<UserRecord> {
+        const user = await this.getUser(userId);
 
-        if (error) throw error;
-
-        return (data ?? []).map((user) => ({
+        return {
             userId: user.user_id,
+            email: user.email,
             firstName: user.first_name,
             lastName: user.last_name,
-            email: user.email,
+            officeLocation: await LocationService.resolveOfficeCityName(user.office_location),
             phoneNumber: user.phone_number,
-            officeLocation: user.office_location,
-            profilePicture: user.avatar_url ?? null,
+            avatarUrl: user.avatar_url ?? null,
             role: user.role as Role,
             approvalStatus: user.approval_status as ApprovalStatus,
             createdAt: user.created_at,
-        }));
-    },
-
-    async getUserRecord(userId: string): Promise<UserRecord> {
-        const { data: profile, error } = await supabase
-            .from("users")
-            .select("*")
-            .eq("user_id", userId)
-            .single();
-
-        if (error || !profile) throw new Error(error?.message ?? "User profile not found.");
-
-        return {
-            userId: profile.user_id,
-            firstName: profile.first_name,
-            lastName: profile.last_name,
-            email: profile.email,
-            phoneNumber: profile.phone_number,
-            officeLocation: profile.office_location,
-            profilePicture: profile.avatar_url ?? null,
-            role: profile.role as Role,
-            approvalStatus: profile.approval_status as ApprovalStatus,
-            createdAt: profile.created_at,
         };
     },
 
@@ -175,17 +172,13 @@ export const UserService = {
             .eq("user_id", authUserId)
             .single();
 
-        if (existingProfileError) throw existingProfileError;
-
-        const source = await this.resolveProfilePictureSource(existingProfile?.avatar_url);
-        if (source.path) {
-            await supabase.storage.from(PROFILE_PICTURE_BUCKET).remove([source.path]);
-            profilePictureUrlCache.delete(source.path);
+        if (existingProfile?.avatar_url && !existingProfile.avatar_url.startsWith("http")) {
+            await supabase.storage.from(PROFILE_PICTURE_BUCKET).remove([existingProfile.avatar_url]);
         }
 
         const { error: uploadError } = await supabase.storage
             .from(PROFILE_PICTURE_BUCKET)
-            .upload(filePath, arrayBuffer, { upsert: true, cacheControl: "3600", contentType });
+            .upload(filePath, arrayBuffer, { contentType, upsert: true });
 
         if (uploadError) throw uploadError;
 
@@ -196,38 +189,42 @@ export const UserService = {
 
         if (updateError) throw updateError;
 
-        profilePictureUrlCache.delete(filePath);
+        profilePictureUrlCache.delete(authUserId);
         return filePath;
     },
 
-
-    async removeProfilePicture(authUserId: string): Promise<void> {
-        const { data: existingProfile, error: existingProfileError } = await supabase
+    async deleteProfilePicture(authUserId: string): Promise<void> {
+        const { data: user, error: fetchError } = await supabase
             .from("users")
             .select("avatar_url")
             .eq("user_id", authUserId)
             .single();
 
-        if (existingProfileError) throw existingProfileError;
+        if (fetchError || !user?.avatar_url) return;
 
-        // Delete old file from storage if it's a storage path (not an external URL)
-        const source = await this.resolveProfilePictureSource(existingProfile?.avatar_url);
-        if (source.path) {
-            await supabase.storage.from(PROFILE_PICTURE_BUCKET).remove([source.path]);
-            profilePictureUrlCache.delete(source.path);
+        if (!user.avatar_url.startsWith("http")) {
+            await supabase.storage.from(PROFILE_PICTURE_BUCKET).remove([user.avatar_url]);
         }
-
-        const user = await this.getUserProfile(authUserId);
-        // Reset to the initials-based fallback URL rather than null
-        const initials = (
-            (user.firstName[0]) +
-            (user.lastName[0])
-        ).toUpperCase();
-        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&size=128&background=ccff00&color=1b1b1b&bold=true&format=png`;
 
         const { error: updateError } = await supabase
             .from("users")
-            .update({ avatar_url: fallbackUrl })
+            .update({ avatar_url: null })
+            .eq("user_id", authUserId);
+
+        if (updateError) throw updateError;
+
+        profilePictureUrlCache.delete(authUserId);
+    },
+
+    async updateProfile(authUserId: string, data: Partial<UserRecord>): Promise<void> {
+        const { error: updateError } = await supabase
+            .from("users")
+            .update({
+                first_name: data.firstName,
+                last_name: data.lastName,
+                phone_number: data.phoneNumber,
+                office_location: data.officeLocation,
+            })
             .eq("user_id", authUserId);
 
         if (updateError) throw updateError;
@@ -244,7 +241,7 @@ export const UserService = {
                 .limit(1);
 
             if (existingPending && existingPending.length > 0) {
-                return { success: false, error: "You already have a pending city change request." };
+                return { success: false, error: "You already have a pending relocation request." };
             }
 
             const { error: requestError } = await supabase.from("requests").insert({
@@ -257,10 +254,10 @@ export const UserService = {
 
             if (requestError) throw requestError;
 
-            await supabase.from("audit_logs").insert({
-                action_type: ActionType.CITY_CHANGE_REQUESTED,
-                user_id: authUserId,
-                target_id: authUserId,
+            await AuditService.logAction({
+                actionType: ActionType.CITY_CHANGE_REQUESTED,
+                userId: authUserId,
+                targetId: authUserId,
             });
 
             return { success: true };
@@ -281,8 +278,8 @@ export const UserService = {
      * Removes a listing from a user's saved listings.
      */
     async removeSavedListing(userId: string, listingId: string): Promise<void> {
-        // Finds the user_favourite in the junction table
-        const { error } = await supabase.from("user_favourites")
+        const { error } = await supabase
+            .from("user_favourites")
             .delete()
             .eq("user_id", userId)
             .eq("listing_id", listingId);
@@ -290,36 +287,11 @@ export const UserService = {
     },
 
     /**
-     * Gets a user's favourited listings.
-     * @param userId - The ID of the user.
+     * @returns All listing IDs favorited by the user
      */
-    async getSavedListings(userId: string): Promise<string[]> {
-        const { data, error } = await supabase
-            .from("user_favourites")
-            .select("listing_id")
-            .eq("user_id", userId);
-
+    async getSavedListingIds(userId: string): Promise<string[]> {
+        const { data, error } = await supabase.from("user_favourites").select("listing_id").eq("user_id", userId);
         if (error) throw error;
-
-        return data.map((d) => d.listing_id);
+        return (data || []).map((fav) => fav.listing_id);
     },
-
-    /**
-     * Updates a user's profile record.
-     */
-    async updateUserProfile(userId: string, updates: Partial<UserRecord>): Promise<void> {
-        const mappedUpdates = {
-            first_name: updates.firstName,
-            last_name: updates.lastName,
-            email: updates.email,
-            phone_number: updates.phoneNumber,
-            office_location: updates.officeLocation,
-            avatar_url: updates.profilePicture,
-            approval_status: updates.approvalStatus,
-        };
-
-        const { error } = await supabase.from("users").update(mappedUpdates).eq("user_id", userId);
-
-        if (error) throw error;
-    }
 };

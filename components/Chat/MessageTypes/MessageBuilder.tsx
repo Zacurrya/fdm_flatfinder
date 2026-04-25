@@ -12,16 +12,14 @@ import TextMessage from "./TextMessage";
 import { MessageProps } from "./types";
 
 /**
- * 
- * @param 
-  * @returns Takes in a message and determines which type of message it is (text, image, listing share, audit) and renders the appropriate component for it. It also handles rendering the date separator and avatar for the message. 
+ * MessageBuilder
+ * Determines which type of message to render and handles shared elements like avatars and date separators.
  */
 const MessageBuilder = (props: MessageProps) => {
   const {
     content,
     isMe,
-    avatarProfilePicture,
-    avatarInitials,
+    avatarUrl,
     avatarVisible = true,
     showDateSeparator,
     createdAt,
@@ -31,43 +29,38 @@ const MessageBuilder = (props: MessageProps) => {
   const renderContent = () => {
     // 1. Check if Image
     if (isImagePayload(trimmedContent)) {
-      return <ImageMessage {...props} />;
+      return <ImageMessage {...props} content={trimmedContent} />;
     }
 
-    // 3. Check if Audit
+    // 2. Check if Audit
     if (isAuditPayload(trimmedContent)) {
-      return (
-        <AuditMessage
-          {...props}
-          content={extractAuditMessage(trimmedContent)}
-        />
-      );
+      return <AuditMessage {...props} content={extractAuditMessage(trimmedContent)} />;
     }
 
-    // 4. Fallback to normal Text Message
-    return <TextMessage {...props} />;
+    // 3. Fallback to Text
+    return <TextMessage {...props} content={trimmedContent} />;
   };
 
   return (
-    <>
-      {showDateSeparator && <DateMessage date={createdAt} />}
+    <View>
+      {showDateSeparator ? <DateMessage date={createdAt} /> : null}
 
       <View
-        className={`flex-row mb-1 px-4 items-start ${
-          isMe ? "justify-end" : "justify-start"
-        }`}
+        className={`flex-row mb-1 px-4 items-start ${isMe ? "justify-end" : "justify-start"
+          }`}
       >
         {!isMe ? (
           <MessageAvatar
-            profilePicture={avatarProfilePicture}
-            initials={avatarInitials || ""}
+            avatarUrl={avatarUrl}
             visible={avatarVisible}
           />
         ) : null}
 
-        {renderContent()}
+        <View className={`max-w-[80%] ${isMe ? "items-end" : "items-start"}`}>
+          {renderContent()}
+        </View>
       </View>
-    </>
+    </View>
   );
 };
 

@@ -2,7 +2,7 @@ import FDMLoader from "@components/ui/FDMLoader";
 import { AuthProvider } from "@context/AuthContext";
 import { Michroma_400Regular, useFonts } from '@expo-google-fonts/michroma';
 import { useAuth } from "@hooks/useAuth";
-import { logger } from "@utils/logger";
+
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
@@ -44,13 +44,13 @@ const AppShell = () => {
       // If logged in, redirect away from auth/landing screens
       if (!inTabsGroup) {
         router.replace("/(tabs)/home");
-        logger.log("User authenticated, redirecting to home");
+        console.log("User authenticated, redirecting to home");
       }
     } else {
       // If logged out, redirect away from protected screens
       if (inTabsGroup) {
         router.replace("/");
-        logger.log("User not authenticated, redirecting to landing page");
+        console.log("User not authenticated, redirecting to landing page");
       }
     }
 

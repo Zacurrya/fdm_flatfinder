@@ -28,9 +28,6 @@ const MessagesScreen = () => {
           <View className="flex-1 items-center justify-center px-8">
             <Ionicons name="chatbubbles-outline" size={56} color="#ffffff20" />
             <Text className="text-fdm-fg/40 text-base text-center mt-4">No messages yet.</Text>
-            <Text className="text-fdm-fg/30 text-sm text-center mt-1">
-              Open a listing and tap Message Seller to start a chat.
-            </Text>
           </View>
         ) : (
           <ScrollView showsVerticalScrollIndicator={false}>

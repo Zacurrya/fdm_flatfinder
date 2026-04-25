@@ -8,13 +8,16 @@ import BackgroundCircle from "@components/ui/BackgroundCircle";
 import FDMLoader from "@components/ui/FDMLoader";
 import ScreenHeader from "@components/ui/ScreenHeader";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@hooks/useAuth";
 import { useProfilePicture } from "@hooks/useProfilePicture";
 import { useUserSettings } from "@hooks/useUserSettings";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { ScrollView, TouchableOpacity, View, useWindowDimensions } from "react-native";
+
 const ProfileScreen = () => {
   const { width, height } = useWindowDimensions();
+  const { user } = useAuth();
 
   // UI State
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
@@ -26,9 +29,7 @@ const ProfileScreen = () => {
     isUpdating: isUpdatingProfilePic,
     changeProfilePicture: updateProfilePic,
     deleteProfilePicture: removeProfilePic,
-  } = useProfilePicture(settings.user);
-
-  const { user } = settings;
+  } = useProfilePicture(user!.userId);
 
   const isBusy = isUpdatingProfilePic || settings.isSubmittingCityChange;
 
@@ -67,7 +68,6 @@ const ProfileScreen = () => {
           />
 
           <ProfileCard
-            user={user}
             onPressProfilePicture={() => setIsPicModalVisible(true)}
             isUploadingProfilePicture={isUpdatingProfilePic}
           />
@@ -83,14 +83,11 @@ const ProfileScreen = () => {
           visible={isSettingsVisible}
           onClose={() => setIsSettingsVisible(false)}
         />
-
         <ProfilePicModal
           visible={isPicModalVisible}
-          user={user}
-          isUploadingProfilePicture={isUpdatingProfilePic}
           onClose={() => setIsPicModalVisible(false)}
-          onChangeProfilePicture={updateProfilePic}
-          onRemoveProfilePicture={removeProfilePic}
+          onUpdate={updateProfilePic}
+          onRemove={removeProfilePic}
         />
       </View>
     </ApprovalGuard>

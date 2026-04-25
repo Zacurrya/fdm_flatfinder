@@ -1,7 +1,6 @@
-import { RequestService } from "@services/requests/requestService";
-import { RequestRecord } from "@/types/records";
-import { AdminRequest } from "@/types/views";
 import { RequestStatus } from "@/types/enums";
+import { AdminRequest } from "@/types/views";
+import { RequestService } from "@services/requests/requestService";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
 
@@ -49,14 +48,14 @@ export const useRequests = (options?: { enabled?: boolean }) => {
     setProcessingId(requestId);
     setError(null);
     try {
-        await RequestService.reviewRequest({ requestId, decision });
-        return { success: true };
+      await RequestService.reviewRequest({ requestId, decision });
+      return { success: true };
     } catch (err: any) {
-        setError(err.message || "Failed to process request");
-        return { success: false, error: err.message };
+      setError(err.message || "Failed to process request");
+      return { success: false, error: err.message };
     } finally {
-        setIsProcessing(false);
-        setProcessingId(null);
+      setIsProcessing(false);
+      setProcessingId(null);
     }
   };
 

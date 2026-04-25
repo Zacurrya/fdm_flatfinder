@@ -46,8 +46,8 @@ export type UserRecord = {
     email: string;
     officeLocation: string;
     phoneNumber: string;
-    profilePicture: string | null;
     role: Role;
+    avatarUrl: string | null;
     approvalStatus: ApprovalStatus;
     createdAt: string;
 };

@@ -1,4 +1,5 @@
-import { getCityImagePath, OfficeCity, RegionCities } from "@lib/office-cities";
+import { OfficeCity, RegionCities } from "@/types/locations";
+import { getCityImagePath } from "@lib/office-cities";
 import { supabase } from "@lib/supabase";
 
 export type LocationRecord = {
@@ -14,6 +15,7 @@ export const LocationService = {
    * Enriches each city with a local image asset if one is available.
    */
   async getCitiesByRegion(): Promise<RegionCities[]> {
+    // Gets all cities from the database
     const { data, error } = await supabase
       .from("locations")
       .select("id, name, region, country_code")
@@ -22,9 +24,11 @@ export const LocationService = {
 
     if (error) throw error;
 
+    // Groups cities by region for display in the modal
     const grouped = new Map<string, OfficeCity[]>();
     for (const row of data ?? []) {
       const entry: OfficeCity = {
+        id: row.id,
         name: row.name,
         countryCode: row.country_code,
         imagePath: getCityImagePath(row.name),
@@ -57,5 +61,23 @@ export const LocationService = {
       region: data.region,
       countryCode: data.country_code,
     };
+  },
+
+  /**
+   * Location UUID -> City name
+   */
+  async resolveOfficeCityName(officeLocation: string): Promise<string> {
+    if (!officeLocation) return officeLocation;
+
+    // Try to resolve the value as an ID from the locations table
+    const { data, error } = await supabase
+      .from("locations")
+      .select("name")
+      .eq("id", officeLocation)
+      .single();
+
+    if (error) throw error;
+
+    return data.name;
   },
 };

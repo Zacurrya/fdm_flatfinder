@@ -1,7 +1,7 @@
-
 export type ResolvedProfilePictureSource = {
     path: string | null;
     directUrl: string | null;
+    avatarUrl?: string | null;
 };
 
 export type ProfilePictureFallbackOptions = {

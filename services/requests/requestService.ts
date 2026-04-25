@@ -38,7 +38,7 @@ export const RequestService = {
             .insert({
                 user_id: dto.userId,
                 request_type: dto.requestType,
-                status: RequestStatus.PENDING.toString(),
+                status: RequestStatus.PENDING,
                 listing_id: dto.listingId ?? null,
                 old_city: dto.oldCity ?? null,
                 new_city: dto.newCity ?? null,
@@ -115,7 +115,7 @@ export const RequestService = {
     },
 
     /**
-     * Handles city change request review logic.
+     * Handles relocation request review logic.
      */
     async handleCityChangeReview(request: RequestRecord, decision: RequestStatus) {
         if (decision === RequestStatus.APPROVED && request.newCity) {
@@ -156,13 +156,17 @@ export const RequestService = {
      * Handles listing upload request review logic.
      */
     async handleListingUploadReview(request: RequestRecord, decision: RequestStatus) {
-        if (!request.listingId) return;
-        const status = decision === RequestStatus.APPROVED ? ApprovalStatus.APPROVED : ApprovalStatus.REJECTED;
+        if (!request.listingId) throw new Error("No listing ID associated with request.");
+        // If approved, listing becomes available. If rejected, it stays draft (or whatever your rejection logic implies)
+        const status = decision === RequestStatus.APPROVED ? "AVAILABLE" : "DRAFT";
         const { error } = await supabase
             .from("listings")
             .update({ status })
             .eq("id", String(request.listingId));
-        if (error) throw error;
+        if (error) {
+            console.error("[handleListingUploadReview] Update failed:", error);
+            throw error;
+        }
     },
 
     /**
@@ -204,11 +208,19 @@ export const RequestService = {
             .select()
             .single();
 
-        if (updateError || !updated) throw updateError || new Error("Update failed.");
+        if (updateError || !updated) {
+            console.error("[reviewRequest] Update failed:", updateError);
+            throw updateError || new Error("Update failed.");
+        }
 
-        const actionType = request.requestType === RequestType.CITY_CHANGE
-            ? (dto.decision === RequestStatus.APPROVED ? ActionType.CITY_CHANGE_APPROVED : ActionType.CITY_CHANGE_REJECTED)
-            : (dto.decision === RequestStatus.APPROVED ? ActionType.SIGN_UP_APPROVED : ActionType.SIGN_UP_REJECTED);
+        let actionType: ActionType;
+        if (request.requestType === RequestType.CITY_CHANGE) {
+            actionType = dto.decision === RequestStatus.APPROVED ? ActionType.CITY_CHANGE_APPROVED : ActionType.CITY_CHANGE_REJECTED;
+        } else if (request.requestType === RequestType.LISTING_UPLOAD) {
+            actionType = dto.decision === RequestStatus.APPROVED ? ActionType.LISTING_UPLOAD_APPROVED : ActionType.LISTING_UPLOAD_REJECTED;
+        } else {
+            actionType = dto.decision === RequestStatus.APPROVED ? ActionType.SIGN_UP_APPROVED : ActionType.SIGN_UP_REJECTED;
+        }
 
         await AuditService.logAction({
             actionType,

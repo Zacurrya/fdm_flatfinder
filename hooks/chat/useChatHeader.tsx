@@ -11,15 +11,14 @@ import { useChatDetails } from "./useChatDetails";
 export const useChatHeader = (details: ReturnType<typeof useChatDetails>) => {
   const {
     listingId,
-    initials,
     listingData,
     otherUser,
-    otherUserName,
     isGroupChat,
     participantCount,
   } = details;
 
   const isListingChat = !!listingId;
+  const otherUserName = `${otherUser?.firstName} ${otherUser?.lastName}`;
 
   const header = (
     <>
@@ -28,10 +27,10 @@ export const useChatHeader = (details: ReturnType<typeof useChatDetails>) => {
           <Image source={{ uri: listingData.mediaUrls[0] }} style={{ width: 40, height: 40 }} />
         ) : isGroupChat ? (
           <Text className="text-fdm-accent font-bold text-sm">{participantCount} 👥</Text>
-        ) : otherUser?.profilePicture ? (
-          <Image source={{ uri: otherUser.profilePicture }} style={{ width: 40, height: 40 }} />
+        ) : otherUser?.avatarUrl ? (
+          <Image source={{ uri: otherUser.avatarUrl }} style={{ width: 40, height: 40 }} />
         ) : (
-          <Text className="text-fdm-accent font-bold text-sm">{initials}</Text>
+          <Text className="text-fdm-accent font-bold text-sm">{otherUserName}</Text>
         )}
       </View>
 

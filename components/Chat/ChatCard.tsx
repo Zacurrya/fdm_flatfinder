@@ -1,7 +1,7 @@
 import ProfilePic from "@components/profile/ProfilePic";
 import { Ionicons } from "@expo/vector-icons";
 import { ChatPreview } from "@services/chat/types";
-import { formatRelativeDate, getInitials } from "@utils/formatters";
+import { formatRelativeDate } from "@utils/formatters";
 import { useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 
@@ -13,7 +13,6 @@ export const ChatCard = ({ chat }: ChatCardProps) => {
   const router = useRouter();
 
   const displayName = chat.displayName || "User";
-  const initials = getInitials(displayName);
 
   return (
     <TouchableOpacity
@@ -22,7 +21,6 @@ export const ChatCard = ({ chat }: ChatCardProps) => {
     >
       <ProfilePic
         avatarUrl={chat.displayPicture as string}
-        initials={initials}
         size={48}
       />
 

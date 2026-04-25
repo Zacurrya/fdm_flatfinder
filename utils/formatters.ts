@@ -1,20 +1,12 @@
 import { PropertyType, RentPeriod } from "@/types/enums";
 
 /**
- * Extracts the first two initials from a full name string, capitalised.
- * Useful for user avatars.
- * @param name The full name string (e.g., "John Doe")
- * @returns 1-2 character initials (e.g., "JD")
+ * Extracts initials from a full name or specific first/last name parts.
+ * @param firstName The user's first name or full name.
+ * @param lastName Optional last name.
  */
-export const getInitials = (name: string): string => {
-  return name
-    .trim()
-    .split(" ")
-    .filter(Boolean)
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+export const getInitials = (firstName: string, lastName: string): string => {
+  return (firstName![0]) + (lastName![0]).toUpperCase();
 };
 
 /**

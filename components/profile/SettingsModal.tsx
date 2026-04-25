@@ -1,7 +1,6 @@
 import AppTrademark from "@components/ui/AppTrademark";
 import ScreenHeader from "@components/ui/ScreenHeader";
 import { Ionicons } from "@expo/vector-icons";
-import { useOfficeSelection } from "@hooks/useOfficeSelection";
 import { useUserSettings } from "@hooks/useUserSettings";
 import React from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -13,8 +12,8 @@ type SettingsModalProps = {
 };
 
 const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
-  const { citiesByRegion } = useOfficeSelection();
   const {
+    citiesByRegion,
     selectedCity,
     selectedRegion,
     handleSelectCity,
@@ -63,8 +62,8 @@ const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
               onSelectCity={handleSelectCity}
               onSubmit={handleRequestCityChange}
               isSubmitting={isSubmittingCityChange}
-              errorMessage={cityError}
-              successMessage={cityMessage}
+              errorMessage={cityError || undefined}
+              successMessage={cityMessage || undefined}
             />
           </View>
 

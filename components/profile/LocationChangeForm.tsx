@@ -1,6 +1,6 @@
 import OfficeLocationSelector from "@components/ui/OfficeLocationSelector";
 import { Ionicons } from "@expo/vector-icons";
-import { OfficeCity, RegionCities } from "@lib/office-cities";
+import { OfficeCity, RegionCities } from "@/types/locations";
 import React from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 

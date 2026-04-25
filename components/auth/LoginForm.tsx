@@ -43,9 +43,6 @@ const LoginForm = ({
         >
           Welcome <Text className="text-fdm-accent">Back</Text>
         </Text>
-        <Text className="text-fdm-fg/50 text-sm text-center">
-          Sign in to continue finding your next flat.
-        </Text>
       </View>
 
       <View className="w-full gap-4">

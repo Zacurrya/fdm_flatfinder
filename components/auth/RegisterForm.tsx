@@ -53,7 +53,6 @@ const RegisterForm = ({
   return (
     <ScrollView
       className="flex-1 w-full max-w-sm self-center z-10"
-      contentContainerStyle={{ paddingBottom: 36 }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
@@ -69,7 +68,7 @@ const RegisterForm = ({
         </Text>
       </View>
 
-      <View className="w-full gap-4">
+      <View className="w-full gap-4" style={{ marginBottom: 36 }}>
         {/* Name fields */}
         <View className="flex-row gap-4">
           <Field
@@ -138,6 +137,8 @@ const RegisterForm = ({
         isLoading={isSubmitting}
         backgroundColour="#ccff00"
         textColour="#1b1b1b"
+        width={220}
+        style={{ alignSelf: 'center' }}
       />
 
       <TouchableOpacity className="self-center mt-6" onPress={onPressLogin} disabled={isSubmitting}>

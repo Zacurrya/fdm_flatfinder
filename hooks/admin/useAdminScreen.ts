@@ -1,6 +1,5 @@
 import { RequestStatus } from "@/types/enums";
 import { AdminRequest } from "@/types/views";
-import { useAdminDecision } from "@hooks/admin/useAdminDecision";
 import { useAudit } from "@hooks/useAudit";
 import { useRequests } from "@hooks/useRequests";
 import { useFocusEffect } from "@react-navigation/native";
@@ -9,8 +8,10 @@ import { useCallback, useState } from "react";
 import { useWindowDimensions } from "react-native";
 
 /**
- * useAdminScreen
- * Hook to manage the state and logic for the Admin Screen.
+ * Handles:
+ * - admin screen tab state
+ * - orientation
+ * - request filtering and actions
  */
 export const useAdminScreen = () => {
   const { width, height } = useWindowDimensions();
@@ -23,14 +24,10 @@ export const useAdminScreen = () => {
     isLoading: isLoadingRequests,
     error: requestsError,
     fetchRequests,
-  } = useRequests({ enabled: activeTab === "requests" });
-
-  const {
     approveRequest,
     rejectRequest,
     processingId: requestProcessingId,
-    error: decisionError
-  } = useAdminDecision();
+  } = useRequests({ enabled: activeTab === "requests" });
 
   const { auditLogs, isLoading, fetchHistory: fetchAuditHistory } = useAudit();
 
@@ -99,7 +96,6 @@ export const useAdminScreen = () => {
     isLoadingRequests,
     requestsError,
     requestProcessingId,
-    decisionError,
     auditLogs,
     isLoading,
     auditSearchEmail,

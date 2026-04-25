@@ -21,9 +21,7 @@ const ChatScreen = () => {
   const {
     isLoading: detailsLoading,
     otherUserName,
-    initials,
     currentUserName,
-    currentUserInitials,
     user,
     otherUser,
   } = details;
@@ -58,8 +56,7 @@ const ChatScreen = () => {
         item={item}
         isMe={isMe}
         senderName={isMe ? currentUserName : otherUserName}
-        senderProfilePicture={isMe ? user?.profilePicture ?? null : otherUser?.profilePicture ?? null}
-        senderInitials={isMe ? currentUserInitials : initials}
+        senderAvatarUrl={isMe ? user?.avatarUrl ?? null : otherUser?.avatarUrl ?? null}
         showDateSeparator={showDateSeparator}
         isPreviousFromSameSender={isPreviousFromSameSender}
       />

@@ -39,10 +39,10 @@ export const useRegisterForm = () => {
       case "lastName": setLastName(value); if (lastNameError) setLastNameError(""); break;
       case "email": setEmail(value); if (emailError) setEmailError(""); break;
       case "phoneNumber": setPhoneNumber(value); if (phoneNumberError) setPhoneNumberError(""); break;
-      case "password": 
-        setPassword(value); 
-        if (passwordError) setPasswordError(""); 
-        if (confirmPasswordError) setConfirmPasswordError(""); 
+      case "password":
+        setPassword(value);
+        if (passwordError) setPasswordError("");
+        if (confirmPasswordError) setConfirmPasswordError("");
         break;
       case "confirmPassword": setConfirmPassword(value); if (confirmPasswordError) setConfirmPasswordError(""); break;
     }
@@ -134,12 +134,12 @@ export const useRegisterForm = () => {
       ]);
 
       let dbConflict = false;
-      
+
       if (emailExists) {
         setEmailError("An account with this email already exists.");
         dbConflict = true;
       }
-      
+
       if (phoneExists) {
         setPhoneNumberError("An account with this phone number already exists.");
         dbConflict = true;
@@ -177,7 +177,7 @@ export const useRegisterForm = () => {
         params: data,
       });
     }
-    
+
     setIsSubmitting(false);
   };
 

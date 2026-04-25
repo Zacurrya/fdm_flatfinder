@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { OfficeCity, RegionCities } from "@lib/office-cities";
+import { OfficeCity, RegionCities } from "@/types/locations";
 import { Image } from "expo-image";
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -61,7 +61,7 @@ const CityModal = ({
                 <View className="gap-2">
                   {(selectedRegionGroup?.cities ?? []).map((city) => {
                     const isSelected = selectedCityName === city.name;
-                    const flagUrl = `https://flagsapi.com/${city.countryCode.toUpperCase()}/flat/32.png`;
+                    const flagUrl = city.countryCode ? `https://flagsapi.com/${city.countryCode.toUpperCase()}/flat/32.png` : null;
                     return (
                       <TouchableOpacity
                         key={`${activeRegion}-${city.name}`}
@@ -69,7 +69,7 @@ const CityModal = ({
                         onPress={() => onSelectCity(activeRegion, city)}
                       >
                         <View className="flex-row items-center gap-2.5">
-                          <Image source={{ uri: flagUrl }} style={{ width: 24, height: 24 }} contentFit="contain" />
+                          <Image source={{ uri: flagUrl || undefined }} style={{ width: 24, height: 24 }} contentFit="contain" />
                           <Text className={`text-sm ${isSelected ? "text-fdm-accent" : "text-fdm-fg"}`}>{city.name}</Text>
                         </View>
                       </TouchableOpacity>

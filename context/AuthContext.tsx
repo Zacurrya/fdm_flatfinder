@@ -4,7 +4,6 @@ import { AuthService } from "@services/auth/authService";
 import { loginDTO, registerDTO } from "@services/auth/types";
 import { UserService } from "@services/user/userService";
 import { Session } from "@supabase/supabase-js";
-import { logger } from "@utils/logger";
 import { createContext, useCallback, useEffect, useState } from "react";
 
 export type AuthContextType = {
@@ -27,12 +26,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const hydrateSession = useCallback(async () => {
         try {
-            const { userProfile, session } = await AuthService.getSession();
-
-            setUser(userProfile);
-            setSession(session);
+            const result = await AuthService.getSession();
+            if (result) {
+                setUser(result.userProfile);
+                setSession(result.session);
+            }
         } catch (err) {
-            logger.log("No session found: ", err);
+            console.log("No session found: ", err);
             setUser(null);
             setSession(null);
         } finally {
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     const profile = await UserService.getUserProfile(newSession.user.id);
                     setUser(profile);
                 } catch (err) {
-                    logger.log("Error updating user profile on auth change:", err);
+                    console.log("Failed to hydrate session:", err);
                 }
             } else {
                 setUser(null);
@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const profile = await UserService.getUserProfile(session.user.id);
             setUser(profile);
         } catch (err) {
-            logger.log("Error refreshing user:", err);
+            console.error("Error refreshing user:", err);
         }
     };
 
@@ -77,9 +77,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const { user, session } = await AuthService.login(dto);
             setUser(user);
             setSession(session);
-            logger.log("Login successful");
+            console.log("Login successful");
         } catch (err) {
-            logger.log("Error logging in:", err);
+            console.log("Login failed:", err);
             throw err;
         } finally {
             setIsLoading(false);
@@ -87,23 +87,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const register = async (dto: registerDTO) => {
-        await AuthService.register(dto);
+        try {
+            setIsLoading(true);
+            await AuthService.register(dto);
+            console.log("Registration successful");
+        } catch (err) {
+            console.error("Error registering:", err);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const logout = async () => {
-        await AuthService.logout();
-        setUser(null);
-        setSession(null);
-        logger.log("Logout successful");
+        try {
+            await AuthService.logout();
+            setIsLoading(true);
+            setUser(null);
+            setSession(null);
+            console.log("Logout successful");
+        } catch (err) {
+            console.error("Error logging out:", err);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const resetPassword = async (email: string) => {
         try {
             setIsLoading(true);
             await AuthService.resetPassword(email);
-            logger.log("Password reset email sent");
+            console.log("Password reset email sent");
         } catch (err) {
-            logger.log("Error resetting password:", err);
+            console.error("Error resetting password:", err);
         } finally {
             setIsLoading(false);
         }

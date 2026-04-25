@@ -2,7 +2,7 @@ import AuthButton from "@components/auth/AuthButton";
 import BackButton from "@components/ui/BackButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import OfficeLocationSelector from "@components/ui/OfficeLocationSelector";
-import { useOfficeLocations } from "@hooks/useOfficeLocations";
+import { useOfficeLocations } from "@hooks/useLocationForm";
 import { StatusBar } from "expo-status-bar";
 import {
   KeyboardAvoidingView,
@@ -18,10 +18,11 @@ const OfficeLocation = () => {
     citiesByRegion,
     selectedCity,
     selectedRegion,
-    errorMessage,
+    locationsError,
+    isLoadingLocations,
     isSubmitting,
     handleSelectCity,
-    handleCompleteSignup,
+    handleCompleteSignUp,
   } = useOfficeLocations();
 
   return (
@@ -55,13 +56,13 @@ const OfficeLocation = () => {
           selectedCity={selectedCity}
           selectedRegion={selectedRegion}
           onSelectCity={handleSelectCity}
-          disabled={isSubmitting}
-          errorMessage={errorMessage}
+          disabled={isLoadingLocations || isSubmitting}
+          errorMessage={locationsError || undefined}
         />
 
         <AuthButton
           label="Finish Sign Up"
-          onPress={handleCompleteSignup}
+          onPress={handleCompleteSignUp}
           isLoading={isSubmitting}
           backgroundColour="#ccff00"
           textColour="#1b1b1b"

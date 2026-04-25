@@ -10,7 +10,8 @@ import {
 
 export const ChatService = {
   /**
-   * Returns all chat previews for the messages screen
+   * Returns all chat previews for the messages screen.
+   * For regular users, this is based on participation.
    */
   async getChats(userId: string): Promise<ChatPreview[]> {
     // Gets all user's chat IDs
@@ -24,6 +25,22 @@ export const ChatService = {
       .map(p => p.chat_id)
       .filter((id): id is string => !!id);
 
+    return this.getChatPreviewsByIds(chatIdList);
+  },
+
+  /**
+   * Returns all city chats (for admins).
+   */
+  async getAllCityChats(): Promise<ChatPreview[]> {
+    const { cityChatIdMap } = await import("@lib/office-cities");
+    const cityChatIds = Object.values(cityChatIdMap);
+    return this.getChatPreviewsByIds(cityChatIds);
+  },
+
+  /**
+   * Internal helper to fetch previews for a list of chat IDs
+   */
+  async getChatPreviewsByIds(chatIdList: string[]): Promise<ChatPreview[]> {
     if (chatIdList.length === 0) return [];
 
     // Fetch the basic chat rows
@@ -34,8 +51,17 @@ export const ChatService = {
 
     if (chatError) throw chatError;
 
-    // For each chat, fetch the latest message details
-    return Promise.all((chatRows ?? []).map(async chat => {
+    // For each chat, fetch the latest message details and participant count
+    const previews = await Promise.all((chatRows ?? []).map(async chat => {
+      // 1. Fetch participant count
+      const { count } = await supabase
+        .from('chat_participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('chat_id', chat.id);
+
+      if ((count ?? 0) < 2) return null;
+
+      // 2. Fetch the latest message
       const { data: lastMsg } = await supabase
         .from('messages')
         .select('content, created_at, sender_id')
@@ -43,7 +69,6 @@ export const ChatService = {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-
       return {
         id: chat.id,
         displayName: chat.display_name ?? null,
@@ -52,9 +77,13 @@ export const ChatService = {
         lastMessage: lastMsg?.content ?? null,
         lastMessageAt: lastMsg?.created_at ?? null,
         lastMessengerId: lastMsg?.sender_id ?? null,
-      } satisfies ChatPreview;
+      } as ChatPreview;
     }));
+
+    // Filter out chats that were skipped (null)
+    return (previews.filter(p => p !== null) as ChatPreview[]);
   },
+
 
   /**
    * Returns the raw metadata for a single chat.
@@ -82,7 +111,7 @@ export const ChatService = {
     };
   },
 
-  async getChatPicture(chatId: string, isGroupChat: boolean, userId: string, citiesByRegion?: import("@lib/office-cities").RegionCities[]): Promise<string | null> {
+  async getChatPicture(chatId: string, isGroupChat: boolean, userId: string, citiesByRegion?: import("@/types/locations").RegionCities[]): Promise<string | null> {
     // Check if this chat is a city chat
     // citiesByRegion must be provided for city chat lookup
     if (citiesByRegion) {

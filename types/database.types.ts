@@ -17,21 +17,21 @@ export type Database = {
       audit_logs: {
         Row: {
           action_type: Database["public"]["Enums"]["action_type"]
-          id: number
+          id: string
           target_id: string
           timestamp: string
           user_id: string
         }
         Insert: {
           action_type: Database["public"]["Enums"]["action_type"]
-          id?: number
+          id?: string
           target_id: string
           timestamp?: string
           user_id: string
         }
         Update: {
           action_type?: Database["public"]["Enums"]["action_type"]
-          id?: number
+          id?: string
           target_id?: string
           timestamp?: string
           user_id?: string
@@ -57,19 +57,16 @@ export type Database = {
         Row: {
           chat_id: string
           created_at: string
-          id: string
           user_id: string
         }
         Insert: {
           chat_id?: string
           created_at?: string
-          id?: string
           user_id?: string
         }
         Update: {
           chat_id?: string
           created_at?: string
-          id?: string
           user_id?: string
         }
         Relationships: [
@@ -95,21 +92,21 @@ export type Database = {
           display_name: string | null
           id: string
           last_message_id: string | null
-          listing_id: string
+          listing_id: string | null
         }
         Insert: {
           created_at?: string
           display_name?: string | null
           id?: string
           last_message_id?: string | null
-          listing_id?: string
+          listing_id?: string | null
         }
         Update: {
           created_at?: string
           display_name?: string | null
           id?: string
           last_message_id?: string | null
-          listing_id?: string
+          listing_id?: string | null
         }
         Relationships: [
           {
@@ -436,9 +433,10 @@ export type Database = {
         | "MESSAGE_DELETED"
         | "CITY_CHANGE_APPROVED"
         | "CITY_CHANGE_DENIED"
+        | "SIGN_UP_REQUESTED"
         | "SIGN_UP_APPROVED"
         | "SIGN_UP_DENIED"
-        | "CITY_CHANGED"
+        | "CITY_CHANGE_REQUESTED"
         | "LISTING_UPLOAD_REQUESTED"
         | "LISTING_UPLOAD_APPROVED"
         | "LISTING_UPLOAD_DENIED"
@@ -594,9 +592,10 @@ export const Constants = {
         "MESSAGE_DELETED",
         "CITY_CHANGE_APPROVED",
         "CITY_CHANGE_DENIED",
+        "SIGN_UP_REQUESTED",
         "SIGN_UP_APPROVED",
         "SIGN_UP_DENIED",
-        "CITY_CHANGED",
+        "CITY_CHANGE_REQUESTED",
         "LISTING_UPLOAD_REQUESTED",
         "LISTING_UPLOAD_APPROVED",
         "LISTING_UPLOAD_DENIED",

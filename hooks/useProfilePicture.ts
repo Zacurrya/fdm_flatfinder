@@ -5,53 +5,84 @@ import { UserService } from "@services/user/userService";
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * useProfilePicture
  * Resolves and caches a user's profile picture URL.
- * Handles both UserRecord objects and raw userId strings.
- * Subscribes to realtime updates on the users table so that
- * the picture URL refreshes automatically wherever the hook is used.
- * Also exposes changeProfilePicture and deleteProfilePicture for
- * screens that need mutation capabilities (formerly useProfilePictureManager).
  */
-export const useProfilePicture = (user: UserRecord | null | undefined) => {
+export const useProfilePicture = (userId?: string | null) => {
     const { user: authUser, refreshUser } = useAuth();
-    const [profilePictureUri, setProfilePictureUri] = useState<string | null>(null);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [resolvedUser, setResolvedUser] = useState<UserRecord | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
 
-    const userId = user?.userId ?? null;
+    // Initial resolution of the user record
+    const fetchUserRecord = useCallback(async () => {
+        // Default to current auth user
+        if (!userId) {
+            setResolvedUser(authUser);
+            return;
+        }
+
+        // If null passed, we have no user
+        if (userId === null) {
+            setResolvedUser(null);
+            console.log("[useProfilePicture] No user ID passed")
+            return;
+        }
+
+        // Resolve the ID
+        if (userId) {
+            try {
+                const record = await UserService.getUserRecord(userId);
+                setResolvedUser(record);
+            } catch (e) {
+                console.error("[useProfilePicture] Failed to fetch user record:", e);
+                setResolvedUser(null);
+            }
+        }
+    }, [userId, authUser]);
+
+    useEffect(() => {
+        void fetchUserRecord();
+    }, [fetchUserRecord]);
 
     const resolveProfilePicture = useCallback(async (forceFetch = false) => {
-        if (!user) {
-            setProfilePictureUri(null);
-            setIsLoading(false);
+        let target = resolvedUser;
+
+        if (forceFetch && typeof userId === "string") {
+            try {
+                target = await UserService.getUserRecord(userId);
+            } catch (e) {
+                console.error("[useProfilePicture] Force fetch failed:", e);
+            }
+        }
+
+        if (!target) {
+            setAvatarUrl(null);
             return;
         }
 
         setIsLoading(true);
         try {
-            const record = forceFetch
-                ? await UserService.getUserRecord(user.userId)
-                : user;
-
-            const pic = await UserService.getUserProfilePicture(record);
-            setProfilePictureUri(pic);
+            const pic = await UserService.getUserProfilePicture(target);
+            setAvatarUrl(pic);
+            if (forceFetch) setResolvedUser(target);
         } catch (e) {
             console.error("[useProfilePicture] Failed to resolve profile picture:", e);
-            setProfilePictureUri(null);
+            setAvatarUrl(null);
         } finally {
             setIsLoading(false);
         }
-    }, [user]);
+    }, [resolvedUser, userId]);
 
     useEffect(() => {
-        void resolveProfilePicture();
-    }, [resolveProfilePicture]);
+        if (resolvedUser) {
+            void resolveProfilePicture();
+        } else {
+            setAvatarUrl(null);
+        }
+    }, [resolvedUser, resolveProfilePicture]);
 
-    const initials = user
-        ? (user.firstName[0] || "") + (user.lastName[0] || "")
-        : "";
-    const hasProfilePicture = !!(user?.profilePicture);
+    const hasProfilePicture = !!(resolvedUser?.avatarUrl);
 
     const { pickImages } = useUploadPhotos({ bucket: "profile-pictures", multiple: false, squareCrop: true, quality: 0.5 });
 
@@ -77,7 +108,7 @@ export const useProfilePicture = (user: UserRecord | null | undefined) => {
                 await refreshUser();
             }
 
-            // Force fetch to bypass stale closure of userOrId
+            // Force fetch to bypass stale closure
             await resolveProfilePicture(true);
 
             return { success: true };
@@ -96,15 +127,15 @@ export const useProfilePicture = (user: UserRecord | null | undefined) => {
 
         setIsUpdating(true);
         try {
-            await UserService.removeProfilePicture(userId);
+            await UserService.deleteProfilePicture(userId);
             // If updating current user, refresh the auth context
             if (userId === authUser?.userId) {
                 await refreshUser();
             }
 
-            // Force fetch to bypass stale closure of userOrId
+            // Force fetch to bypass stale closure
             await resolveProfilePicture(true);
-            
+
             return { success: true };
         } catch (e: any) {
             return { success: false, error: e.message };
@@ -115,9 +146,8 @@ export const useProfilePicture = (user: UserRecord | null | undefined) => {
 
     return {
         // Picture state
-        profilePictureUri,
+        avatarUrl,
         isLoading,
-        initials: initials.toUpperCase(),
         hasProfilePicture,
         refresh: resolveProfilePicture,
         // Mutation state & actions

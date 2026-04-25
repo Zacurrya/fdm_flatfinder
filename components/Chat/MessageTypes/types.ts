@@ -7,7 +7,6 @@ export type MessageProps = {
   showSenderName?: boolean;
   createdAt: string;
   showDateSeparator?: boolean;
-  avatarProfilePicture?: string | null;
-  avatarInitials?: string;
+  avatarUrl?: string | null;
   avatarVisible?: boolean;
 };

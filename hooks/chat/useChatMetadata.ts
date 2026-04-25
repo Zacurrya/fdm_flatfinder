@@ -23,15 +23,15 @@ export const useChatMetadata = (chatId: string, currentUserId?: string) => {
       setIsLoading(true);
       try {
         const chat = await ChatService.getChatMetadata(chatId);
-        setListingId(chat.listing_id);
-        setChatName(chat.display_name);
-        const participants = chat.participants || [];
+        setListingId(chat.listingId);
+        setChatName(chat.displayName);
+        const participants = chat.participantIds || [];
         setParticipantCount(participants.length);
 
         if (participants.length <= 2) {
-          const other = participants.find((p: any) => p.user_id !== currentUserId);
+          const other = participants.find((id) => id !== currentUserId);
           if (other) {
-            setOtherUserId(other.user_id);
+            setOtherUserId(other);
           }
         } else {
           setOtherUserId(null);

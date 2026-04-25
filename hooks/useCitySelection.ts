@@ -1,14 +1,18 @@
-import { OfficeCity, RegionCities } from "@lib/office-cities";
+import { OfficeCity, RegionCities } from "@/types/locations";
 import { LocationService } from "@services/locations/locationService";
 import { useEffect, useState } from "react";
 
-export const useOfficeSelection = (initialCity: OfficeCity | null = null, initialRegion: string = "") => {
+/**
+ * Consolidates city fetching and selection state for forms and settings.
+ */
+export const useCitySelection = () => {
   const [citiesByRegion, setCitiesByRegion] = useState<RegionCities[]>([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [locationsError, setLocationsError] = useState<string | null>(null);
 
-  const [selectedCity, setSelectedCity] = useState<OfficeCity | null>(initialCity);
-  const [selectedRegion, setSelectedRegion] = useState(initialRegion);
+  const [selectedCity, setSelectedCity] = useState<OfficeCity | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [cityMessage, setCityMessage] = useState("");
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -21,22 +25,39 @@ export const useOfficeSelection = (initialCity: OfficeCity | null = null, initia
         setIsLoadingLocations(false);
       }
     };
+
     void fetchLocations();
   }, []);
 
-  const handleSelectCity = (region: string, city: OfficeCity) => {
+  const handleSelectCity = (region: string, city: OfficeCity | null) => {
     setSelectedRegion(region);
     setSelectedCity(city);
+    setLocationsError(null);
+    setCityMessage("");
+  };
+
+  const resetSelection = () => {
+    setSelectedCity(null);
+    setSelectedRegion("");
+    setLocationsError(null);
+    setCityMessage("");
   };
 
   return {
+    // Data
     citiesByRegion,
     isLoadingLocations,
+
+    // Error / Messaging State
     locationsError,
+    setLocationsError,
+    cityMessage,
+    setCityMessage,
+
+    // Selection State
     selectedCity,
     selectedRegion,
     handleSelectCity,
-    setSelectedCity,
-    setSelectedRegion,
+    resetSelection,
   };
 };

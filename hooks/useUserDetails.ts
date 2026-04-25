@@ -13,7 +13,7 @@ export const useUserDetails = (userId: string | null | undefined) => {
   const [userDetails, setUserDetails] = useState<User | null>(userCache.get(userId ?? "") ?? null);
   const [isLoading, setIsLoading] = useState(!userCache.has(userId ?? ""));
 
-  const { profilePictureUri, initials, hasProfilePicture, isLoading: avatarLoading } = useProfilePicture(userDetails);
+  const { avatarUrl, hasProfilePicture, isLoading: avatarLoading } = useProfilePicture(userId);
 
   useEffect(() => {
     if (!userId) {
@@ -79,8 +79,7 @@ export const useUserDetails = (userId: string | null | undefined) => {
 
   return {
     userDetails,
-    profilePictureUri,
-    initials,
+    avatarUrl,
     hasProfilePicture,
     isLoading: isLoading || avatarLoading,
   };

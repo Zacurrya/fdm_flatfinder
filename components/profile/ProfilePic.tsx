@@ -1,11 +1,10 @@
+import FDMLoader from "@components/ui/FDMLoader";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import FDMLoader from "@components/ui/FDMLoader";
-import { Text, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 
 type ProfilePicProps = {
   avatarUrl: string | null;
-  initials: string;
   size?: number;
   onPress?: () => void;
   isUploading?: boolean;
@@ -14,7 +13,6 @@ type ProfilePicProps = {
 
 const ProfilePic = ({
   avatarUrl,
-  initials,
   size = 64,
   onPress,
   isUploading = false,
@@ -39,15 +37,9 @@ const ProfilePic = ({
           transition={200}
         />
       ) : (
-        <Text
-          style={{ fontSize: size * 0.4 }}
-          className="text-fdm-accent font-bold"
-        >
-          {initials}
-        </Text>
+        <Ionicons name="person" size={size} color="#ffffff60" />
       )}
 
-      {/* Uploading Overlay */}
       {isUploading && (
         <View className="absolute inset-0 bg-black/40 items-center justify-center">
           <FDMLoader fullScreen={false} />

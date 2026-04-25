@@ -1,6 +1,5 @@
 import { useUploadPhotos } from "@hooks/useUploadPhotos";
 import * as validateUtil from "@utils/inputValidation";
-import { logger } from "@utils/logger";
 import { useCallback, useState } from "react";
 
 /**
@@ -37,7 +36,7 @@ export const useChatInput = (sendFn: (content: string) => Promise<void>) => {
           const uploadedUrl = await uploadOne(capturedAttachment.uri);
           finalContent = content ? `${uploadedUrl} ${content}` : uploadedUrl;
         } finally {
-          logger.log("Attachment upload completed");
+          console.log("Attachment upload completed");
         }
       }
 
@@ -47,7 +46,7 @@ export const useChatInput = (sendFn: (content: string) => Promise<void>) => {
       setInputText(content);
     } finally {
       setIsSending(false);
-      logger.log("Message sent successfully");
+      console.log("Message sent successfully");
     }
   }, [inputText, attachment, isSending, sendFn, uploadOne]);
 

@@ -6,7 +6,7 @@ import { ChatService } from "@services/chat/chatService";
 import { ListingService } from "@services/listings/listingsService";
 import { getRentLabel } from "@utils/currency";
 import { parsePhotoUrls } from "@utils/formatters";
-import { logger } from "@utils/logger";
+
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
@@ -78,7 +78,7 @@ export const useListing = (id?: string | number, initialData?: Listing | null) =
         userId: user!.userId,
       });
       router.back();
-      logger.log("Listing deleted successfully, ID:", listing.id);
+      console.log("Listing deleted successfully, ID:", listing.id);
     } catch (e) {
       console.error("Failed to delete", e);
       Alert.alert("Error", "Failed to delete listing.");

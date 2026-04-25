@@ -21,8 +21,20 @@ export const useChats = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await ChatService.getChats(user.userId);
-      setChats(data);
+      // Fetch user's direct chats
+      const userChats = await ChatService.getChats(user.userId);
+
+      // Admin can see all city chats
+      let allChats = [...userChats];
+      if (user.role === "ADMIN") {
+        const cityChats = await ChatService.getAllCityChats();
+        // Merge and remove duplicates (some city chats might already be in userChats)
+        const userChatIds = new Set(userChats.map(c => c.id));
+        const uniqueCityChats = cityChats.filter(c => !userChatIds.has(c.id));
+        allChats = [...allChats, ...uniqueCityChats];
+      }
+
+      setChats(allChats);
     } catch (err: any) {
       setError(err.message || "Failed to load chats.");
     } finally {

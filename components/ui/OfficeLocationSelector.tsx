@@ -1,6 +1,6 @@
 import CityModal from "@components/auth/CityModal";
 import { Ionicons } from "@expo/vector-icons";
-import { OfficeCity, RegionCities } from "@lib/office-cities";
+import { OfficeCity, RegionCities } from "@/types/locations";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
@@ -29,7 +29,7 @@ const OfficeLocationSelector = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   // Country flag image URL
-  const selectedCityFlagUrl = selectedCity
+  const selectedCityFlagUrl = selectedCity?.countryCode
     ? `https://flagsapi.com/${selectedCity.countryCode.toUpperCase()}/flat/32.png`
     : null;
 

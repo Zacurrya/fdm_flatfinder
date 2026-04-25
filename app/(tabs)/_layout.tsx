@@ -53,14 +53,14 @@ const TabsLayout = () => {
         }}
       />
       <Tabs.Screen
-        name="add_listing"
+        name="add-listing"
         options={{
           tabBarLabel: "Add",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle-outline" size={tabIconSize(size)} color={color} />
           ),
           // Admins don't upload listings
-          href: isAdmin ? null : "/(tabs)/add_listing",
+          href: isAdmin ? null : "/(tabs)/add-listing",
         }}
       />
 

@@ -6,8 +6,7 @@ type MessageProps = {
   item: MessageRecord;
   isMe: boolean;
   senderName: string;
-  senderProfilePicture: string | null;
-  senderInitials: string;
+  senderAvatarUrl?: string | null;
   showDateSeparator: boolean;
   isPreviousFromSameSender: boolean;
 };
@@ -16,8 +15,7 @@ export const Message = ({
   item,
   isMe,
   senderName,
-  senderProfilePicture,
-  senderInitials,
+  senderAvatarUrl,
   showDateSeparator,
   isPreviousFromSameSender,
 }: MessageProps) => {
@@ -30,8 +28,7 @@ export const Message = ({
       showSenderName={false}
       createdAt={item.createdAt}
       showDateSeparator={showDateSeparator}
-      avatarProfilePicture={senderProfilePicture}
-      avatarInitials={senderInitials}
+      avatarUrl={senderAvatarUrl}
       avatarVisible={!isMe && !isPreviousFromSameSender}
     />
   );

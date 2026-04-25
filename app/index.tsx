@@ -45,6 +45,7 @@ const Index = () => {
           onPress={() => router.push("/(auth)/login")}
           backgroundColour="#ccff00"
           textColour="#1b1b1b"
+          width={250}
         />
 
         <AuthButton
@@ -53,6 +54,7 @@ const Index = () => {
           backgroundColour="transparent"
           borderColour="#ccff00"
           textColour="#ccff00"
+          width={250}
         />
       </View>
     </View>
