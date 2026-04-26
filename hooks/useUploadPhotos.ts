@@ -1,5 +1,4 @@
-import { supabase } from "@lib/supabase";
-import { File } from "expo-file-system";
+import { StorageService } from "@services/storage/storageService";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { Alert } from "react-native";
@@ -22,7 +21,7 @@ export type UploadPhotosOptions = {
  *
  * Reusable hook that handles:
  *  - Picking one or multiple images from the device library
- *  - Uploading each image to a specified Supabase storage bucket
+ *  - Uploading each image to a specified Supabase storage bucket via StorageService
  *  - Returning the public URL(s) of the uploaded file(s)
  *
  * Used by: useListingUpload, useChatInput, useProfilePicture
@@ -37,25 +36,7 @@ export const useUploadPhotos = (options: UploadPhotosOptions) => {
      * @returns The public URL of the uploaded file.
      */
     const uploadOne = async (uri: string): Promise<string> => {
-        const ext = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-        const safeExt = /^[a-z0-9]+$/.test(ext) ? ext : "jpg";
-        const contentType = safeExt === "heic" ? "image/heic" : safeExt === "png" ? "image/png" : "image/jpeg";
-        const uniquePart = `${Date.now()}_${Math.random().toString(36).substring(7)}`;
-        const fileName = pathPrefix
-            ? `${pathPrefix}/${uniquePart}.${safeExt}`
-            : `${uniquePart}.${safeExt}`;
-
-        const imageFile = new File(uri);
-        const arrayBuffer = await imageFile.arrayBuffer();
-
-        const { error } = await supabase.storage
-            .from(bucket)
-            .upload(fileName, arrayBuffer, { contentType, upsert: false });
-
-        if (error) throw error;
-
-        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-        return `${supabaseUrl}/storage/v1/object/public/${bucket}/${fileName}`;
+        return StorageService.uploadFile(bucket, uri, { pathPrefix });
     };
 
     /**

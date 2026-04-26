@@ -1,11 +1,11 @@
-import { useAuth } from "@hooks/useAuth";
-import * as validateUtil from "@utils/inputValidation";
+import { useAuth } from "@hooks/general/useAuth";
+import * as validateUtil from "@utils/validation";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
 export const useLoginForm = () => {
   const router = useRouter();
-  const { login, isLoading, resetPassword } = useAuth();
+  const { login, resetPassword } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,7 +15,7 @@ export const useLoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
-  const isBusy = isSubmitting || isResettingPassword || isLoading;
+  const isBusy = isSubmitting || isResettingPassword;
 
   const clearGlobalError = () => {
     if (errorMessage) setErrorMessage("");
@@ -56,10 +56,10 @@ export const useLoginForm = () => {
     return valid;
   };
 
-  const handleLogin = async (): Promise<boolean> => {
+  const handleLogin = async () => {
     const trimmedEmail = email.trim();
 
-    if (!validate(trimmedEmail)) return false;
+    if (!validate(trimmedEmail)) return;
 
     setIsSubmitting(true);
     setErrorMessage("");
@@ -68,13 +68,10 @@ export const useLoginForm = () => {
       await login({ email: trimmedEmail, password });
     } catch {
       setErrorMessage('Incorrect username or password. Please try again.');
-      return false;
+      setPassword("");
     } finally {
       setIsSubmitting(false);
     }
-
-    // Navigation is handled by RootNavigator in _layout.tsx
-    return true;
   };
 
   const handleResetPassword = async (): Promise<void> => {
@@ -114,6 +111,6 @@ export const useLoginForm = () => {
     handlePasswordChange,
     handleLogin,
     handleResetPassword,
-    handleGoToRegister: () => router.push("/(auth)/register"),
+    handleGoToRegister: () => router.push("/register"),
   };
 };

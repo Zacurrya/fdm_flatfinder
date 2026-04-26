@@ -1,23 +1,15 @@
-import { Listing } from "@/types/views";
-
-export type ListingFilterInput = {
-    searchQuery: string;
-    minPrice: string;
-    maxPrice: string;
-    bedrooms: number | null;
-    bathrooms: number | null;
-    sourceFilter: string | null;
-};
+import { ListingRecord } from "@/types/records";
+import { FilterListingsDTO } from "@services/listings/types";
 
 // Converts listing price to monthly
-function toMonthlyPrice(listing: Listing): number {
+function toMonthlyPrice(listing: ListingRecord): number {
     if (listing.rentPeriod === "WEEKLY") { return (listing.price * 52) / 12; }
     else if (listing.rentPeriod === "BIWEEKLY") { return (listing.price * 26) / 12; }
     else { return listing.price; }
 }
 
 // Reads the filters and returns a filtered listing array
-export const filterListings = (listings: Listing[], filters: ListingFilterInput): Listing[] => {
+export const filterListings = (listings: ListingRecord[], filters: FilterListingsDTO & { savedListingIds?: string[] }): ListingRecord[] => {
     const {
         searchQuery,
         minPrice,
@@ -25,9 +17,15 @@ export const filterListings = (listings: Listing[], filters: ListingFilterInput)
         bedrooms,
         bathrooms,
         sourceFilter,
+        onlySaved,
+        savedListingIds = [],
     } = filters;
 
     return listings.filter((listing) => {
+        if (onlySaved && !savedListingIds.includes(listing.id)) {
+            return false;
+        }
+
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
             const address = listing.address || "";
@@ -40,10 +38,18 @@ export const filterListings = (listings: Listing[], filters: ListingFilterInput)
         }
 
         const monthlyPrice = toMonthlyPrice(listing);
-        if (minPrice && monthlyPrice < parseInt(minPrice, 10)) { return false; }
-        if (maxPrice && monthlyPrice > parseInt(maxPrice, 10)) { return false; }
-        if (bedrooms && listing.bedrooms && listing.bedrooms < bedrooms) { return false; }
-        if (bathrooms && listing.bathrooms && listing.bathrooms < bathrooms) { return false; }
+        if (minPrice && monthlyPrice < parseInt(String(minPrice), 10)) { return false; }
+        if (maxPrice && monthlyPrice > parseInt(String(maxPrice), 10)) { return false; }
+        if (typeof bedrooms === 'number') {
+            if (typeof listing.bedrooms !== 'number' || listing.bedrooms !== bedrooms) {
+                return false;
+            }
+        }
+        if (typeof bathrooms === 'number') {
+            if (typeof listing.bathrooms !== 'number' || listing.bathrooms !== bathrooms) {
+                return false;
+            }
+        }
         if (sourceFilter && listing.source !== sourceFilter) { return false; }
 
         return true;

@@ -3,7 +3,7 @@ import { RequestStatus, RequestType } from "@/types/enums";
 export interface CreateRequestDTO {
   userId: string;
   requestType: RequestType;
-  listingId?: number | null;
+  listingId?: string | null;
   oldCity?: string | null;
   newCity?: string | null;
 }

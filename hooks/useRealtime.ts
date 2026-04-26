@@ -1,4 +1,5 @@
 import { supabase } from "@lib/supabase";
+import { useIsFocused } from "@react-navigation/native";
 import { useEffect, useRef } from "react";
 
 /**
@@ -23,6 +24,8 @@ export const useRealtime = <T>(
     enabled?: boolean
   } = {}
 ) => {
+  const isFocused = useIsFocused();
+
   // Use a ref for the callback to prevent unnecessary subscription cycles if the handler is not memoized
   const onInsertRef = useRef(options.onInsert);
   const onUpdateRef = useRef(options.onUpdate);
@@ -38,14 +41,15 @@ export const useRealtime = <T>(
   const filterValue = options.filter?.value;
 
   useEffect(() => {
-    if (!options.enabled) return;
+    // Only subscribe if enabled AND the screen is focused
+    if (!options.enabled || !isFocused) return;
 
     // If a filter is specified but the value is missing, wait (guard against undefined IDs)
     if (filterColumn && (filterValue == null || filterValue === "undefined")) return;
 
     const filterString = filterColumn ? `${filterColumn}=eq.${filterValue}` : "";
     const channelName = `${tableName}:${filterColumn ?? "all"}:${filterValue ?? "global"}:${instanceIdRef.current}`;
-    
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -98,7 +102,7 @@ export const useRealtime = <T>(
       } else {
         console.warn(`Trying to unsubscribe from non-existent channel: ${tableName}`, { filter: filterString });
       }
-      
+
     };
-  }, [tableName, filterColumn, filterValue, options.enabled]);
+  }, [tableName, filterColumn, filterValue, options.enabled, isFocused]);
 }

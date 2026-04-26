@@ -1,6 +1,7 @@
 import ProfilePic from "@components/profile/ProfilePic";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
+import { useProfilePicture } from "@hooks/useProfilePicture";
 import React from "react";
 import { Modal, Pressable, Text, TouchableOpacity, View } from "react-native";
 
@@ -17,6 +18,7 @@ type ProfilePicModalProps = {
  */
 const ProfilePicModal = ({ visible, onClose, onUpdate, onRemove }: ProfilePicModalProps) => {
   const { user } = useAuth();
+  const { avatarUrl, isLoading } = useProfilePicture(user?.userId);
 
   const handleUpdate = async () => {
     const result = await onUpdate();
@@ -47,8 +49,9 @@ const ProfilePicModal = ({ visible, onClose, onUpdate, onRemove }: ProfilePicMod
 
           <View className="p-1 rounded-full border-2 border-fdm-accent/30">
             <ProfilePic
-              avatarUrl={user?.avatarUrl ?? null}
+              avatarUrl={avatarUrl}
               size={120}
+              isUploading={isLoading}
             />
           </View>
 

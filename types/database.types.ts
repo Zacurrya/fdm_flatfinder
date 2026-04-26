@@ -125,76 +125,58 @@ export type Database = {
           },
         ]
       }
-      listing_locations: {
-        Row: {
-          address: string
-          city: string
-          created_at: string
-          id: string
-        }
-        Insert: {
-          address: string
-          city: string
-          created_at?: string
-          id?: string
-        }
-        Update: {
-          address?: string
-          city?: string
-          created_at?: string
-          id?: string
-        }
-        Relationships: []
-      }
       listings: {
         Row: {
+          address: string
           bathrooms: number
           bedrooms: number
           created_at: string
-          description: string | null
+          description: string
           id: string
-          is_approved: boolean
           location_id: string
           media_urls: string[]
           owner_id: string
           price: number
-          rent_period: Database["public"]["Enums"]["rent_period"] | null
+          property_type: Database["public"]["Enums"]["property_type"] | null
+          rent_period: Database["public"]["Enums"]["rent_period"]
           source: string
-          status: string
+          status: Database["public"]["Enums"]["listing_status"]
           title: string
           updated_at: string
         }
         Insert: {
+          address: string
           bathrooms: number
           bedrooms: number
           created_at?: string
-          description?: string | null
+          description: string
           id?: string
-          is_approved?: boolean
           location_id?: string
           media_urls: string[]
           owner_id: string
           price: number
-          rent_period?: Database["public"]["Enums"]["rent_period"] | null
+          property_type?: Database["public"]["Enums"]["property_type"] | null
+          rent_period: Database["public"]["Enums"]["rent_period"]
           source?: string
-          status?: string
+          status?: Database["public"]["Enums"]["listing_status"]
           title: string
           updated_at?: string
         }
         Update: {
+          address?: string
           bathrooms?: number
           bedrooms?: number
           created_at?: string
-          description?: string | null
+          description?: string
           id?: string
-          is_approved?: boolean
           location_id?: string
           media_urls?: string[]
           owner_id?: string
           price?: number
-          rent_period?: Database["public"]["Enums"]["rent_period"] | null
+          property_type?: Database["public"]["Enums"]["property_type"] | null
+          rent_period?: Database["public"]["Enums"]["rent_period"]
           source?: string
-          status?: string
+          status?: Database["public"]["Enums"]["listing_status"]
           title?: string
           updated_at?: string
         }
@@ -203,13 +185,14 @@ export type Database = {
             foreignKeyName: "listings_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
-            referencedRelation: "listing_locations"
+            referencedRelation: "locations"
             referencedColumns: ["id"]
           },
         ]
       }
       locations: {
         Row: {
+          chat_id: string | null
           country_code: string
           created_at: string | null
           id: string
@@ -217,6 +200,7 @@ export type Database = {
           region: string
         }
         Insert: {
+          chat_id?: string | null
           country_code: string
           created_at?: string | null
           id?: string
@@ -224,13 +208,22 @@ export type Database = {
           region: string
         }
         Update: {
+          chat_id?: string | null
           country_code?: string
           created_at?: string | null
           id?: string
           name?: string
           region?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "locations_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -275,11 +268,11 @@ export type Database = {
         Row: {
           created_at: string
           id: number
-          listing_id: number | null
+          listing_id: string | null
           new_city: string | null
           old_city: string | null
           request_type: Database["public"]["Enums"]["request_type"]
-          reviewed_At: string | null
+          reviewed_at: string | null
           reviewed_by: string | null
           status: Database["public"]["Enums"]["request_status"]
           user_id: string
@@ -287,11 +280,11 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: number
-          listing_id?: number | null
+          listing_id?: string | null
           new_city?: string | null
           old_city?: string | null
           request_type: Database["public"]["Enums"]["request_type"]
-          reviewed_At?: string | null
+          reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           user_id: string
@@ -299,11 +292,11 @@ export type Database = {
         Update: {
           created_at?: string
           id?: number
-          listing_id?: number | null
+          listing_id?: string | null
           new_city?: string | null
           old_city?: string | null
           request_type?: Database["public"]["Enums"]["request_type"]
-          reviewed_At?: string | null
+          reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           user_id?: string
@@ -416,7 +409,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_office_location_fkey"
+            columns: ["office_location"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

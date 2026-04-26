@@ -1,70 +1,42 @@
 import ApprovalGuard from "@components/auth/ApprovalGuard";
+import ListingList from "@components/listing/ListingList";
 import FilterSidebar from "@components/search/FilterSidebar";
 import SearchBar from "@components/search/SearchBar";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
-import FDMLoader from "@components/ui/FDMLoader";
-import ListingCard from "@components/ui/ListingCard";
-import { Ionicons } from "@expo/vector-icons";
+import ScreenHeader from "@components/ui/ScreenHeader";
 import { useListings } from "@hooks/listings/useListings";
-import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { Animated, Modal, ScrollView, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { useState } from "react";
+import { Modal, Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 
 const SearchScreen = () => {
-  const router = useRouter();
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
+  const [showFilters, setShowFilters] = useState(false);
+
   // Props from useListings hook
   const {
-    listings,
-    favIds,
+    allListings,
+    savedListingIds,
     isLoading,
     toggleFavourite,
     filters,
-    setMinPrice,
-    setMaxPrice,
-    setBedrooms,
-    setBathrooms,
-    setSourceFilter,
-    setSearchQuery,
+    updateFilter,
     clearAllFilters,
   } = useListings();
 
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const slideAnim = useRef(new Animated.Value(width)).current;
-
-  // -- Sidebar Animation Logic --
-  useEffect(() => {
-    if (showMobileSidebar) {
-      setModalVisible(true);
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: width,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => setModalVisible(false));
-    }
-  }, [showMobileSidebar, width, slideAnim]);
-
   const sidebarProps = {
     ...filters,
-    setMinPrice,
-    setMaxPrice,
-    setBedrooms,
-    setBathrooms,
-    setSourceFilter,
+    setMinPrice: (val: string) => updateFilter("minPrice", val),
+    setMaxPrice: (val: string) => updateFilter("maxPrice", val),
+    setBedrooms: (val: number | null) => updateFilter("bedrooms", val),
+    setBathrooms: (val: number | null) => updateFilter("bathrooms", val),
+    setSourceFilter: (val: string | null) => updateFilter("sourceFilter", val),
     onClearAll: clearAllFilters,
   };
 
-  const renderSidebar = (onClose?: () => void) => (
-    <View className={`${isLandscape ? 'w-80' : 'w-full'} bg-fdm-bg border-l border-[#ffffff10] h-full shadow-2xl`}>
+  const renderFilterContent = (onClose?: () => void) => (
+    <View className={`${isLandscape ? 'w-80' : 'w-full'} bg-fdm-bg h-full`}>
       <FilterSidebar
         {...sidebarProps}
         onClose={onClose}
@@ -78,80 +50,56 @@ const SearchScreen = () => {
         <BackgroundCircle y={0} x="80%" color="#CCFF001A" opacity={0.5} />
         <BackgroundCircle y="90%" x={-100} size={400} color="#CCFF00" opacity={0.05} />
         <BackgroundCircle y={400} x="90%" size={600} color="#CCFF00" opacity={0.03} />
-        {isLoading && <FDMLoader />}
         <View className="flex-1 flex-row">
           {/* Landscape Sidebar */}
-          {isLandscape && renderSidebar()}
+          {isLandscape && renderFilterContent()}
 
           {/* Main Content */}
           <View className="flex-1">
             {/* Header */}
-            <View className={`px-6 py-4 border-b border-fdm-fg/10 ${!isLandscape ? 'pt-12' : 'pt-8'}`}>
+            <ScreenHeader title="Search" highlightedTitle="Properties" />
+            <View className="px-6 border-b border-fdm-fg/10">
               <SearchBar
-                value={filters.searchQuery}
-                onChangeText={setSearchQuery}
+                value={filters.searchQuery || ""}
+                onChangeText={(val) => updateFilter("searchQuery", val)}
                 showFilterButton={!isLandscape}
-                onPressFilter={() => setShowMobileSidebar(true)}
+                onPressFilter={() => setShowFilters(true)}
               />
             </View>
 
             {/* Results list */}
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
-              {listings.length === 0 && !isLoading ? (
-                <View className="items-center justify-center mt-20">
-                  <Ionicons name="search-outline" size={64} color="#ffffff20" />
-                  <Text className="text-fdm-fg/50 text-lg mt-4 font-medium text-center">No flats found matching your search</Text>
-                  <TouchableOpacity
-                    onPress={clearAllFilters}
-                    className="mt-6 px-6 py-3 bg-fdm-fg/5 rounded-xl border border-fdm-fg/10"
-                  >
-                    <Text className="text-fdm-accent font-bold">Clear Filters</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View style={{ flexDirection: isLandscape ? 'row' : 'column', flexWrap: 'wrap', marginHorizontal: -8 }}>
-                  {listings.map(listing => (
-                    <View key={listing.id} style={{ width: isLandscape ? '50%' : '100%', padding: 8 }}>
-                      <ListingCard
-                        listing={listing}
-                        isFavourite={favIds.includes(listing.id)}
-                        onToggleFavourite={() => toggleFavourite(listing.id)}
-                        onPress={() => router.push(`/listing/${listing.id}`)}
-                      />
-                    </View>
-                  ))}
-                </View>
-              )}
+              <ListingList
+                listings={allListings}
+                isLoading={isLoading}
+                savedListingIds={savedListingIds}
+                toggleFavourite={toggleFavourite}
+                onClearFilters={clearAllFilters}
+                filters={filters}
+              />
             </ScrollView>
           </View>
         </View>
 
-        {/* Mobile Right Sidebar Modal */}
+        {/* Floating Filter Drawer */}
         {!isLandscape && (
           <Modal
-            visible={modalVisible}
+            visible={showFilters}
             transparent={true}
-            animationType="none"
-            onRequestClose={() => setShowMobileSidebar(false)}
+            animationType="fade"
+            onRequestClose={() => setShowFilters(false)}
           >
-            <View className="flex-1 flex-row">
-              {/* Backdrop */}
-              <TouchableOpacity
-                activeOpacity={1}
-                className="flex-1 bg-black/60"
-                onPress={() => setShowMobileSidebar(false)}
-              />
-              {/* Sidebar Content */}
-              <Animated.View
-                style={{
-                  width: width * 0.85,
-                  height: '100%',
-                  transform: [{ translateX: slideAnim }]
-                }}
+            <Pressable
+              className="flex-1 bg-transparent flex-row justify-end"
+              onPress={() => setShowFilters(false)}
+            >
+              <Pressable
+                className="bg-fdm-bg w-[85%] h-full border-l border-white/10 shadow-2xl rounded-l-2xl"
+                onPress={(e) => e.stopPropagation()}
               >
-                {renderSidebar(() => setShowMobileSidebar(false))}
-              </Animated.View>
-            </View>
+                {renderFilterContent(() => setShowFilters(false))}
+              </Pressable>
+            </Pressable>
           </Modal>
         )}
       </View>

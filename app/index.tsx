@@ -1,6 +1,6 @@
 import AuthButton from "@components/auth/AuthButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -50,7 +50,7 @@ const Index = () => {
 
         <AuthButton
           label="Sign Up"
-          onPress={() => router.push("/(auth)/register")}
+          onPress={() => router.push("/(auth)/(register)/register")}
           backgroundColour="transparent"
           borderColour="#ccff00"
           textColour="#ccff00"

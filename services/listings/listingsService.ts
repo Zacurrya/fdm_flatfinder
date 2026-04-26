@@ -1,14 +1,12 @@
-import { RequestType } from "@/types/enums";
-import { Listing } from "@/types/views";
+import { ActionType, RequestType } from "@/types/enums";
+import { ListingRecord } from "@/types/records";
 import { supabase } from "@lib/supabase";
+import { AuditService } from "@services/audit/auditService";
 import { RequestService } from "@services/requests/requestService";
-import { File as ExpoFile } from 'expo-file-system';
+import { StorageService } from "@services/storage/storageService";
 import { CreateListingDTO, FilterListingsDTO } from "./types";
 
-const mapListing = (data: any): Listing => {
-  const location = Array.isArray(data.listing_locations)
-    ? data.listing_locations[0]
-    : data.listing_locations;
+const mapListing = (data: any): ListingRecord => {
 
   return {
     id: String(data.id),
@@ -26,8 +24,8 @@ const mapListing = (data: any): Listing => {
     status: data.status,
     createdAt: data.created_at,
     updatedAt: data.updated_at || data.created_at,
-    city: location?.city,
-    address: location?.address,
+    city: data.locations?.name,
+    address: data.address,
   };
 };
 
@@ -35,14 +33,14 @@ export const ListingService = {
   /**
    * @returns All approved listings
    */
-  async fetchListings(city?: string): Promise<Listing[]> {
+  async fetchListings(locationId?: string): Promise<ListingRecord[]> {
     let query = supabase
       .from("listings")
-      .select("*, listing_locations!inner(*)")
-      .eq("status", "APPROVED");
+      .select("*, locations!inner(*)")
+      .eq("status", "AVAILABLE");
 
-    if (city) {
-      query = query.eq("listing_locations.city", city);
+    if (locationId) {
+      query = query.eq("location_id", locationId);
     }
 
     const { data, error } = await query.order("created_at", { ascending: false });
@@ -52,33 +50,58 @@ export const ListingService = {
   },
 
   /**
-  * @returns Filtered listings
+   * @returns Full records for all listings favorited by a user
+   * Used for the home screen
    */
-  async fetchFilteredListings(dto: FilterListingsDTO): Promise<Listing[]> {
-    let query = supabase
+  async fetchSavedListings(userId: string): Promise<ListingRecord[]> {
+    const { data: favs, error: favError } = await supabase
+      .from("user_favourites")
+      .select("listing_id")
+      .eq("user_id", userId);
+
+    if (favError) throw favError;
+    if (!favs || favs.length === 0) return [];
+
+    const listingIds = favs.map(f => f.listing_id);
+
+    const { data, error } = await supabase
       .from("listings")
-      .select("*, listing_locations(*)")
-      .eq("status", "APPROVED");
-
-    if (dto.bedrooms) query = query.eq("bedrooms", dto.bedrooms);
-    if (dto.bathrooms) query = query.eq("bathrooms", dto.bathrooms);
-    if (dto.minPrice) query = query.gte("price", dto.minPrice);
-    if (dto.maxPrice) query = query.lte("price", dto.maxPrice);
-    if (dto.sources && dto.sources.length > 0) query = query.in("source", dto.sources);
-
-    const { data, error } = await query.order("created_at", { ascending: false });
+      .select("*, locations(*)")
+      .in("id", listingIds)
+      .eq("status", "AVAILABLE")
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     return (data || []).map(mapListing);
   },
 
   /**
+  * @returns Filtered listings
+   */
+  async fetchFilteredListings(dto: FilterListingsDTO): Promise<ListingRecord[]> {
+    let query = supabase
+      .from("listings")
+      .select("*, locations(*)")
+      .eq("status", "AVAILABLE");
+    if (dto.bedrooms) query = query.eq("bedrooms", dto.bedrooms);
+    if (dto.bathrooms) query = query.eq("bathrooms", dto.bathrooms);
+    if (dto.minPrice) query = query.gte("price", dto.minPrice);
+    if (dto.maxPrice) query = query.lte("price", dto.maxPrice);
+    if (dto.sourceFilter) query = query.eq("source", dto.sourceFilter);
+    if (dto.locationId) query = query.eq("location_id", dto.locationId);
+    const { data, error } = await query.order("created_at", { ascending: false });
+    if (error) throw error;
+
+    return (data || []).map(mapListing);
+  },
+
+  /**
    * Returns a complete record of a single listing.
    */
-  async fetchListingById(listingId: string): Promise<Listing> {
+  async fetchListingById(listingId: string): Promise<ListingRecord> {
     const { data, error } = await supabase
       .from("listings")
-      .select("*, listing_locations(*)")
+      .select("*, locations(*)")
       .eq("id", listingId)
       .single();
 
@@ -110,20 +133,8 @@ export const ListingService = {
   /**
    * Creates a new listing in PENDING status and triggers an approval request.
    */
-  async createListing(dto: CreateListingDTO): Promise<Listing> {
-    // Insert listing location first to get its ID
-    const { data: locData, error: locError } = await supabase
-      .from("listing_locations")
-      .insert({
-        city: dto.city,
-        address: dto.address,
-      })
-      .select()
-      .single();
-
-    if (locError || !locData) throw locError ?? new Error("Failed to create listing location.");
-
-    // Then insert listing and its location ID into the listings table
+  async createListing(dto: CreateListingDTO): Promise<ListingRecord> {
+    // Insert listing directly into the listings table
     const { data, error: insertError } = await supabase
       .from("listings")
       .insert({
@@ -131,19 +142,20 @@ export const ListingService = {
         title: dto.title,
         description: dto.description,
         price: dto.price,
-        rent_period: dto.rent_period as any,
+        rent_period: dto.rentPeriod,
         bedrooms: dto.bedrooms,
         bathrooms: dto.bathrooms,
         source: dto.source,
         media_urls: dto.photos,
-        location_id: locData.id,
-        status: "PENDING",
+        location_id: dto.locationId,
+        address: dto.address,
+        property_type: dto.propertyType,
+        status: "DRAFT",
       })
-      .select()
+      .select("*, locations(*)")
       .single();
 
     if (insertError || !data) {
-      await supabase.from("listing_locations").delete().eq("id", locData.id);
       throw new Error(insertError?.message ?? "Failed to create listing.");
     }
 
@@ -151,7 +163,7 @@ export const ListingService = {
       await RequestService.createRequest({
         userId: dto.userId,
         requestType: RequestType.LISTING_UPLOAD,
-        listingId: data.id as any,
+        listingId: isNaN(Number(data.id)) ? data.id : Number(data.id) as any,
       });
     } catch (requestError) {
       await supabase.from("listings").delete().eq("id", data.id);
@@ -161,21 +173,14 @@ export const ListingService = {
     const { data: sessionData } = await supabase.auth.getSession();
     const actorUserId = sessionData?.session?.user?.id ?? dto.userId;
 
-    await supabase.from("audit_logs").insert({
-      action_type: "LISTING_UPLOAD_REQUESTED",
-      user_id: actorUserId,
-      target_id: dto.userId,
+    // Log audit
+    await AuditService.logAction({
+      actionType: ActionType.LISTING_UPLOAD_REQUESTED,
+      userId: actorUserId,
+      targetId: dto.userId
     });
 
-    const { data: listingWithLocation, error: fetchCreatedError } = await supabase
-      .from("listings")
-      .select("*, listing_locations(*)")
-      .eq("id", data.id)
-      .single();
-
-    if (fetchCreatedError || !listingWithLocation) throw new Error(fetchCreatedError?.message ?? "Listing created but fetch failed.");
-
-    return mapListing(listingWithLocation);
+    return mapListing(data);
   },
 
   /**
@@ -184,23 +189,6 @@ export const ListingService = {
    * @returns The public URL of the uploaded image.
    */
   async uploadListingPhoto(uri: string): Promise<string> {
-    const ext = uri.split('.').pop()?.toLowerCase() || 'jpg';
-    const contentType = ext === 'heic' ? 'image/heic' : ext === 'png' ? 'image/png' : 'image/jpeg';
-    const fileName = `listing_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
-
-    // Creates a local file object to read bits
-    const imageFile = new ExpoFile(uri);
-    const arrayBuffer = await imageFile.arrayBuffer();
-
-    // Sends image to the bucket
-    const { error } = await supabase.storage
-      .from('listing-images')
-      .upload(fileName, arrayBuffer, { contentType, upsert: false });
-
-    if (error) throw error;
-
-    // Builds the public url directly since the bucket is public
-    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-    return `${supabaseUrl}/storage/v1/object/public/listing-images/${fileName}`;
+    return StorageService.uploadFile('listing-images', uri);
   }
 };

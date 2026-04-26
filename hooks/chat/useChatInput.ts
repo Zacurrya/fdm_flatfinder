@@ -1,5 +1,5 @@
 import { useUploadPhotos } from "@hooks/useUploadPhotos";
-import * as validateUtil from "@utils/inputValidation";
+import * as validateUtil from "@utils/validation";
 import { useCallback, useState } from "react";
 
 /**

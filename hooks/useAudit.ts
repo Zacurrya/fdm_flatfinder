@@ -1,6 +1,6 @@
 import { ActionType } from "@/types/enums";
 import { AuditLogRecord } from "@/types/records";
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
 import { useRealtime } from "@hooks/useRealtime";
 import { AuditService } from "@services/audit/auditService";
 import { useCallback, useEffect, useState } from "react";
@@ -26,12 +26,13 @@ export const useAudit = () => {
   }, []);
 
   const onNewLog = useCallback((payload: any) => {
+    console.log("New audit log received:", payload);
     // Refetch to ensure enrichment of the new log
     loadInitialHistory();
   }, [loadInitialHistory]);
 
-  // Subscribe to real-time updates for the audit_logs table
-  useRealtime<any>("audit_logs", { onInsert: onNewLog, enabled: true });
+  // Subscribe to real-time updates for the audit_logs table only if user is approved
+  useRealtime<any>("audit_logs", { onInsert: onNewLog, enabled: user?.approvalStatus === "APPROVED" });
 
   useEffect(() => {
     void loadInitialHistory();
@@ -45,6 +46,7 @@ export const useAudit = () => {
         targetId,
         actionType: action,
       });
+      console.log("Audit logged: ", action);
     } catch (err) {
       console.error("[useAudit] logAction failed:", err);
     }

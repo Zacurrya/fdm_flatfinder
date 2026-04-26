@@ -1,4 +1,4 @@
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
 import { useCitySelection } from "@hooks/useCitySelection";
 import { UserService } from "@services/user/userService";
 import { useEffect, useState } from "react";
@@ -34,21 +34,20 @@ export const useUserSettings = (settingsVisible: boolean = false) => {
     citySelection.setCityMessage("");
     setIsSubmittingCityChange(true);
 
-    const result = await UserService.requestOfficeLocationChange(
-      user.userId,
-      citySelection.selectedCity.name,
-      user.officeLocation
-    );
+    try {
+      await UserService.requestOfficeLocationChange(
+        user.userId,
+        citySelection.selectedCity.name,
+        user.officeLocation
+      );
 
-    if (!result.success) {
+      await refreshUser();
+      citySelection.setCityMessage("Request submitted. Awaiting admin approval.");
+    } catch (e: any) {
+      citySelection.setLocationsError(e.message ?? "Failed to submit request.");
+    } finally {
       setIsSubmittingCityChange(false);
-      citySelection.setLocationsError(result.error ?? "Failed to submit request.");
-      return;
     }
-
-    await refreshUser();
-    setIsSubmittingCityChange(false);
-    citySelection.setCityMessage("Request submitted. Awaiting admin approval.");
   };
 
   return {

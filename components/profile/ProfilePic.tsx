@@ -1,10 +1,13 @@
 import FDMLoader from "@components/ui/FDMLoader";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@hooks/general/useAuth";
+import { useProfilePicture } from "@hooks/useProfilePicture";
 import { Image } from "expo-image";
 import { TouchableOpacity, View } from "react-native";
 
 type ProfilePicProps = {
-  avatarUrl: string | null;
+  avatarUrl?: string | null;
+  userId?: string | null;
   size?: number;
   onPress?: () => void;
   isUploading?: boolean;
@@ -12,35 +15,53 @@ type ProfilePicProps = {
 };
 
 const ProfilePic = ({
-  avatarUrl,
+  avatarUrl: propAvatarUrl,
+  userId,
   size = 64,
   onPress,
   isUploading = false,
   showEditIcon = false,
 }: ProfilePicProps) => {
+  const { user: authUser } = useAuth();
+
+  // If no avatarUrl or userId is provided, we default to the current auth user
+  const effectiveUserId = userId === undefined && propAvatarUrl === undefined
+    ? authUser?.userId
+    : userId;
+
+  const { avatarUrl: hookAvatarUrl, isLoading: hookLoading } = useProfilePicture(effectiveUserId);
+
+  // Use prop URL if provided, otherwise use the one from the hook
+  const finalAvatarUrl = propAvatarUrl || hookAvatarUrl;
+  const finalIsLoading = isUploading || hookLoading;
   const containerStyle = {
     width: size,
     height: size,
     borderRadius: size / 2,
   };
 
+  const isSvg = typeof finalAvatarUrl === 'number' || !finalAvatarUrl;
+
   const Content = (
     <View
       style={containerStyle}
-      className="bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center overflow-hidden"
+      className="bg-white border border-fdm-accent/30 items-center justify-center overflow-hidden"
     >
-      {avatarUrl ? (
-        <Image
-          source={{ uri: avatarUrl }}
-          style={{ width: "100%", height: "100%" }}
-          contentFit="cover"
-          transition={200}
-        />
-      ) : (
-        <Ionicons name="person" size={size} color="#ffffff60" />
-      )}
+      <Image
+        source={
+          finalAvatarUrl 
+            ? (typeof finalAvatarUrl === 'number' ? finalAvatarUrl : { uri: finalAvatarUrl })
+            : require("@assets/images/logo.svg")
+        }
+        style={isSvg ? { width: "75%", height: "75%" } : { width: "100%", height: "100%" }}
+        contentFit={isSvg ? "contain" : "cover"}
+        transition={200}
+        cachePolicy="disk"
+        tintColor={!finalAvatarUrl ? "#ccff00" : undefined}
+        onError={(e) => console.error(`[ProfilePic] Load failed for: ${finalAvatarUrl}`, e)}
+      />
 
-      {isUploading && (
+      {finalIsLoading && (
         <View className="absolute inset-0 bg-black/40 items-center justify-center">
           <FDMLoader fullScreen={false} />
         </View>

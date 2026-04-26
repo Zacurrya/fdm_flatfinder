@@ -1,6 +1,6 @@
 import ProfileAvatar from "@components/profile/ProfilePic";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
 import { useProfilePicture } from "@hooks/useProfilePicture";
 import { Text, View } from "react-native";
 
@@ -14,7 +14,7 @@ const ProfileCard = ({
   isUploadingProfilePicture = false,
 }: ProfileCardProps) => {
   const { user } = useAuth();
-  const { avatarUrl } = useProfilePicture();
+  const { avatarUrl, isLoading } = useProfilePicture(user?.userId);
 
   return (
     <View className="pt-3 pb-5 pl-5 mt-4 bg-fdm-fg/5 border border-fdm-fg/10 rounded-3xl">
@@ -24,7 +24,7 @@ const ProfileCard = ({
         <ProfileAvatar
           avatarUrl={avatarUrl}
           onPress={onPressProfilePicture}
-          isUploading={isUploadingProfilePicture}
+          isUploading={isUploadingProfilePicture || isLoading}
           showEditIcon={true}
           size={100}
         />
@@ -44,15 +44,15 @@ const ProfileCard = ({
       <View className="gap-4">
         <View className="flex-row items-center gap-3">
           <Ionicons name="mail-outline" size={18} color="#ffffff60" />
-          <Text className="text-fdm-fg/70 text-sm">{user!.email || "—"}</Text>
+          <Text className="text-fdm-fg/70 text-sm">{user?.email || "—"}</Text>
         </View>
         <View className="flex-row items-center gap-3">
           <Ionicons name="call-outline" size={18} color="#ffffff60" />
-          <Text className="text-fdm-fg/70 text-sm">{user!.phoneNumber || "—"}</Text>
+          <Text className="text-fdm-fg/70 text-sm">{user?.phoneNumber || "—"}</Text>
         </View>
         <View className="flex-row items-center gap-3">
           <Ionicons name="location-outline" size={18} color="#ffffff60" />
-          <Text className="text-fdm-fg/70 text-sm">{user!.officeLocation || "—"}</Text>
+          <Text className="text-fdm-fg/70 text-sm">{user?.officeLocation || "—"}</Text>
         </View>
       </View>
 

@@ -47,16 +47,21 @@ export function getCityByChatId(chatId: string, citiesByRegion: RegionCities[]):
 }
 
 /**
- * Returns the local image path for a city.
+ * Mapping of City ID (UUID) to its local image asset.
  */
-export function getCityImagePath(cityName: string): any {
-  switch (cityName) {
-    case "London": return require("@assets/images/city-icons/london.svg");
-    case "Tokyo": return require("@assets/images/city-icons/tokyo.svg");
-    case "Singapore": return require("@assets/images/city-icons/singapore.svg");
-    case "Hong Kong": return require("@assets/images/city-icons/hong-kong.svg");
-    default: return require("@assets/images/city-icons/london.svg");
-  }
+const cityIdToImageMap: Record<string, any> = {
+  "71923672-8bd9-421d-8a31-b5c0e923cac9": require("@assets/images/city-icons/london.svg"), // London
+  "4317e5c1-0304-4133-aa26-124ac8400c57": require("@assets/images/city-icons/hong-kong.svg"), // Hong Kong
+  "b2e86af6-dfa1-4cc7-a07d-38b9966f0d24": require("@assets/images/city-icons/kuala-lumpur.svg"), // Kuala Lumpur
+  "219fad67-cb78-41a7-8ced-a28a16d0dc62": require("@assets/images/city-icons/brussels.svg"), // Brussels
+  "ed8e3c49-12c1-43aa-a2f5-de07a5d15443": require("@assets/images/city-icons/singapore.svg"), // Singapore
+};
+
+/**
+ * Returns the local image path for a city by its ID.
+ */
+export function getCityImageById(cityId: string): any {
+  return cityIdToImageMap[cityId] || require("@assets/images/city-icons/london.svg");
 }
 
 /**

@@ -1,33 +1,22 @@
 import { OfficeCity, RegionCities } from "@/types/locations";
 import { LocationService } from "@services/locations/locationService";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 /**
- * Consolidates city fetching and selection state for forms and settings.
+ * Manages the selection state of office locations, utilizing LocationService for grouped data.
  */
 export const useCitySelection = () => {
-  const [citiesByRegion, setCitiesByRegion] = useState<RegionCities[]>([]);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
-  const [locationsError, setLocationsError] = useState<string | null>(null);
+  const { data: citiesByRegion = [], isLoading: isLoadingLocations, error: locationsFetchError } = useQuery<RegionCities[]>({
+    queryKey: ["locations", "grouped"],
+    queryFn: () => LocationService.getCitiesByRegion(),
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
 
   const [selectedCity, setSelectedCity] = useState<OfficeCity | null>(null);
   const [selectedRegion, setSelectedRegion] = useState("");
   const [cityMessage, setCityMessage] = useState("");
-
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const data = await LocationService.getCitiesByRegion();
-        setCitiesByRegion(data);
-      } catch (err: any) {
-        setLocationsError(err.message ?? "Failed to load locations");
-      } finally {
-        setIsLoadingLocations(false);
-      }
-    };
-
-    void fetchLocations();
-  }, []);
+  const [locationsError, setLocationsError] = useState<string | null>(null);
 
   const handleSelectCity = (region: string, city: OfficeCity | null) => {
     setSelectedRegion(region);
@@ -43,13 +32,15 @@ export const useCitySelection = () => {
     setCityMessage("");
   };
 
+  const currentError = locationsError || (locationsFetchError instanceof Error ? locationsFetchError.message : null);
+
   return {
     // Data
     citiesByRegion,
     isLoadingLocations,
 
     // Error / Messaging State
-    locationsError,
+    locationsError: currentError,
     setLocationsError,
     cityMessage,
     setCityMessage,

@@ -1,6 +1,6 @@
 import { RequestStatus } from "@/types/enums";
 import { AdminRequest } from "@/types/views";
-import { useAudit } from "@hooks/useAudit";
+import { useAudit } from "@hooks/general/useAudit";
 import { useRequests } from "@hooks/useRequests";
 import { useFocusEffect } from "@react-navigation/native";
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -56,16 +56,24 @@ export const useAdminScreen = () => {
 
   const handleApproveRequest = useCallback(
     async (request: AdminRequest) => {
-      const result = await approveRequest(request.id);
-      if (result.success) void handleRefreshRequests();
+      try {
+        await approveRequest(request.id);
+        void handleRefreshRequests();
+      } catch (e) {
+        // Error is handled by useRequests state
+      }
     },
     [approveRequest, handleRefreshRequests]
   );
 
   const handleRejectRequest = useCallback(
     async (request: AdminRequest) => {
-      const result = await rejectRequest(request.id);
-      if (result.success) void handleRefreshRequests();
+      try {
+        await rejectRequest(request.id);
+        void handleRefreshRequests();
+      } catch (e) {
+        // Error is handled by useRequests state
+      }
     },
     [rejectRequest, handleRefreshRequests]
   );

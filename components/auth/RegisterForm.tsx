@@ -1,7 +1,5 @@
 import AuthButton from "@components/auth/AuthButton";
-import EmailInput from "@components/auth/EmailInput";
 import PasswordInput from "@components/auth/PasswordInput";
-import PhoneNumberInput from "@components/auth/PhoneNumberInput";
 import Field from "@components/ui/Field";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
@@ -95,15 +93,26 @@ const RegisterForm = ({
           />
         </View>
 
-        <EmailInput
+        <Field
+          label="Email"
           value={values.email}
           onChangeText={handleChange("email")}
+          placeholder="you@fdmgroup.com"
+          keyboardType="email-address"
+          autoComplete="email"
+          textContentType="emailAddress"
+          autoCapitalize="none"
           error={errors.email}
           editable={!isSubmitting}
         />
-        <PhoneNumberInput
+        <Field
+          label="Phone Number"
           value={values.phoneNumber}
           onChangeText={handleChange("phoneNumber")}
+          placeholder="+44 7700 900123"
+          keyboardType="phone-pad"
+          autoComplete="tel"
+          textContentType="telephoneNumber"
           error={errors.phoneNumber}
           editable={!isSubmitting}
         />

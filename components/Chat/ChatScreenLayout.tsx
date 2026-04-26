@@ -89,7 +89,7 @@ const ChatScreenLayout = ({
             >
                 <View className="flex-row items-center">
                     <TouchableOpacity
-                        onPress={() => router.replace("/(tabs)/messages")}
+                        onPress={() => router.replace("/messages")}
                         className="w-10 h-10 rounded-full bg-fdm-fg/10 items-center justify-center mr-3"
                     >
                         <Ionicons name="arrow-back" size={20} color="white" />

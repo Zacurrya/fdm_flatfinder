@@ -8,6 +8,8 @@ export type ListingRecord = {
     price: number;
     rentPeriod: RentPeriod;
     locationId: string;
+    city: string;
+    address: string;
     mediaUrls: string[];
     source: string;
     bedrooms: number;
@@ -16,6 +18,7 @@ export type ListingRecord = {
     status: ListingStatus;
     createdAt: string;
     updatedAt: string;
+    isSaved?: boolean;
 }
 
 export type AuditLogRecord = {
@@ -45,6 +48,7 @@ export type UserRecord = {
     lastName: string;
     email: string;
     officeLocation: string;
+    officeLocationId: string;
     phoneNumber: string;
     role: Role;
     avatarUrl: string | null;

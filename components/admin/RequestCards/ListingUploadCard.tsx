@@ -32,12 +32,12 @@ const ListingUploadCard = ({ request, isProcessing, onApprove, onReject }: Reque
 
                 <View className="ml-4">
                     <View className={`px-2 py-1 rounded-md ${request.status === RequestStatus.APPROVED ? 'bg-green-500/20' :
-                            request.status === RequestStatus.REJECTED ? 'bg-red-500/20' :
-                                'bg-yellow-500/20'
+                        request.status === RequestStatus.REJECTED ? 'bg-red-500/20' :
+                            'bg-yellow-500/20'
                         }`}>
                         <Text className={`text-[10px] font-bold ${request.status === RequestStatus.APPROVED ? 'text-green-500' :
-                                request.status === RequestStatus.REJECTED ? 'text-red-500' :
-                                    'text-yellow-500'
+                            request.status === RequestStatus.REJECTED ? 'text-red-500' :
+                                'text-yellow-500'
                             }`}>
                             {request.status}
                         </Text>

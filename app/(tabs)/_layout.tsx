@@ -1,12 +1,17 @@
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
 import { Tabs } from "expo-router";
 import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TabsLayout = () => {
   const { user } = useAuth();
+
+  // If no user is authenticated, stop rendering immediately.
+  // The Root Layout will handle redirection to the landing page.
+  if (!user) return null;
+
   const isAdmin = user?.role === "ADMIN";
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -98,15 +103,6 @@ const TabsLayout = () => {
           ),
           // Hide the admin tab for non-admin users
           href: isAdmin ? ("/(tabs)/admin" as any) : null,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          tabBarLabel: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={tabIconSize(size)} color={color} />
-          ),
         }}
       />
     </Tabs>

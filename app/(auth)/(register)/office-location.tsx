@@ -1,9 +1,13 @@
 import AuthButton from "@components/auth/AuthButton";
+import OfficeLocationSelector from "@components/profile/OfficeLocationSelector";
 import BackButton from "@components/ui/BackButton";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
-import OfficeLocationSelector from "@components/ui/OfficeLocationSelector";
-import { useOfficeLocations } from "@hooks/useLocationForm";
+import { useAuth } from "@hooks/general/useAuth";
+import { useCitySelection } from "@hooks/useCitySelection";
+import { Image } from "expo-image";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -14,16 +18,54 @@ import {
 
 const OfficeLocation = () => {
   const { width, height } = useWindowDimensions();
+  const { register } = useAuth();
+  const router = useRouter();
+  const params = useLocalSearchParams<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+    password: string;
+  }>();
+
   const {
     citiesByRegion,
     selectedCity,
     selectedRegion,
     locationsError,
+    setLocationsError,
     isLoadingLocations,
-    isSubmitting,
     handleSelectCity,
-    handleCompleteSignUp,
-  } = useOfficeLocations();
+  } = useCitySelection();
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /**
+   * Validates an office has been chosen and submits the form to the auth context
+   */
+  const handleCompleteSignUp = async () => {
+    if (!selectedCity) {
+      setLocationsError("Please choose your FDM office city before continuing.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await register({
+        firstName: params.firstName,
+        lastName: params.lastName,
+        email: params.email,
+        password: params.password,
+        phoneNumber: params.phoneNumber,
+        officeLocation: selectedCity.id,
+      });
+      router.replace("/home");
+    } catch (error: any) {
+      setLocationsError(error.message ?? "Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -43,6 +85,12 @@ const OfficeLocation = () => {
 
       <View className="flex-1 w-full max-w-sm self-center justify-center z-10 mb-12">
         <View className="items-center mt-3 mb-12 w-full">
+          <Image
+            source={require("@assets/images/plane.svg")}
+            style={{ width: 48, height: 48, marginBottom: 16 }}
+            tintColor="#ccff00"
+            contentFit="contain"
+          />
           <Text className="text-fdm-fg text-3xl mb-3 tracking-tighter text-center" style={{ fontFamily: "Michroma_400Regular" }}>
             Where <Text className="text-fdm-accent">To?</Text>
           </Text>
@@ -66,8 +114,8 @@ const OfficeLocation = () => {
           isLoading={isSubmitting}
           backgroundColour="#ccff00"
           textColour="#1b1b1b"
-          width="66.666667%" // matches w-2/3
-          style={{ alignSelf: 'center', marginTop: 32 }} // mt-8
+          width="66.7%"
+          style={{ alignSelf: 'center', marginTop: 32 }}
         />
       </View>
     </KeyboardAvoidingView>

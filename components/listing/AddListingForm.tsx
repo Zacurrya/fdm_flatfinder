@@ -1,10 +1,11 @@
+import { Dropdown } from "@/components/ui/Dropdown";
 import { PropertyType, RentPeriod } from "@/types/enums";
 import AuthButton from "@components/auth/AuthButton";
 import FDMLoader from "@components/ui/FDMLoader";
 import Field from "@components/ui/Field";
 import { Ionicons } from "@expo/vector-icons";
 import { useListingUpload } from "@hooks/listings/useListingUpload";
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export const AddListingForm = () => {
@@ -128,24 +129,40 @@ export const AddListingForm = () => {
         </View>
       </View>
 
-      {/* Beds / Baths row */}
+      {/* Beds / Baths row (Dropdowns) */}
       <View className="flex-row gap-4">
-        <Field
-          label="Bedrooms"
-          value={String(bedrooms)}
-          onChangeText={(text) => setBedrooms(Number(text) || 0)}
-          keyboardType="numeric"
-          placeholder="1"
-          containerClassName="flex-1"
-        />
-        <Field
-          label="Bathrooms"
-          value={String(bathrooms)}
-          onChangeText={(text) => setBathrooms(Number(text) || 0)}
-          keyboardType="numeric"
-          placeholder="1"
-          containerClassName="flex-1"
-        />
+        <View className="flex-1">
+          <Text className="text-fdm-fg/80 font-medium mb-2 ml-1 text-sm uppercase tracking-wider">Bedrooms</Text>
+          <Dropdown
+            placeholder="Select..."
+            value={bedrooms ?? null}
+            options={[
+              { label: "Select...", value: null },
+              { label: "1", value: 1 },
+              { label: "2", value: 2 },
+              { label: "3", value: 3 },
+              { label: "4", value: 4 },
+              { label: "5", value: 5 },
+            ]}
+            onChange={setBedrooms}
+          />
+        </View>
+        <View className="flex-1">
+          <Text className="text-fdm-fg/80 font-medium mb-2 ml-1 text-sm uppercase tracking-wider">Bathrooms</Text>
+          <Dropdown
+            placeholder="Select..."
+            value={bathrooms ?? null}
+            options={[
+              { label: "Select...", value: null },
+              { label: "1", value: 1 },
+              { label: "2", value: 2 },
+              { label: "3", value: 3 },
+              { label: "4", value: 4 },
+              { label: "5", value: 5 },
+            ]}
+            onChange={setBathrooms}
+          />
+        </View>
       </View>
 
       {/* Property Type */}

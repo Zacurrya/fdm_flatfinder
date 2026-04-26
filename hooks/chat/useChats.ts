@@ -1,11 +1,10 @@
 import { ChatService } from "@services/chat/chatService";
 import { ChatPreview } from "@services/chat/types";
 import { useCallback, useEffect, useState } from "react";
-import { useAuth } from "./useAuth";
-import { useRealtime } from "./useRealtime";
+import { useAuth } from "../general/useAuth";
+import { useRealtime } from "../general/useRealtime";
 
 /**
- * useChats
  * Dedicated hook to fetch and subscribe to the user's active chats.
  * This abstracts the logic away from the UI component.
  */
@@ -16,7 +15,10 @@ export const useChats = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchChats = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      console.warn("[useChats] Fetch skipped: No authenticated user found.");
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -28,14 +30,16 @@ export const useChats = () => {
       let allChats = [...userChats];
       if (user.role === "ADMIN") {
         const cityChats = await ChatService.getAllCityChats();
-        // Merge and remove duplicates (some city chats might already be in userChats)
+        // Merge and remove duplicates
         const userChatIds = new Set(userChats.map(c => c.id));
         const uniqueCityChats = cityChats.filter(c => !userChatIds.has(c.id));
         allChats = [...allChats, ...uniqueCityChats];
       }
 
       setChats(allChats);
+      console.log(`[useChats] Fetched ${allChats.length} chats for user ${user.userId}`);
     } catch (err: any) {
+      console.error("[useChats] Error fetching chats:", err);
       setError(err.message || "Failed to load chats.");
     } finally {
       setIsLoading(false);
@@ -46,12 +50,13 @@ export const useChats = () => {
     fetchChats();
   }, [fetchChats]);
 
-  // Top-level hook call — subscribes to real-time updates for new/changed chats
+  // Subscribe to real-time updates for the user's chats
   useRealtime("chat_participants", {
+    filter: { column: "participant_id", value: user?.userId! },
     onInsert: fetchChats,
     onUpdate: fetchChats,
     onDelete: fetchChats,
-    enabled: !!user,
+    enabled: !!user && user.approvalStatus === "APPROVED",
   });
 
   return {

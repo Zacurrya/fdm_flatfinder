@@ -1,11 +1,11 @@
-import React from "react";
-import { FlatList, Text, View } from "react-native";
-import { useChats } from "@hooks/useChats";
 import FDMLoader from "@components/ui/FDMLoader";
 import { Ionicons } from "@expo/vector-icons";
-import { ChatCard } from "./ChatCard";
+import { useChats } from "@hooks/chat/useChats";
+import React from "react";
+import { FlatList, Text, View } from "react-native";
+import ChatPreview from "./ChatPreview";
 
-export const ChatList = () => {
+const ChatList = () => {
   const { chats, isLoading, error } = useChats();
 
   if (isLoading) {
@@ -33,7 +33,9 @@ export const ChatList = () => {
     <FlatList
       data={chats}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <ChatCard chat={item} />}
+      renderItem={({ item }) => <ChatPreview chat={item} />}
     />
   );
 };
+
+export default ChatList;

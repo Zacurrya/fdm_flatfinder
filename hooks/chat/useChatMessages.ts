@@ -1,6 +1,6 @@
 import { MessageRecord } from "@/types/records";
-import { useAuth } from "@hooks/useAuth";
-import { useRealtime } from "@hooks/useRealtime";
+import { useAuth } from "@hooks/general/useAuth";
+import { useRealtime } from "@hooks/general/useRealtime";
 import { ChatService } from "@services/chat/chatService";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";

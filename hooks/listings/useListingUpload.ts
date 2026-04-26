@@ -1,9 +1,8 @@
 import { ListingSource, PropertyType, RentPeriod } from "@/types/enums";
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
 import { useUploadPhotos } from "@hooks/useUploadPhotos";
 import { ListingService } from "@services/listings/listingsService";
-import { LocationService } from "@services/locations/locationService";
-import { fields } from "@utils/inputValidation";
+import { fields } from "@utils/validation";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
@@ -17,8 +16,8 @@ export const useListingUpload = () => {
     const [address, setAddress] = useState("");
     const [price, setPrice] = useState<number>(0);
     const [rentPeriod, setRentPeriod] = useState<RentPeriod>(RentPeriod.WEEKLY);
-    const [bedrooms, setBedrooms] = useState<number>(1);
-    const [bathrooms, setBathrooms] = useState<number>(1);
+    const [bedrooms, setBedrooms] = useState<number | null>(null);
+    const [bathrooms, setBathrooms] = useState<number | null>(null);
     const [propertyType, setPropertyType] = useState<PropertyType>(PropertyType.FLAT);
     const [photos, setPhotos] = useState<string[]>([]);
 
@@ -60,12 +59,16 @@ export const useListingUpload = () => {
         const addressErr = fields.address(address);
         const priceErr = fields.rentAmount(price);
         const photosErr = fields.photos(photos);
+        const bedroomsErr = fields.bedrooms(bedrooms);
+        const bathroomsErr = fields.bathrooms(bathrooms);
 
         if (titleErr) newErrors.title = titleErr;
         if (descErr) newErrors.description = descErr;
         if (addressErr) newErrors.address = addressErr;
         if (priceErr) newErrors.price = priceErr;
         if (photosErr) newErrors.photos = photosErr;
+        if (bedroomsErr) newErrors.bedrooms = bedroomsErr;
+        if (bathroomsErr) newErrors.bathrooms = bathroomsErr;
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -77,21 +80,24 @@ export const useListingUpload = () => {
 
         try {
             // Upload photos via shared hook
+            console.log("Uploading photos...");
             const uploadedPhotoUrls = await photoUploader.uploadMany(photos);
+            console.log("Photos uploaded successfully:", uploadedPhotoUrls);
 
             // Create listing record
+            console.log("Creating listing...");
             await ListingService.createListing({
                 userId: user.userId,
                 title,
                 description,
                 price,
-                rent_period: rentPeriod,
-                property_type: propertyType,
-                bedrooms,
-                bathrooms,
+                rentPeriod,
+                propertyType,
+                bedrooms: bedrooms!,
+                bathrooms: bathrooms!,
                 source: ListingSource.FDM,
                 photos: uploadedPhotoUrls,
-                city,
+                locationId: user.officeLocationId,
                 address,
             });
 
@@ -107,7 +113,7 @@ export const useListingUpload = () => {
     const handleSubmit = async () => {
         const success = await uploadListing();
         if (success) {
-            router.push("/(tabs)/search");
+            router.push("/search");
         }
     };
 
@@ -126,8 +132,8 @@ export const useListingUpload = () => {
         address, setAddress: (val: string) => updateField("address", val, setAddress),
         price, setPrice: (val: number) => updateField("price", val, setPrice),
         rentPeriod, setRentPeriod,
-        bedrooms, setBedrooms,
-        bathrooms, setBathrooms,
+        bedrooms, setBedrooms: (val: number | null) => updateField("bedrooms", val, setBedrooms),
+        bathrooms, setBathrooms: (val: number | null) => updateField("bathrooms", val, setBathrooms),
         propertyType, setPropertyType,
         photos,
         // Async state

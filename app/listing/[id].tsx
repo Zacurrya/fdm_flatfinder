@@ -1,13 +1,15 @@
 import FavouriteListingButton from "@components/listing/FavouriteListingButton";
 import IconButton from "@components/listing/IconButton";
+import ListingMap from "@components/listing/ListingMap";
 import FDMLoader from "@components/ui/FDMLoader";
 import { Ionicons } from "@expo/vector-icons";
 import { useListing } from "@hooks/listings/useListing";
-import { useAuth } from "@hooks/useAuth";
-import { useSavedListings } from "@hooks/useSavedListings";
+import { useSavedListings } from "@hooks/listings/useSavedListings";
+import { useAuth } from "@hooks/general/useAuth";
 import { formatListingPrice } from "@utils/currency";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { BedDouble, Toilet } from "lucide-react-native";
 import { Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -16,18 +18,18 @@ const ListingDetailScreen = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { favIds, toggleFavourite } = useSavedListings();
+  const { savedListingIds, toggleFavourite } = useSavedListings();
 
   const {
     listing,
     isLoading,
-    signedPhotos,
+    photos,
     actions,
     isOwner,
   } = useListing(id as string);
 
   const listingId = listing?.id!;
-  const isFavourite = favIds.includes(listingId);
+  const isFavourite = savedListingIds.includes(listingId);
 
   const windowWidth = Dimensions.get('window').width;
   const buttonSize = 28;
@@ -53,7 +55,7 @@ const ListingDetailScreen = () => {
         <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
           {/* photo header */}
           <View className="w-full h-80 bg-fdm-fg/10 relative">
-            {signedPhotos.length > 0 ? (
+            {photos.length > 0 ? (
               <>
                 <ScrollView
                   horizontal
@@ -61,7 +63,7 @@ const ListingDetailScreen = () => {
                   showsHorizontalScrollIndicator={false}
                   style={{ width: '100%', height: 320 }}
                 >
-                  {signedPhotos.map((url, index) => (
+                  {photos.map((url: string, index: number) => (
                     <View key={index} style={{ width: windowWidth, height: 320 }}>
                       <Image
                         key={url}
@@ -72,9 +74,9 @@ const ListingDetailScreen = () => {
                     </View>
                   ))}
                 </ScrollView>
-                {signedPhotos.length > 1 && (
+                {photos.length > 1 && (
                   <View className="absolute bottom-4 w-full flex-row justify-center items-center gap-2 pointer-events-none">
-                    {signedPhotos.map((_, idx) => (
+                    {photos.map((_: string, idx: number) => (
                       <View key={idx} className="w-2 h-2 rounded-full bg-white/70" />
                     ))}
                   </View>
@@ -154,12 +156,12 @@ const ListingDetailScreen = () => {
             {/* Specs */}
             <View className="flex-row border-y border-white/10 py-5 mb-8 justify-around">
               <View className="items-center">
-                <Ionicons name="bed-outline" size={24} color="#ccff00" />
+                <BedDouble size={24} color="#ccff00" />
                 <Text className="text-white font-semibold mt-2">{listing.bedrooms || 1} Bed</Text>
               </View>
               <View className="h-full w-[1px] bg-white/10" />
               <View className="items-center">
-                <Ionicons name="water-outline" size={24} color="#ccff00" />
+                <Toilet size={24} color="#ccff00" />
                 <Text className="text-white font-semibold mt-2">{listing.bathrooms || 1} Bath</Text>
               </View>
               <View className="h-full w-[1px] bg-white/10" />
@@ -173,7 +175,7 @@ const ListingDetailScreen = () => {
 
             {/* Description */}
             {listing.description ? (
-              <View className="mb-6">
+              <View className="mb-2">
                 <Text className="text-white text-lg font-bold mb-2">Description</Text>
                 <Text className="text-fdm-fg/80 text-base leading-relaxed">
                   {listing.description}
@@ -181,7 +183,10 @@ const ListingDetailScreen = () => {
               </View>
             ) : null}
 
-            {!isOwner && (
+            {/* Map */}
+            <ListingMap address={listing.address} />
+
+            {!isOwner && listing.ownerId !== null && (
               <TouchableOpacity
                 onPress={actions.openChat}
                 className="bg-fdm-accent py-4 mx-12 rounded-2xl flex-row justify-center items-center mt-2"

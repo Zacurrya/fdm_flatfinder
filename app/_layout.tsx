@@ -1,15 +1,25 @@
 import FDMLoader from "@components/ui/FDMLoader";
 import { AuthProvider } from "@context/AuthContext";
+import { SavedListingsProvider } from "@context/SavedListingsContext";
 import { Michroma_400Regular, useFonts } from '@expo-google-fonts/michroma';
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
 
-import * as ScreenOrientation from 'expo-screen-orientation';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,7 +35,7 @@ const RootNavigator = () => {
 
 // Redirects the user to auth or main app based on their auth status
 const AppShell = () => {
-  const { session, user, isLoading: isAuthLoading } = useAuth();
+  const { session, user } = useAuth();
   const router = useRouter();
   const segments = useSegments();
 
@@ -33,22 +43,23 @@ const AppShell = () => {
     Michroma_400Regular,
   });
 
-  const isAuthenticated = Boolean(session && user);
-  const isLoading = isAuthLoading || !fontsLoaded;
+  const isAuthenticated = session && user;
+  const isLoading = !fontsLoaded;
 
   useEffect(() => {
     if (isLoading) return;
     const inTabsGroup = segments[0] === "(tabs)";
+    const isListingPage = segments[0] === "listing" && segments.length === 2;
 
     if (isAuthenticated) {
       // If logged in, redirect away from auth/landing screens
-      if (!inTabsGroup) {
-        router.replace("/(tabs)/home");
+      if (!inTabsGroup && !isListingPage) {
+        router.replace("/home");
         console.log("User authenticated, redirecting to home");
       }
     } else {
       // If logged out, redirect away from protected screens
-      if (inTabsGroup) {
+      if (inTabsGroup || isListingPage) {
         router.replace("/");
         console.log("User not authenticated, redirecting to landing page");
       }
@@ -57,7 +68,7 @@ const AppShell = () => {
     // Hide splash screen after first routing decision
     SplashScreen.hideAsync();
 
-  }, [isLoading, isAuthenticated, segments]);
+  }, [isLoading, isAuthenticated, segments, router]);
 
 
   if (isLoading) {
@@ -72,16 +83,15 @@ const AppShell = () => {
 };
 
 const RootLayout = () => {
-  useEffect(() => {
-    // Lock orientation to portrait by default for the entire app
-    void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-  }, []);
-
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <AppShell />
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SavedListingsProvider>
+            <AppShell />
+          </SavedListingsProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </SafeAreaProvider>
   );
 };

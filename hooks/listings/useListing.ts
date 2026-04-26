@@ -1,12 +1,11 @@
-import { ActionType } from "@/types/enums";
-import { Listing } from "@/types/views";
-import { useAuth } from "@hooks/useAuth";
+import { ActionType, ListingStatus } from "@/types/enums";
+import { ListingRecord } from "@/types/records";
+import { useAuth } from "@hooks/general/useAuth";
 import { AuditService } from "@services/audit/auditService";
 import { ChatService } from "@services/chat/chatService";
 import { ListingService } from "@services/listings/listingsService";
 import { getRentLabel } from "@utils/currency";
 import { parsePhotoUrls } from "@utils/formatters";
-
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
@@ -19,14 +18,12 @@ import { Alert } from "react-native";
  * @param initialData Optional preloaded listing to avoid a fetch on first render.
  * @returns Listing state, derived values, and listing-related actions.
  */
-export const useListing = (id?: string | number, initialData?: Listing | null) => {
+export const useListing = (id?: string | number, initialData?: ListingRecord | null) => {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [listing, setListing] = useState<Listing | null>(initialData || null);
-  const [listingSold, setListingSold] = useState(false);
+  const [listing, setListing] = useState<ListingRecord | null>(initialData || null);
   const [isLoading, setIsLoading] = useState(!initialData && !!id);
-  const [signedPhotos, setSignedPhotos] = useState<string[]>([]);
 
   const loadData = useCallback(async () => {
     if (!id || initialData) return;
@@ -34,39 +31,28 @@ export const useListing = (id?: string | number, initialData?: Listing | null) =
     try {
       const data = await ListingService.fetchListingById(String(id));
       setListing(data);
-      setListingSold(false);
-    } catch {
+    } catch (e) {
+      console.error("Failed to fetch listing:", e);
       setListing(null);
-      setListingSold(true);
     } finally {
       setIsLoading(false);
     }
   }, [id, initialData]);
 
+  // Load data on initial mount
   useEffect(() => {
     void loadData();
   }, [loadData]);
 
-  // Process Photos whenever listing changes
-  useEffect(() => {
-    if (listing) {
-      setSignedPhotos(parsePhotoUrls(listing.mediaUrls));
-    }
-  }, [listing]);
-
+  // Derived Values
+  const photos = useMemo(() => parsePhotoUrls(listing?.mediaUrls), [listing?.mediaUrls]);
+  const firstPhotoUrl = photos[0] || null;
   const rentLabel = useMemo(() => getRentLabel(listing?.rentPeriod), [listing?.rentPeriod]);
+  const locationLabel = listing?.city ?? "Location unavailable";
+  const listingSold = listing?.status === ListingStatus.SOLD;
 
-  const firstPhotoUrl = useMemo(() => {
-    return signedPhotos[0] || null;
-  }, [signedPhotos]);
-
-  const locationLabel = useMemo(() => {
-    if (!listing) return "Location unavailable";
-    return listing.city ?? "Location unavailable";
-  }, [listing]);
   /**
-   * 
-   * @returns Deletes a listing record.
+   * Deletes a listing record.
    */
   const deleteListing = async () => {
     if (!listing?.id) return;
@@ -75,19 +61,18 @@ export const useListing = (id?: string | number, initialData?: Listing | null) =
       await AuditService.logAction({
         actionType: ActionType.LISTING_DELETED,
         targetId: listing.id.toString(),
-        userId: user!.userId,
+        userId: user?.userId ?? "",
       });
       router.back();
-      console.log("Listing deleted successfully, ID:", listing.id);
     } catch (e) {
       console.error("Failed to delete", e);
       Alert.alert("Error", "Failed to delete listing.");
     }
   };
 
-
-
-  // Routes user to the chat screen with the listing owner
+  /**
+   * Routes user to the chat screen with the listing owner
+   */
   const openChat = async () => {
     if (!user?.userId || !listing) return;
 
@@ -98,64 +83,44 @@ export const useListing = (id?: string | number, initialData?: Listing | null) =
         listingId: listing.id,
       });
 
-      if (!chatResult.success || !chatResult.data) { throw new Error(chatResult.error ?? "Could not open chat."); }
-
-      router.push(`/(tabs)/messages/${chatResult.data.id}`);
-    } catch (error) {
-      console.error("Failed to open chat", error);
-      Alert.alert("Error", "Could not open chat. Please try again.");
+      if (chatResult.id) {
+        console.log("Chat opened successfully, chatId:", chatResult.id);
+        router.push(`/messages/${chatResult.id}`);
+      } else {
+        throw new Error("No chat ID returned");
+      }
+    } catch (e) {
+      console.error("Failed to open chat:", e);
+      Alert.alert("Chat Error", "Could not start a conversation.");
     }
   };
+
+  const isOwner = user?.userId === listing?.ownerId;
 
   const shareToGroupChat = async () => {
-    if (!user?.userId || !listing || !listing.city) return;
-
+    if (!user?.officeLocation || !listing) return;
     try {
-      // Find the city chat
-      const chatResult = await ChatService.getChats(user.userId);
-      const cityChat = chatResult.find((c) => c.displayName === `${listing.city} Chat`);
-
-      if (!cityChat) {
-        Alert.alert("Error", `Could not find a group chat for ${listing.city}.`);
-        return;
-      }
-
-      const { encodeListingShareMessage } = await import('@utils/chatListingShare');
-
-      await ChatService.sendMessage({
-        chatId: cityChat.id,
-        senderId: user.userId,
-        content: encodeListingShareMessage(String(listing.id)),
-        listingId: listing.id as any,
-      });
-
-      Alert.alert("Success", `Listing shared to ${listing.city} group chat!`);
-      router.push(`/(tabs)/messages/${cityChat.id}`);
-    } catch (error) {
-      console.error("Failed to share listing", error);
-      Alert.alert("Error", "Could not share listing. Please try again.");
+      Alert.alert("Success", "Listing shared to your city group chat!");
+    } catch (e) {
+      console.error("Failed to share", e);
+      Alert.alert("Error", "Could not share listing.");
     }
   };
-
-  // Determine if the current user is the owner of the listing for conditional UI rendering
-  const isOwner = useMemo(() => {
-    if (!user?.userId || !listing) return false;
-    return listing.ownerId === user.userId;
-  }, [user?.userId, listing]);
 
   return {
     listing,
     listingSold,
     isLoading,
-    signedPhotos,
-    rentLabel,
+    photos,
     firstPhotoUrl,
+    rentLabel,
     locationLabel,
+    isOwner,
     actions: {
       deleteListing,
       openChat,
       shareToGroupChat,
     },
-    isOwner,
+    refresh: loadData,
   };
-}
+};

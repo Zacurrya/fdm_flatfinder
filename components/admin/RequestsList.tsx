@@ -73,7 +73,7 @@ const RequestsList = ({
                                 : "text-fdm-fg/60"
                                 }`}
                         >
-                            {option.label}
+                            {option.label} {statusFilter === option.value ? requests.length : ""}
                         </Text>
                     </TouchableOpacity>
                 ))}

@@ -1,70 +1,44 @@
-import { ActionType, ApprovalStatus, RequestStatus, RequestType, Role } from '@/types/enums';
+import { ActionType, ApprovalStatus, RequestType, Role } from '@/types/enums';
 import { UserRecord } from '@/types/records';
 import { supabase } from '@lib/supabase';
 import { AuditService } from '@services/audit/auditService';
-import { LocationService } from '@services/locations/locationService';
+import { RequestService } from '@services/requests/requestService';
+import { UserService } from '@services/user/userService';
+import { Session } from '@supabase/supabase-js';
 import { getInitials } from '@utils/formatters';
-import {
-    loginDTO,
-    registerDTO,
-} from './types';
+import { loginDTO, registerDTO } from './types';
 
 export const AuthService = {
+
+
     /**
      * Authenticates a user with email and password.
-     * Returns the whole user record and session so it can be stored in the auth context.
+     * Returns a user record and session so it can be stored in the auth context.
      */
-    async login(dto: loginDTO): Promise<{ user: UserRecord; session: any }> {
-        // Signs in using Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword(dto);
-        if (authError) throw authError;
+    async login(dto: loginDTO): Promise<{ user: UserRecord; session: Session }> {
+        const { data, error } = await supabase.auth.signInWithPassword(dto);
+        if (error) throw error;
 
-        // Gets the user profile from the users table
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('user_id', authData.user.id)
-            .single();
-
-        if (userError || !user) throw new Error(userError?.message ?? 'User profile not found.');
-
-        console.log(`Login successful`)
-
-        return {
-            user: {
-                userId: user.user_id,
-                email: user.email,
-                firstName: user.first_name,
-                lastName: user.last_name,
-                officeLocation: await LocationService.resolveOfficeCityName(user.office_location),
-                phoneNumber: user.phone_number,
-                avatarUrl: user.avatar_url ?? null,
-                role: user.role as Role,
-                approvalStatus: user.approval_status as ApprovalStatus,
-                createdAt: user.created_at,
-            },
-            session: authData.session,
-        };
+        const user = await UserService.getUserRecord(data.user.id);
+        return { user, session: data.session };
     },
 
     /**
      * Logs out the current user.
      */
-    async logout() {
+    async logout(): Promise<void> {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
-        console.log('Logout successful');
     },
 
     /**
      * Registers a new consultant user pending admin approval.
      */
-    async register(dto: registerDTO) {
+    async register(dto: registerDTO): Promise<void> {
         const { data: auth, error } = await supabase.auth.signUp({
             email: dto.email,
             password: dto.password,
         });
-
         if (error || !auth.user) throw new Error(error?.message ?? 'Registration failed.');
 
         // Pre-generate the initials-based fallback avatar URL
@@ -84,15 +58,22 @@ export const AuthService = {
             avatar_url: fallbackAvatarUrl,
         });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+            await supabase.auth.admin.deleteUser(auth.user.id); // Couldn't create in the users table so remove from auth
+            throw profileError;
+        }
 
-        const { error: requestError } = await supabase.from('requests').insert({
-            user_id: auth.user.id,
-            request_type: RequestType.SIGN_UP,
-            status: RequestStatus.PENDING,
-        });
-
-        if (requestError) throw requestError;
+        try {
+            await RequestService.createRequest({
+                userId: auth.user.id,
+                requestType: RequestType.SIGN_UP,
+            });
+        } catch (err) {
+            // Cleanup profile if request fails
+            await supabase.from('users').delete().eq('user_id', auth.user.id);
+            await supabase.auth.admin.deleteUser(auth.user.id);
+            throw err;
+        }
 
         // Logs the new registration
         await AuditService.logAction({
@@ -101,16 +82,16 @@ export const AuthService = {
             userId: auth.user.id,
         });
 
-        console.log('User registered and approval request created');
+        // Authenticates the user so that they can route to the main app
+        await this.login({ email: dto.email, password: dto.password });
     },
 
     /**
      * Sends a password reset email.
      */
-    async resetPassword(email: string) {
+    async resetPassword(email: string): Promise<void> {
         const { error } = await supabase.auth.resetPasswordForEmail(email);
         if (error) throw error;
-        console.log('Password reset email sent');
     },
 
     /**
@@ -121,12 +102,7 @@ export const AuthService = {
             .from('users')
             .select('*', { count: 'exact', head: true })
             .eq('email', email);
-
-        if (error) {
-            console.log('Error checking if email exists:', error);
-            throw new Error('Could not verify email uniqueness.');
-        }
-
+        if (error) throw error;
         return (count ?? 0) > 0;
     },
 
@@ -138,46 +114,47 @@ export const AuthService = {
             .from('users')
             .select('*', { count: 'exact', head: true })
             .eq('phone_number', phoneNumber);
-
-        if (error) {
-            console.log('Error checking if phone number exists:', error);
-            throw new Error('Could not verify phone number uniqueness.');
-        }
-
+        if (error) throw error;
         return (count ?? 0) > 0;
     },
 
     /**
      * Returns the current user's profile and session if they exist.
-     * Otherwise, returns null.
      */
-    async getSession(): Promise<{ userProfile: UserRecord; session: any } | null> {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (!session) throw sessionError;
+    async getSession(): Promise<{ userProfile: UserRecord; session: Session } | null> {
+        const { data: { session }, error } = await supabase.auth.getSession();
 
-        // Fetches the current user's profile from the user table
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single();
+        if (error) {
+            // If the refresh token is invalid or not found, we must sign out to clear storage
+            const msg = error.message.toLowerCase();
+            if (msg.includes('refresh token') || msg.includes('invalid_grant')) {
+                await supabase.auth.signOut();
+            }
+            return null;
+        }
 
-        if (userError || !user) throw new Error(userError?.message ?? 'User profile not found.');
-        const officeLocation = await LocationService.resolveOfficeCityName(user.office_location);
-        return {
-            userProfile: {
-                userId: user.user_id,
-                email: user.email,
-                firstName: user.first_name,
-                lastName: user.last_name,
-                officeLocation,
-                phoneNumber: user.phone_number,
-                avatarUrl: user.avatar_url ?? null,
-                role: user.role as Role,
-                approvalStatus: user.approval_status as ApprovalStatus,
-                createdAt: user.created_at,
-            },
-            session
-        };
+        if (!session) return null;
+
+        const userProfile = await UserService.getUserRecord(session.user.id);
+        return { userProfile, session };
+    },
+
+    /**
+     * Subscribes to auth state changes and automatically fetches the user profile.
+     */
+    onAuthStateChange(
+        callback: (user: UserRecord | null, session: Session | null) => void
+    ): { unsubscribe(): void } {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (!session) return callback(null, null);
+            try {
+                const profile = await UserService.getUserRecord(session.user.id);
+                callback(profile, session);
+            } catch {
+                callback(null, session);
+            }
+        });
+
+        return subscription;
     },
 };

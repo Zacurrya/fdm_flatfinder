@@ -1,7 +1,7 @@
+import AwaitingApprovalView from "@components/auth/AwaitingApprovalView";
 import SignOutButton from "@components/profile/SignOutButton";
-import AwaitingApprovalView from "@components/ui/AwaitingApprovalView";
 import FDMLoader from "@components/ui/FDMLoader";
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
 
 type ApprovalGuardProps = {
   children: React.ReactNode;

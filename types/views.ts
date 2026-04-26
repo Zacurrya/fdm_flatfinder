@@ -1,14 +1,9 @@
 import { PropertyType, RentPeriod } from "./enums";
-import { AuditLogRecord, ListingRecord, RequestRecord } from "./records";
+import { AuditLogRecord, RequestRecord } from "./records";
 
 /**
  * Types that represent combined records from multiple tables.
  */
-
-export type Listing = ListingRecord & {
-    city: string;
-    address: string;
-};
 
 // Enriched for the admin request page
 export type AdminRequest = RequestRecord & {
@@ -42,11 +37,4 @@ export type AuditLogEntry = AuditLogRecord & {
     targetLastName?: string;
 }
 
-// User profile for display purposes
-export type UserProfile = {
-    firstName: string;
-    lastName: string;
-    avatarUrl: string | null;
-    email: string;
-    phoneNumber: string;
-};
+// -- Requests --

@@ -13,6 +13,7 @@ type FieldProps = {
     containerClassName?: string;
     multiline?: boolean;
     numberOfLines?: number;
+    autoCapitalize?: "none" | "sentences" | "words" | "characters";
 };
 
 const Field = ({
@@ -28,6 +29,7 @@ const Field = ({
     containerClassName,
     multiline = false,
     numberOfLines,
+    autoCapitalize = "sentences",
 }: FieldProps) => (
     <View className={containerClassName}>
         <Text className="text-fdm-fg/80 font-medium mb-2 ml-1 text-sm uppercase tracking-wider">
@@ -39,7 +41,7 @@ const Field = ({
             onChangeText={onChangeText}
             placeholder={placeholder}
             placeholderTextColor="#ffffff66"
-            autoCapitalize="none"
+            autoCapitalize={autoCapitalize}
             keyboardType={keyboardType}
             autoComplete={autoComplete}
             textContentType={textContentType}

@@ -1,11 +1,12 @@
 import ApprovalGuard from "@components/auth/ApprovalGuard";
-import { ChatCard } from "@components/Chat/ChatCard";
+import ChatPreviewItem from "@components/Chat/ChatPreview";
 import AppTrademark from "@components/ui/AppTrademark";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
 import FDMLoader from "@components/ui/FDMLoader";
 import ScreenHeader from "@components/ui/ScreenHeader";
 import { Ionicons } from "@expo/vector-icons";
-import { useChats } from "@hooks/useChats";
+import { useChats } from "@hooks/chat/useChats";
+import { ChatPreview } from "@services/chat/types";
 import { StatusBar } from "expo-status-bar";
 import { ScrollView, Text, View } from "react-native";
 
@@ -31,8 +32,8 @@ const MessagesScreen = () => {
           </View>
         ) : (
           <ScrollView showsVerticalScrollIndicator={false}>
-            {chats.map((chat) => (
-              <ChatCard key={chat.id} chat={chat} />
+            {chats.map((chat: ChatPreview) => (
+              <ChatPreviewItem key={chat.id} chat={chat} />
             ))}
             <AppTrademark />
           </ScrollView>

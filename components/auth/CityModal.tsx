@@ -57,7 +57,7 @@ const CityModal = ({
                 <Text className="text-fdm-fg text-lg font-bold ml-3">{activeRegion}</Text>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
                 <View className="gap-2">
                   {(selectedRegionGroup?.cities ?? []).map((city) => {
                     const isSelected = selectedCityName === city.name;
@@ -81,7 +81,7 @@ const CityModal = ({
           ) : (
             <>
               <Text className="text-fdm-fg text-lg font-bold mb-4">Select your region</Text>
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
                 <View className="gap-2">
                   {citiesByRegion.map((group) => (
                     <TouchableOpacity

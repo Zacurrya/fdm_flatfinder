@@ -1,13 +1,13 @@
-import { Listing } from "@/types/views";
 import { Ionicons } from "@expo/vector-icons";
 import { useListing } from "@hooks/listings/useListing";
 import { formatListingPrice } from "@utils/currency";
+import { ListingRecord } from "@/types/records";
 import { useRouter } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 type ChatListingSubHeaderProps = {
   listingId?: string;
-  initialData?: Listing | null;
+  initialData?: ListingRecord | null;
 };
 
 const ChatListingSubHeader = ({

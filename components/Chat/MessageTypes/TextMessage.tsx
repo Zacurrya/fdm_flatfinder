@@ -1,5 +1,6 @@
-import { Text, View } from "react-native";
+import { Text } from "react-native";
 import { MessageProps } from "./types";
+import MessageBubble from "../MessageBubble";
 
 const TextMessage = ({
   content,
@@ -8,18 +9,11 @@ const TextMessage = ({
   senderName,
   showSenderName = false,
 }: MessageProps) => {
-  const bubbleClassName = `max-w-[75%] px-2.5 py-2 rounded-2xl ${
-    isMe
-      ? "bg-fdm-accent rounded-tr-sm"
-      : "bg-fdm-fg/10 border border-fdm-fg/10 rounded-tl-sm"
-  }`;
-
-  const timestampClassName = `text-xs mt-1 ${
-    isMe ? "text-fdm-bg/60 text-right" : "text-fdm-fg/40"
-  }`;
+  const timestampClassName = `text-xs mt-1 ${isMe ? "text-fdm-bg/60 text-right" : "text-fdm-fg/40"
+    }`;
 
   return (
-    <View className={bubbleClassName}>
+    <MessageBubble isMe={isMe}>
       {!isMe && showSenderName && senderName ? (
         <Text className="text-fdm-accent/80 text-sm font-semibold mb-1">
           {senderName}
@@ -30,8 +24,8 @@ const TextMessage = ({
         {content}
       </Text>
 
-      <Text className={timestampClassName}>{timeLabel}</Text>
-    </View>
+      <Text numberOfLines={1} className={timestampClassName}>{timeLabel}</Text>
+    </MessageBubble>
   );
 };
 

@@ -1,6 +1,6 @@
+import BackgroundCircle from "@components/ui/BackgroundCircle";
 import { Ionicons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
-import BackgroundCircle from "./BackgroundCircle";
 
 type AwaitingApprovalViewProps = {
   title?: string;

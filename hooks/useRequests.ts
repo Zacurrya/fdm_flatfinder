@@ -2,7 +2,8 @@ import { RequestStatus } from "@/types/enums";
 import { AdminRequest } from "@/types/views";
 import { RequestService } from "@services/requests/requestService";
 import { useCallback, useEffect, useState } from "react";
-import { useAuth } from "./useAuth";
+import { useAuth } from "./general/useAuth";
+import { useRealtime } from "./general/useRealtime";
 
 /**
  * useRequests
@@ -37,6 +38,14 @@ export const useRequests = (options?: { enabled?: boolean }) => {
     }
   }, [user]);
 
+  // Subscribe to realtime changes to the requests table
+  useRealtime("requests", {
+    enabled: options?.enabled !== false && !!user,
+    onInsert: () => fetchRequests(),
+    onUpdate: () => fetchRequests(),
+    onDelete: () => fetchRequests(),
+  });
+
   useEffect(() => {
     if (options?.enabled !== false) {
       void fetchRequests();
@@ -49,10 +58,11 @@ export const useRequests = (options?: { enabled?: boolean }) => {
     setError(null);
     try {
       await RequestService.reviewRequest({ requestId, decision });
-      return { success: true };
+      console.log(`[useRequests] Request ${requestId} ${decision.toLowerCase()} successfully`);
     } catch (err: any) {
+      console.error(`[useRequests] Failed to ${decision.toLowerCase()} request ${requestId}:`, err);
       setError(err.message || "Failed to process request");
-      return { success: false, error: err.message };
+      throw err;
     } finally {
       setIsProcessing(false);
       setProcessingId(null);

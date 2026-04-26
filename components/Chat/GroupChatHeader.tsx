@@ -1,4 +1,4 @@
-import CityImage from "@components/ui/CityImage";
+import { Image } from "expo-image";
 import { Text, View } from "react-native";
 
 type GroupChatHeaderProps = {
@@ -10,8 +10,15 @@ const GroupChatHeader = ({ imagePath, participantCount }: GroupChatHeaderProps) 
   return (
     <>
       <View className="w-12 h-12 rounded-full bg-fdm-accent/20 border border-fdm-accent/30 items-center justify-center mr-3 overflow-hidden">
-        <View className="h-8 w-8">
-          <CityImage imagePath={imagePath} fitContainer />
+        <View className="h-8 w-8 items-center justify-center">
+          {imagePath && (
+            <Image
+              source={imagePath}
+              style={{ width: "100%", height: "100%" }}
+              contentFit="contain"
+              tintColor="#ccff00"
+            />
+          )}
         </View>
       </View>
 

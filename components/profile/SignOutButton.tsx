@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "@hooks/general/useAuth";
 import { Alert, StyleProp, Text, TouchableOpacity, ViewStyle } from "react-native";
 
 type SignOutButtonProps = {

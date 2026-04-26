@@ -1,10 +1,10 @@
 import AuthButton from "@components/auth/AuthButton";
-import EmailInput from "@components/auth/EmailInput";
 import PasswordInput from "@components/auth/PasswordInput";
+import Field from "@components/ui/Field";
 import {
-  Text,
-  TouchableOpacity,
-  View,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 type LoginFormProps = {
@@ -46,9 +46,15 @@ const LoginForm = ({
       </View>
 
       <View className="w-full gap-4">
-        <EmailInput
+        <Field
+          label="Email"
           value={email}
           onChangeText={onEmailChange}
+          placeholder="you@fdmgroup.com"
+          keyboardType="email-address"
+          autoComplete="email"
+          textContentType="emailAddress"
+          autoCapitalize="none"
           error={emailError}
           editable={!isSubmitting}
         />
@@ -83,6 +89,7 @@ const LoginForm = ({
         textColour="#1b1b1b"
         width="66.666667%" // matches w-2/3
         style={{ alignSelf: 'center', marginTop: 32 }} // mt-8
+        disabled={isSubmitting}
       />
 
       <TouchableOpacity

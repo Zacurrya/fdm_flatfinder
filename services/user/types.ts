@@ -1,27 +1,4 @@
-export type ResolvedProfilePictureSource = {
-    path: string | null;
-    directUrl: string | null;
-    avatarUrl?: string | null;
-};
-
-export type ProfilePictureFallbackOptions = {
-    firstName?: string;
-    lastName?: string;
-    size?: number;
-};
-
-export type GetProfilePictureUrlOptions = ProfilePictureFallbackOptions & {
-    profilePicture?: string | null;
-    expiresInSeconds?: number;
-};
-
 // -- DTOs --
-
-export type SetCacheUrlDTO = {
-    path: string;
-    url: string;
-    expiresInSeconds: number;
-};
 
 export type ProfilePictureUploadDTO = {
     imageUri: string;

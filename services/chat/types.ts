@@ -3,7 +3,9 @@ export type ChatMetadata = {
   id: string;
   displayName: string | null;
   listingId: string | null;
-  displayPicture: string | null;
+  listingTitle?: string | null;
+  listingPrice?: number | null;
+  displayPicture: any | null;
   isGroupChat: boolean;
   participantIds: string[];
   participantCount: number;
@@ -13,7 +15,9 @@ export type ChatPreview = {
   id: string;
   displayName: string | null;
   listingId: string | null;
-  displayPicture: string | null;
+  listingTitle?: string | null;
+  listingPrice?: number | null;
+  displayPicture: any | null;
   lastMessage: string | null;
   lastMessageAt: string | null;
   lastMessengerId: string | null;
@@ -38,7 +42,7 @@ export type SendMessageDTO = {
   chatId: string;
   senderId: string;
   content: string;
-  listingId?: number;
+  listingId?: string;
 };
 
 export type GetChatMetaDTO = {

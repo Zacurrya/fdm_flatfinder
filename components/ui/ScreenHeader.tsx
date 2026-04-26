@@ -12,17 +12,16 @@ type ScreenHeaderProps = {
 };
 
 /**
- * ScreenHeader
  * A unified header component for tab screens.
  */
-const ScreenHeader: React.FC<ScreenHeaderProps> = ({
+const ScreenHeader = ({
   title,
   subtitle,
   highlightedTitle,
   rightElement,
   condensed = false,
   hasSeparator = false
-}) => {
+}: ScreenHeaderProps) => {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isLandscape = width > height;

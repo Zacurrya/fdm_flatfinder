@@ -1,23 +1,115 @@
+
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { BedDouble, Toilet } from "lucide-react-native";
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 type FilterSidebarProps = {
-  minPrice: string;
+  minPrice?: string | number | null;
   setMinPrice: (val: string) => void;
-  maxPrice: string;
+  maxPrice?: string | number | null;
   setMaxPrice: (val: string) => void;
-  bedrooms: number | null;
+  bedrooms?: number | null;
   setBedrooms: (val: number | null) => void;
-  bathrooms: number | null;
+  bathrooms?: number | null;
   setBathrooms: (val: number | null) => void;
-  sourceFilter: string | null;
+  sourceFilter?: string | null;
   setSourceFilter: (val: string | null) => void;
   onClose?: () => void;
   onClearAll?: () => void;
 };
 
+
 const BED_OPTIONS = [1, 2, 3, 4, 5];
-const BATH_OPTIONS = [1, 2, 3];
+const BATH_OPTIONS = [1, 2, 3, 4, 5];
+
+// -- Subcomponents --
+const SectionHeader = ({ icon, label, right, style = {} }: { icon: React.ReactNode; label: string; right?: React.ReactNode; style?: any }) => (
+  <View className="flex-row items-center gap-2 mb-4" style={style}>
+    <View className="w-8 h-8 rounded-lg bg-fdm-accent/10 items-center justify-center">{icon}</View>
+    <Text className="text-fdm-fg font-bold tracking-tight">{label}</Text>
+    {right}
+  </View>
+);
+
+const PriceInputRow = ({ minPrice, setMinPrice, maxPrice, setMaxPrice }: { minPrice?: string | number | null; setMinPrice: (val: string) => void; maxPrice?: string | number | null; setMaxPrice: (val: string) => void; }) => (
+  <View className="flex-row items-center gap-4">
+    <View className="flex-1 h-14 bg-fdm-fg/5 border border-fdm-fg/10 rounded-xl px-4 flex-row items-center">
+      <Text className="text-fdm-fg/30 mr-2 text-sm">£</Text>
+      <TextInput
+        className="flex-1 text-fdm-fg font-medium text-base"
+        placeholder="Min"
+        placeholderTextColor="#ffffff20"
+        keyboardType="numeric"
+        value={minPrice != null ? String(minPrice) : ""}
+        onChangeText={setMinPrice}
+      />
+    </View>
+    <View className="w-4 h-0.5 bg-fdm-fg/10 rounded-full" />
+    <View className="flex-1 h-14 bg-fdm-fg/5 border border-fdm-fg/10 rounded-xl px-4 flex-row items-center">
+      <Text className="text-fdm-fg/30 mr-2 text-sm">£</Text>
+      <TextInput
+        className="flex-1 text-fdm-fg font-medium text-base"
+        placeholder="Max"
+        placeholderTextColor="#ffffff20"
+        keyboardType="numeric"
+        value={String(maxPrice || "")}
+        onChangeText={setMaxPrice}
+      />
+    </View>
+  </View>
+);
+
+const BedBathDropdownRow = ({ bedrooms, setBedrooms, bathrooms, setBathrooms }: { bedrooms?: number | null; setBedrooms: (val: number | null) => void; bathrooms?: number | null; setBathrooms: (val: number | null) => void; }) => (
+  <View className="flex-row gap-4 items-center">
+    <Dropdown<number | null>
+      placeholder="Any"
+      value={typeof bedrooms === 'number' ? bedrooms : null}
+      options={[{ label: "Any", value: null }, ...BED_OPTIONS.map(num => ({ label: `${num}`, value: num }))]}
+      onChange={setBedrooms}
+    />
+    <Dropdown<number | null>
+      placeholder="Any"
+      value={typeof bathrooms === 'number' ? bathrooms : null}
+      options={[{ label: "Any", value: null }, ...BATH_OPTIONS.map(num => ({ label: `${num}`, value: num }))]}
+      onChange={setBathrooms}
+    />
+  </View>
+);
+
+const SourceFilterOption = ({ sourceFilter, setSourceFilter }: { sourceFilter?: string | null; setSourceFilter: (val: string | null) => void; }) => (
+  <TouchableOpacity
+    onPress={() => setSourceFilter(sourceFilter === "FDM" ? null : "FDM")}
+    className={`flex-row items-center justify-between px-6 h-20 rounded-xl border-2 ${sourceFilter === "FDM"
+      ? "bg-fdm-accent/5 border-fdm-accent"
+      : "bg-fdm-fg/5 border-fdm-fg/5"
+      }`}
+  >
+    <View className="flex-row items-center gap-4">
+      <View className={`w-12 items-center justify-center'}`}>
+        <Image
+          source={require("@assets/images/logo.svg")}
+          style={{ width: 50, height: 30 }}
+          tintColor={"#ccff00"}
+          contentFit="contain"
+        />
+      </View>
+      <View>
+        <Text className={`ml-3 font-black text-base ${sourceFilter === "FDM" ? "text-fdm-accent" : "text-fdm-fg"}`}>
+          Colleague Listed
+        </Text>
+      </View>
+    </View>
+    <Ionicons
+      name={sourceFilter === "FDM" ? "checkmark-circle" : "radio-button-off"}
+      size={24}
+      color={sourceFilter === "FDM" ? "#ccff00" : "#ffffff20"}
+    />
+  </TouchableOpacity>
+);
+
+// -- Main Component --
 
 const FilterSidebar = ({
   minPrice,
@@ -35,17 +127,16 @@ const FilterSidebar = ({
 }: FilterSidebarProps) => {
   return (
     <View className="flex-1 bg-fdm-bg">
-      <View className="px-6 pt-8 pb-4 flex-row items-center justify-between border-b border-fdm-fg/5">
+      <View className="px-4 pt-4 pb-4 flex-row items-center justify-between border-b border-fdm-fg/5">
         <View>
-          <Text className="text-2xl font-bold text-fdm-fg tracking-tight" style={{ fontFamily: "Michroma_400Regular" }}>
+          <Text className="text-2xl font-bold text-fdm-fg tracking-tight">
             Filters
           </Text>
-          <Text className="text-fdm-fg/40 text-xs mt-1 font-medium italic">Refine your search</Text>
         </View>
         <View className="flex-row items-center gap-2">
           {onClearAll && (
             <TouchableOpacity onPress={onClearAll} className="mr-2">
-              <Text className="text-fdm-accent text-xs font-bold uppercase tracking-wider">Reset</Text>
+              <Text className="text-fdm-accent text-sm font-bold uppercase tracking-wider">Reset</Text>
             </TouchableOpacity>
           )}
           {onClose && (
@@ -59,162 +150,55 @@ const FilterSidebar = ({
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
-        {/* Price Range Section */}
+      <ScrollView className="flex-1 px-4 pt-3" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+        {/* -- Price Range Section -- */}
+        <View className="mb-4">
+          <SectionHeader
+            icon={<Ionicons name="cash-outline" size={16} color="#ccff00" />}
+            label="Price Range"
+            right={<Text className="text-fdm-fg/30 text-[10px] ml-auto uppercase font-bold tracking-tighter">Budget (£/mo)</Text>}
+          />
+          <PriceInputRow minPrice={minPrice} setMinPrice={setMinPrice} maxPrice={maxPrice} setMaxPrice={setMaxPrice} />
+        </View>
+
+        {/* -- Bedrooms & Bathrooms Section -- */}
         <View className="mb-8">
-          <View className="flex-row items-center gap-2 mb-4">
-            <View className="w-8 h-8 rounded-lg bg-fdm-accent/10 items-center justify-center">
-              <Ionicons name="cash-outline" size={16} color="#ccff00" />
-            </View>
-            <Text className="text-fdm-fg font-bold tracking-tight">Price Range</Text>
-            <Text className="text-fdm-fg/30 text-[10px] ml-auto uppercase font-bold tracking-tighter">Budget (£/mo)</Text>
-          </View>
-
-          <View className="flex-row items-center gap-4">
-            <View className="flex-1 h-14 bg-fdm-fg/5 border border-fdm-fg/10 rounded-2xl px-4 flex-row items-center">
-              <Text className="text-fdm-fg/30 mr-2 text-sm">£</Text>
-              <TextInput
-                className="flex-1 text-fdm-fg font-medium text-base"
-                placeholder="Min"
-                placeholderTextColor="#ffffff20"
-                keyboardType="numeric"
-                value={minPrice}
-                onChangeText={setMinPrice}
-              />
-            </View>
-            <View className="w-4 h-0.5 bg-fdm-fg/10 rounded-full" />
-            <View className="flex-1 h-14 bg-fdm-fg/5 border border-fdm-fg/10 rounded-2xl px-4 flex-row items-center">
-              <Text className="text-fdm-fg/30 mr-2 text-sm">£</Text>
-              <TextInput
-                className="flex-1 text-fdm-fg font-medium text-base"
-                placeholder="Max"
-                placeholderTextColor="#ffffff20"
-                keyboardType="numeric"
-                value={maxPrice}
-                onChangeText={setMaxPrice}
-              />
-            </View>
-          </View>
+          <SectionHeader
+            icon={<BedDouble size={16} color="#ccff00" />}
+            label="Bedrooms"
+            right={
+              <>
+                <View className="w-8 h-8 rounded-lg bg-fdm-accent/10 items-center justify-center ml-6">
+                  <Toilet size={16} color="#ccff00" />
+                </View>
+                <Text className="text-fdm-fg font-bold tracking-tight ml-2">Bathrooms</Text>
+              </>
+            }
+          />
+          <BedBathDropdownRow bedrooms={bedrooms} setBedrooms={setBedrooms} bathrooms={bathrooms} setBathrooms={setBathrooms} />
         </View>
 
-        {/* Bedrooms Section */}
-        <View className="mb-8">
-          <View className="flex-row items-center gap-2 mb-4">
-            <View className="w-8 h-8 rounded-lg bg-fdm-accent/10 items-center justify-center">
-              <Ionicons name="bed-outline" size={16} color="#ccff00" />
-            </View>
-            <Text className="text-fdm-fg font-bold tracking-tight">Bedrooms</Text>
-            <Text className="text-fdm-fg/30 text-[10px] ml-auto uppercase font-bold tracking-tighter">Minimum</Text>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-3">
-            {BED_OPTIONS.map((num) => {
-              const active = bedrooms === num;
-              return (
-                <TouchableOpacity
-                  key={`bed-${num}`}
-                  onPress={() => setBedrooms(active ? null : num)}
-                  className={`w-14 h-14 rounded-2xl items-center justify-center border-2 transition-all ${active
-                      ? "bg-fdm-accent border-fdm-accent"
-                      : "bg-fdm-fg/5 border-fdm-fg/5"
-                    }`}
-                >
-                  <Text
-                    className={`text-base font-black ${active ? "text-[#151515]" : "text-fdm-fg/60"
-                      }`}
-                  >
-                    {num}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+        {/* -- Source Section -- */}
+        <View className="mb-6">
+          <SectionHeader
+            icon={<Ionicons name="shield-checkmark-outline" size={16} color="#ccff00" />}
+            label="Verification"
+          />
+          <SourceFilterOption sourceFilter={sourceFilter} setSourceFilter={setSourceFilter} />
         </View>
 
-        {/* Bathrooms Section */}
-        <View className="mb-8">
-          <View className="flex-row items-center gap-2 mb-4">
-            <View className="w-8 h-8 rounded-lg bg-fdm-accent/10 items-center justify-center">
-              <Ionicons name="water-outline" size={16} color="#ccff00" />
-            </View>
-            <Text className="text-fdm-fg font-bold tracking-tight">Bathrooms</Text>
-            <Text className="text-fdm-fg/30 text-[10px] ml-auto uppercase font-bold tracking-tighter">Minimum</Text>
-          </View>
-
-          <View className="flex-row gap-3">
-            {BATH_OPTIONS.map((num) => {
-              const active = bathrooms === num;
-              return (
-                <TouchableOpacity
-                  key={`bath-${num}`}
-                  onPress={() => setBathrooms(active ? null : num)}
-                  className={`flex-1 h-14 rounded-2xl items-center justify-center border-2 ${active
-                      ? "bg-fdm-accent border-fdm-accent"
-                      : "bg-fdm-fg/5 border-fdm-fg/5"
-                    }`}
-                >
-                  <Text
-                    className={`text-base font-black ${active ? "text-[#151515]" : "text-fdm-fg/60"
-                      }`}
-                  >
-                    {num}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Source Section */}
-        <View className="mb-12">
-          <View className="flex-row items-center gap-2 mb-4">
-            <View className="w-8 h-8 rounded-lg bg-fdm-accent/10 items-center justify-center">
-              <Ionicons name="shield-checkmark-outline" size={16} color="#ccff00" />
-            </View>
-            <Text className="text-fdm-fg font-bold tracking-tight">Verification</Text>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => setSourceFilter(sourceFilter === "FDM" ? null : "FDM")}
-            className={`flex-row items-center justify-between px-6 h-20 rounded-3xl border-2 ${sourceFilter === "FDM"
-                ? "bg-fdm-accent/5 border-fdm-accent"
-                : "bg-fdm-fg/5 border-fdm-fg/5"
-              }`}
-          >
-            <View className="flex-row items-center gap-4">
-              <View className={`w-10 h-10 rounded-full items-center justify-center ${sourceFilter === "FDM" ? 'bg-fdm-accent' : 'bg-fdm-fg/10'}`}>
-                <Ionicons
-                  name="briefcase"
-                  size={18}
-                  color={sourceFilter === "FDM" ? "#151515" : "#ffffff40"}
-                />
-              </View>
-              <View>
-                <Text className={`font-black text-base ${sourceFilter === "FDM" ? "text-fdm-accent" : "text-fdm-fg"}`}>
-                  Exclusively FDM
-                </Text>
-                <Text className="text-fdm-fg/40 text-[10px] font-bold uppercase tracking-widest mt-1">Colleagues only</Text>
-              </View>
-            </View>
-            <Ionicons
-              name={sourceFilter === "FDM" ? "checkmark-circle" : "radio-button-off"}
-              size={24}
-              color={sourceFilter === "FDM" ? "#ccff00" : "#ffffff20"}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View className="h-20" />
+        <View className="h-8" />
       </ScrollView>
 
-      {/* Apply Button Overlay */}
+      {/* -- Apply Filter Button -- */}
       {onClose && (
-        <View className="px-6 py-6 border-t border-fdm-fg/5 bg-fdm-bg">
+        <View className="px-4 py-2 border-t border-fdm-fg/5 bg-fdm-bg items-end">
           <TouchableOpacity
             onPress={onClose}
-            className="bg-fdm-accent h-16 rounded-2xl items-center justify-center shadow-xl shadow-fdm-accent/20"
+            className="bg-fdm-accent h-10 px-6 rounded-xl items-center justify-center shadow-xl shadow-fdm-accent/20"
+            style={{ alignSelf: 'flex-end' }}
           >
-            <Text className="text-black font-black text-lg tracking-widest uppercase">Apply Filters</Text>
+            <Text className="text-black font-black text-base tracking-widest uppercase">Apply</Text>
           </TouchableOpacity>
         </View>
       )}

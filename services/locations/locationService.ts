@@ -1,5 +1,5 @@
 import { OfficeCity, RegionCities } from "@/types/locations";
-import { getCityImagePath } from "@lib/office-cities";
+import { getCityImageById } from "@lib/office-cities";
 import { supabase } from "@lib/supabase";
 
 export type LocationRecord = {
@@ -25,59 +25,41 @@ export const LocationService = {
     if (error) throw error;
 
     // Groups cities by region for display in the modal
-    const grouped = new Map<string, OfficeCity[]>();
+    const grouped: Record<string, OfficeCity[]> = {};
     for (const row of data ?? []) {
       const entry: OfficeCity = {
         id: row.id,
         name: row.name,
         countryCode: row.country_code,
-        imagePath: getCityImagePath(row.name),
+        imagePath: getCityImageById(row.id),
       };
-      if (!grouped.has(row.region)) {
-        grouped.set(row.region, []);
+      if (!grouped[row.region]) {
+        grouped[row.region] = [];
       }
-      grouped.get(row.region)!.push(entry);
+      grouped[row.region].push(entry);
     }
 
-    return Array.from(grouped.entries()).map(([region, cities]) => ({ region, cities }));
+    return Object.entries(grouped).map(([region, cities]) => ({ region, cities }));
   },
 
   /**
-   * Fetches a single location record by city name.
+   * Fetches a single location record by its ID.
    */
-  async getLocationByCity(cityName: string): Promise<LocationRecord | null> {
+  async getLocationById(locationId: string): Promise<LocationRecord & { chatId: string | null }> {
     const { data, error } = await supabase
       .from("locations")
-      .select("id, name, region, country_code")
-      .ilike("name", cityName.trim())
-      .maybeSingle();
+      .select("id, name, region, country_code, chat_id")
+      .eq("id", locationId)
+      .single();
 
-    if (error) throw error;
-    if (!data) return null;
+    if (error || !data) throw new Error(error?.message ?? "Location not found.");
 
     return {
       id: data.id,
       city: data.name,
       region: data.region,
       countryCode: data.country_code,
+      chatId: data.chat_id,
     };
-  },
-
-  /**
-   * Location UUID -> City name
-   */
-  async resolveOfficeCityName(officeLocation: string): Promise<string> {
-    if (!officeLocation) return officeLocation;
-
-    // Try to resolve the value as an ID from the locations table
-    const { data, error } = await supabase
-      .from("locations")
-      .select("name")
-      .eq("id", officeLocation)
-      .single();
-
-    if (error) throw error;
-
-    return data.name;
   },
 };

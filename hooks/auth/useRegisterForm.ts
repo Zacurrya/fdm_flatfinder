@@ -1,5 +1,5 @@
 import { AuthService } from "@services/auth/authService";
-import * as validateUtil from "@utils/inputValidation";
+import * as validateUtil from "@utils/validation";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
@@ -173,7 +173,7 @@ export const useRegisterForm = () => {
 
     if (data) {
       router.push({
-        pathname: "/(auth)/office-location",
+        pathname: "/office-location",
         params: data,
       });
     }
@@ -203,6 +203,6 @@ export const useRegisterForm = () => {
     onChange: handleChange,
     clearFormError: () => setFormError(""),
     handleSubmit,
-    handleGoToLogin: () => router.push("/(auth)/login"),
+    handleGoToLogin: () => router.push("/login"),
   };
 }

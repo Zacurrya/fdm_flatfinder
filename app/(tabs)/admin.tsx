@@ -37,7 +37,7 @@ const AdminScreen = () => {
       <StatusBar style="light" hidden={isLandscape} />
 
       {!isLandscape && (
-        <ScreenHeader title="Admin" highlightedTitle="Panel" subtitle={subtitle} />
+        <ScreenHeader title="Admin" />
       )}
 
       {!isLandscape && (

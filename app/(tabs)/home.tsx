@@ -1,24 +1,23 @@
 import ApprovalGuard from "@components/auth/ApprovalGuard";
 import HomeHeader from "@components/home/HomeHeader";
-import SavedListings from "@components/home/SavedListings";
+import ListingList from "@components/listing/ListingList";
+import ProfileModal from "@components/profile/ProfileModal";
+import ProfilePic from "@components/profile/ProfilePic";
+import AppTrademark from "@components/ui/AppTrademark";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
-import FDMLoader from "@components/ui/FDMLoader";
-import ListingCard from "@components/ui/ListingCard";
 import { useListings } from "@hooks/listings/useListings";
-import { useAuth } from "@hooks/useAuth";
-import { useSavedListings } from "@hooks/useSavedListings";
-import { getCityImagePath } from "@lib/office-cities";
-import { FlatList, View } from "react-native";
+import { useAuth } from "@hooks/general/useAuth";
+import { getCityImageById } from "@lib/office-cities";
+import { useState } from "react";
+import { Text, View } from "react-native";
 
 const Home = () => {
-  const { favIds, isLoading: isSavedLoading, toggleFavourite } = useSavedListings();
-  const { listings, isLoading: isListingsLoading, goToListing } = useListings();
+  const [isProfileVisible, setIsProfileVisible] = useState(false);
+  const { listings, isLoading, savedListingIds, toggleFavourite } = useListings({ onlySaved: true } as any);
   const { user } = useAuth();
-  const cityImagePath = getCityImagePath(user?.officeLocation ?? "");
+  if (!user) return null;
 
-  const savedListings = listings.filter(l => favIds.includes(l.id));
-
-  if (isSavedLoading || isListingsLoading) { return (<FDMLoader />) }
+  const cityImagePath = getCityImageById(user?.officeLocationId ?? "");
 
   return (
     <ApprovalGuard>
@@ -31,28 +30,37 @@ const Home = () => {
           x={200}
         />
 
-        <HomeHeader
-          cityName={user?.officeLocation!}
-          imagePath={cityImagePath}
-        />
+        {/* Global Profile Trigger */}
+        <View className="absolute top-16 right-6 z-50">
+          <ProfilePic size={52} onPress={() => setIsProfileVisible(true)} />
+        </View>
 
-        {/* Render the filtered listing objects */}
-        <FlatList
-          data={listings}
-          keyExtractor={(item) => item.id.toString()}
-          ListHeaderComponent={<SavedListings savedListings={savedListings} onPressListing={goToListing} />}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          renderItem={({ item }) => (
-            <View className="mx-6 mb-4">
-              <ListingCard
-                listing={item}
-                isFavourite={favIds.includes(item.id)}
-                onToggleFavourite={() => toggleFavourite(item.id)}
-                onPress={() => goToListing(item.id)}
-              />
-            </View>
-          )}
+        {/* Header content and Feed */}
+        <View className="flex-1">
+          <HomeHeader
+            cityName={user?.officeLocation!}
+            imagePath={cityImagePath}
+          />
+
+          <Text className="text-fdm-fg font-bold px-6 mb-2 mt-4 uppercase tracking-widest text-sm">Your Saved Listings</Text>
+
+          <View className="px-6 flex-1">
+            <ListingList
+              listings={listings}
+              isLoading={isLoading}
+              savedListingIds={savedListingIds}
+              toggleFavourite={toggleFavourite}
+              filters={{ onlySaved: true }}
+              emptyMessage="You haven't saved any listings yet."
+            />
+          </View>
+        </View>
+
+        <ProfileModal
+          visible={isProfileVisible}
+          onClose={() => setIsProfileVisible(false)}
         />
+        <AppTrademark />
       </View>
     </ApprovalGuard>
   );

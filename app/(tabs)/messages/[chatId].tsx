@@ -24,6 +24,8 @@ const ChatScreen = () => {
     currentUserName,
     user,
     otherUser,
+    otherUserAvatarUrl,
+    currentUserAvatarUrl,
   } = details;
 
   const isLoading = detailsLoading || messagesLoading;
@@ -33,7 +35,13 @@ const ChatScreen = () => {
   // Chat send/upload logic
   const { inputProps } = useChatInput(async (content) => {
     if (!user?.userId || !chatId) return;
-    await ChatService.sendMessage({ chatId, senderId: user.userId, content });
+    try {
+      await ChatService.sendMessage({ chatId, senderId: user.userId, content });
+      console.log(`[ChatScreen] Message sent to chat ${chatId}`);
+    } catch (err) {
+      console.error("[ChatScreen] Failed to send message:", err);
+      throw err;
+    }
   });
 
   const renderMessage = (item: MessageRecord, index: number) => {
@@ -56,7 +64,7 @@ const ChatScreen = () => {
         item={item}
         isMe={isMe}
         senderName={isMe ? currentUserName : otherUserName}
-        senderAvatarUrl={isMe ? user?.avatarUrl ?? null : otherUser?.avatarUrl ?? null}
+        senderAvatarUrl={isMe ? currentUserAvatarUrl : otherUserAvatarUrl}
         showDateSeparator={showDateSeparator}
         isPreviousFromSameSender={isPreviousFromSameSender}
       />

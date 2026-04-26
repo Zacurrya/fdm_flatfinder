@@ -1,24 +1,16 @@
 import { ListingSource, PropertyType, RentPeriod } from "@/types/enums";
 
-// Shows in the search listing list
-export type ListingPreview = {
-  id: string;
-  title: string;
-  price: number;
-  bedrooms: number;
-  bathrooms: number;
-  location: string;
-  media_urls: string[];
-}
-
 // -- DTOs --
 
 export type FilterListingsDTO = {
   bedrooms?: number | null;
   bathrooms?: number | null;
-  minPrice?: number | null;
-  maxPrice?: number | null;
-  sources?: ListingSource[];
+  minPrice?: string | number | null;
+  maxPrice?: string | number | null;
+  sourceFilter?: string | null;
+  locationId?: string | null;
+  searchQuery?: string;
+  onlySaved?: boolean;
 }
 
 export type CreateListingDTO = {
@@ -26,12 +18,12 @@ export type CreateListingDTO = {
   title: string;
   description: string;
   price: number;
-  rent_period: RentPeriod;
-  property_type: PropertyType;
+  rentPeriod: RentPeriod;
+  propertyType: PropertyType;
   bedrooms: number;
   bathrooms: number;
   source: ListingSource;
   photos: string[];
-  city: string;
+  locationId: string;
   address: string;
 };

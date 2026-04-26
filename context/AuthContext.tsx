@@ -9,12 +9,12 @@ import { createContext, useCallback, useEffect, useState } from "react";
 export type AuthContextType = {
     user: UserRecord | null;
     session: Session | null;
-    isLoading: boolean;
     refreshUser: () => Promise<void>;
     login: (dto: loginDTO) => Promise<void>;
     register: (dto: registerDTO) => Promise<void>;
     logout: () => Promise<void>;
     resetPassword: (email: string) => Promise<void>;
+    isLoading: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +30,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (result) {
                 setUser(result.userProfile);
                 setSession(result.session);
+            } else {
+                setUser(null);
+                setSession(null);
             }
         } catch (err) {
             console.log("No session found: ", err);
@@ -44,36 +47,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         hydrateSession();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+        const subscription = AuthService.onAuthStateChange((newUser: UserRecord | null, newSession: Session | null) => {
+            setUser(newUser);
             setSession(newSession);
-            if (newSession) {
-                try {
-                    const profile = await UserService.getUserProfile(newSession.user.id);
-                    setUser(profile);
-                } catch (err) {
-                    console.log("Failed to hydrate session:", err);
-                }
-            } else {
-                setUser(null);
-            }
         });
 
         return () => subscription.unsubscribe();
     }, [hydrateSession]);
 
-    const refreshUser = async () => {
+    const refreshUser = useCallback(async () => {
         if (!session) return;
         try {
-            const profile = await UserService.getUserProfile(session.user.id);
+            const profile = await UserService.getUserRecord(session.user.id);
             setUser(profile);
         } catch (err) {
             console.error("Error refreshing user:", err);
         }
-    };
+    }, [session]);
+
+    // Realtime subscription to the user's personal record in the 'users' table.
+    useEffect(() => {
+        if (!session?.user?.id) return;
+
+        const channel = supabase
+            .channel(`user-profile-${session.user.id}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "users",
+                    filter: `user_id=eq.${session.user.id}`,
+                },
+                (payload) => {
+                    console.log("[AuthContext] User record changed, patching state instantly...");
+
+                    // Directly merge the incoming changes into the existing user state
+                    setUser((prevUser) => {
+                        if (!prevUser) return payload.new as UserRecord;
+                        return { ...prevUser, ...(payload.new as Partial<UserRecord>) };
+                    });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            void supabase.removeChannel(channel);
+        };
+    }, [session?.user?.id]);
 
     const login = async (dto: loginDTO) => {
         try {
-            setIsLoading(true);
             const { user, session } = await AuthService.login(dto);
             setUser(user);
             setSession(session);
@@ -88,9 +112,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const register = async (dto: registerDTO) => {
         try {
-            setIsLoading(true);
             await AuthService.register(dto);
-            console.log("Registration successful");
         } catch (err) {
             console.error("Error registering:", err);
             throw err;
@@ -102,20 +124,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const logout = async () => {
         try {
             await AuthService.logout();
-            setIsLoading(true);
             setUser(null);
             setSession(null);
-            console.log("Logout successful");
         } catch (err) {
             console.error("Error logging out:", err);
-        } finally {
-            setIsLoading(false);
         }
     };
 
     const resetPassword = async (email: string) => {
         try {
-            setIsLoading(true);
             await AuthService.resetPassword(email);
             console.log("Password reset email sent");
         } catch (err) {
@@ -130,12 +147,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             value={{
                 user,
                 session,
-                isLoading,
                 refreshUser,
                 login,
                 register,
                 logout,
                 resetPassword,
+                isLoading,
             }}
         >
             {children}

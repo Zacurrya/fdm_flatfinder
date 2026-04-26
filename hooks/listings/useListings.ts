@@ -1,87 +1,77 @@
-import { Listing } from "@/types/views";
-import { useSavedListings } from "@hooks/useSavedListings";
+import { ListingRecord } from "@/types/records";
+import { useSavedListings } from "@hooks/listings/useSavedListings";
+import { useAuth } from "@hooks/general/useAuth";
 import { ListingService } from "@services/listings/listingsService";
+import { FilterListingsDTO } from "@services/listings/types";
 import { filterListings } from "@utils/listingFilters";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { useAuth } from "@hooks/useAuth";
 
-export type ListingFilterState = {
-  minPrice: string;
-  maxPrice: string;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  sourceFilter: string | null;
-  searchQuery: string;
+const INITIAL_FILTERS: FilterListingsDTO = {
+  minPrice: "",
+  maxPrice: "",
+  bedrooms: null,
+  bathrooms: null,
+  sourceFilter: null,
+  searchQuery: "",
 };
 
 /**
- * useListings
- * Loads the listing feed, applies client-side search filters, and composes saved-listing actions.
- * @returns The filtered listings, all listings, favourite IDs, loading state, and filter setters.
+ * Loads the listing feed using TanStack Query, applies client-side search filters,
+ * and enriches each record with its saved state.
  */
-export const useListings = () => {
+export const useListings = (initialFilters?: FilterListingsDTO) => {
   const router = useRouter();
+  const { user } = useAuth();
   const {
-    favIds,
+    savedListingIds,
     isLoading: loadingFavourites,
     refreshFavourites,
     toggleFavourite,
   } = useSavedListings();
 
-  const { user } = useAuth();
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [filters, setFilters] = useState<FilterListingsDTO>(initialFilters || INITIAL_FILTERS);
 
-  // Filter states
-  const [minPrice, setMinPrice] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<string>("");
-  const [bedrooms, setBedrooms] = useState<number | null>(null);
-  const [bathrooms, setBathrooms] = useState<number | null>(null);
-  const [sourceFilter, setSourceFilter] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const locationFilter = user?.role === "ADMIN" ? undefined : user?.officeLocationId;
 
-  const loadData = useCallback(async () => {
-    try {
-      const cityFilter = user?.role === "ADMIN" ? undefined : user?.officeLocation;
-      const [data] = await Promise.all([
-        ListingService.fetchListings(cityFilter),
-        refreshFavourites(),
-      ]);
-      setListings(data);
-    } catch (error) {
-      console.error("Failed to fetch listings or favourites:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [refreshFavourites, user?.role, user?.officeLocation]);
+  const { data: rawListings = [], isLoading: listingsLoading, refetch } = useQuery({
+    queryKey: ["listings", locationFilter, filters.onlySaved],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      let data: ListingRecord[];
+      if (filters.onlySaved) {
+        data = await ListingService.fetchSavedListings(user.userId);
+      } else {
+        data = await ListingService.fetchListings(locationFilter);
+      }
+      
+      // Ensure favorites are fresh too
+      await refreshFavourites();
+      return data;
+    },
+    enabled: !!user,
+  });
 
-  useFocusEffect(
-    useCallback(() => {
-      setIsLoading(true);
-      void loadData();
-    }, [loadData])
-  );
+  // Applies the saved status to each listing, using the saved listings context
+  const enrichedListings = useMemo(() => {
+    return rawListings.map(l => {
+      const isSaved = savedListingIds.includes(l.id);
+      if (l.isSaved === isSaved) return l;
+      return { ...l, isSaved };
+    });
+  }, [rawListings, savedListingIds]);
 
   const filteredListings = useMemo(() => {
-    return filterListings(listings, {
-      searchQuery,
-      minPrice,
-      maxPrice,
-      bedrooms,
-      bathrooms,
-      sourceFilter,
-    });
-  }, [listings, searchQuery, minPrice, maxPrice, bedrooms, bathrooms, sourceFilter]);
+    return filterListings(enrichedListings, { ...filters, savedListingIds });
+  }, [enrichedListings, filters, savedListingIds]);
 
-  const clearAllFilters = () => {
-    setMinPrice("");
-    setMaxPrice("");
-    setBedrooms(null);
-    setBedrooms(null);
-    setSourceFilter(null);
-    setSearchQuery("");
-  };
+  const updateFilter = useCallback((key: keyof FilterListingsDTO, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const clearAllFilters = () => setFilters(INITIAL_FILTERS);
 
   const goToListing = (id: string | number) => {
     router.push(`/listing/${id}`);
@@ -89,30 +79,14 @@ export const useListings = () => {
 
   return {
     listings: filteredListings,
-    allListings: listings,
-    favIds,
-    isLoading: isLoading || loadingFavourites,
-    refresh: loadData,
+    allListings: enrichedListings,
+    savedListingIds,
+    isLoading: listingsLoading || loadingFavourites,
+    refresh: refetch,
     toggleFavourite,
     goToListing,
-
-    // Filter values
-    filters: {
-      minPrice,
-      maxPrice,
-      bedrooms,
-      bathrooms,
-      sourceFilter,
-      searchQuery,
-    },
-
-    // Filter setters
-    setMinPrice,
-    setMaxPrice,
-    setBedrooms,
-    setBathrooms,
-    setSourceFilter,
-    setSearchQuery,
+    filters,
+    updateFilter,
     clearAllFilters,
   };
-}
+};

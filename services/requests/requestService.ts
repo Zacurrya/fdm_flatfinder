@@ -3,7 +3,11 @@ import { RequestRecord } from "@/types/records";
 import { AdminRequest } from "@/types/views";
 import { supabase } from "@lib/supabase";
 import { AuditService } from "@services/audit/auditService";
-import { ChatService } from "@services/chat/chatService";
+import { UserService } from "@services/user/userService";
+import {
+    CreateRequestDTO,
+    ReviewRequestDTO,
+} from "./types";
 
 function mapRequestRow(row: any): RequestRecord {
     return {
@@ -19,14 +23,6 @@ function mapRequestRow(row: any): RequestRecord {
         createdAt: row.created_at,
     };
 }
-
-import {
-    CreateRequestDTO,
-    ReviewRequestDTO,
-} from "./types";
-
-
-
 
 export const RequestService = {
     /**
@@ -81,14 +77,13 @@ export const RequestService = {
 
         const listingIds = [...new Set(requests.filter(r => r.requestType === RequestType.LISTING_UPLOAD && r.listingId).map(r => String(r.listingId)))];
         if (listingIds.length > 0) {
-            const { data: listings } = await supabase.from("listings").select("id, title, price, rent_period, bedrooms, bathrooms, source, media_urls, listing_locations(city, address)").in("id", listingIds);
+            const { data: listings } = await supabase.from("listings").select("id, title, price, rent_period, bedrooms, bathrooms, source, media_urls").in("id", listingIds);
             if (listings) {
                 const listingMap = new Map(listings.map(l => [String(l.id), l]));
                 requests.forEach(r => {
                     if (r.requestType !== RequestType.LISTING_UPLOAD || !r.listingId) return;
                     const l = listingMap.get(String(r.listingId));
                     if (!l) return;
-                    const loc = Array.isArray(l.listing_locations) ? l.listing_locations[0] : l.listing_locations;
                     r.listingTitle = l.title;
                     r.listingPrice = l.price;
                     r.listingRentPeriod = l.rent_period as any;
@@ -97,8 +92,6 @@ export const RequestService = {
                     r.listingBaths = l.bathrooms;
                     r.listingSource = l.source as any;
                     r.listingPhotos = l.media_urls || [];
-                    r.listingCity = loc?.city;
-                    r.listingAddress = loc?.address;
                 });
             }
         }
@@ -137,19 +130,6 @@ export const RequestService = {
             .update({ approval_status: status })
             .eq("user_id", request.userId);
         if (error) throw error;
-
-        // Assign the newly approved user to their city's group chat
-        if (decision === RequestStatus.APPROVED) {
-            const { data: userRow } = await supabase
-                .from("users")
-                .select("office_location")
-                .eq("user_id", request.userId)
-                .single();
-
-            if (userRow?.office_location) {
-                await ChatService.assignToCityGroupChat(request.userId, userRow.office_location);
-            }
-        }
     },
 
     /**
@@ -164,7 +144,6 @@ export const RequestService = {
             .update({ status })
             .eq("id", String(request.listingId));
         if (error) {
-            console.error("[handleListingUploadReview] Update failed:", error);
             throw error;
         }
     },
@@ -209,7 +188,6 @@ export const RequestService = {
             .single();
 
         if (updateError || !updated) {
-            console.error("[reviewRequest] Update failed:", updateError);
             throw updateError || new Error("Update failed.");
         }
 
@@ -228,13 +206,34 @@ export const RequestService = {
             userId: reviewerId,
         });
 
+        // Assigns user to a city chat if they were approved for sign up or a city change
+        if (
+            dto.decision === RequestStatus.APPROVED &&
+            (request.requestType === RequestType.SIGN_UP || request.requestType === RequestType.CITY_CHANGE)
+        ) {
+            // Get user's office location
+            const { data: userRow } = await supabase
+                .from("users")
+                .select("office_location")
+                .eq("user_id", request.userId)
+                .single();
+
+            const officeLocationId = userRow?.office_location;
+            if (officeLocationId) {
+                // Add user to city chat
+                await UserService.addUserToCityChat(request.userId, officeLocationId);
+            } else {
+
+            }
+        }
+
         return mapRequestRow(updated);
     },
 
     /**
      * Checks for pending requests.
      */
-    async hasPendingRequest(userId: string, requestType: RequestType, listingId?: number): Promise<boolean> {
+    async hasPendingRequest(userId: string, requestType: RequestType, listingId?: string): Promise<boolean> {
         let query = supabase.from('requests').select("id").eq("user_id", userId).eq("request_type", requestType).eq("status", RequestStatus.PENDING);
         if (listingId) query = query.eq("listing_id", listingId);
         const { data, error } = await query.limit(1);

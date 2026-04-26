@@ -1,7 +1,3 @@
-import { UserRecord } from "@/types/records";
-
-export type User = UserRecord;
-
 // -- DTOs -- 
 
 export type registerDTO = {

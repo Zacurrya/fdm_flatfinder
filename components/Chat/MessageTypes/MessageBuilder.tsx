@@ -2,7 +2,7 @@ import {
   extractAuditMessage,
   isAuditPayload,
   isImagePayload,
-} from "@utils/mediaParser";
+} from "@utils/formatters";
 import { View } from "react-native";
 import MessageAvatar from "../MessageAvatar";
 import AuditMessage from "./AuditMessage";
@@ -13,7 +13,7 @@ import { MessageProps } from "./types";
 
 /**
  * MessageBuilder
- * Determines which type of message to render and handles shared elements like avatars and date separators.
+ * Determines message type and renders appropriate message content.
  */
 const MessageBuilder = (props: MessageProps) => {
   const {
@@ -46,9 +46,10 @@ const MessageBuilder = (props: MessageProps) => {
       {showDateSeparator ? <DateMessage date={createdAt} /> : null}
 
       <View
-        className={`flex-row mb-1 px-4 items-start ${isMe ? "justify-end" : "justify-start"
+        className={`flex-row mb-1 px-3 items-start ${isMe ? "justify-end" : "justify-start"
           }`}
       >
+        {/* Render avatar if not current user */}
         {!isMe ? (
           <MessageAvatar
             avatarUrl={avatarUrl}
@@ -56,7 +57,7 @@ const MessageBuilder = (props: MessageProps) => {
           />
         ) : null}
 
-        <View className={`max-w-[80%] ${isMe ? "items-end" : "items-start"}`}>
+        <View className={`flex-1 ${isMe ? "items-end" : "items-start"}`}>
           {renderContent()}
         </View>
       </View>
