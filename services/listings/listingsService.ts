@@ -36,7 +36,7 @@ export const ListingService = {
   async fetchListings(locationId?: string): Promise<ListingRecord[]> {
     let query = supabase
       .from("listings")
-      .select("*, locations!inner(*)")
+      .select("*, locations(*)")
       .eq("status", "AVAILABLE");
 
     if (locationId) {

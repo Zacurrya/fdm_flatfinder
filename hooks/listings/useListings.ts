@@ -33,7 +33,7 @@ export const useListings = (initialFilters?: FilterListingsDTO) => {
 
   const [filters, setFilters] = useState<FilterListingsDTO>(initialFilters || INITIAL_FILTERS);
 
-  const locationFilter = user?.role === "ADMIN" ? undefined : user?.officeLocationId;
+  const locationFilter = undefined; // All users should see all listings by default regardless of role
 
   const { data: rawListings = [], isLoading: listingsLoading, refetch } = useQuery({
     queryKey: ["listings", locationFilter, filters.onlySaved],
@@ -47,8 +47,6 @@ export const useListings = (initialFilters?: FilterListingsDTO) => {
         data = await ListingService.fetchListings(locationFilter);
       }
       
-      // Ensure favorites are fresh too
-      await refreshFavourites();
       return data;
     },
     enabled: !!user,
