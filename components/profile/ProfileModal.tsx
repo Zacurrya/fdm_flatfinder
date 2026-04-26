@@ -24,7 +24,7 @@ const ProfileModal = ({ visible, onClose }: ProfileModalProps) => {
 
   const [currentView, setCurrentView] = useState<ProfileView>("PROFILE");
 
-  // Reset to main profile view when modal is closed
+  // Reset to main profile view when modal is closed, ensuring the modal re-opens on the profile tab
   useEffect(() => {
     if (!visible) {
       setCurrentView("PROFILE");
