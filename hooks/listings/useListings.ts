@@ -1,10 +1,10 @@
 import { ListingRecord } from "@/types/records";
-import { useSavedListings } from "@hooks/listings/useSavedListings";
 import { useAuth } from "@hooks/general/useAuth";
+import { useSavedListings } from "@hooks/listings/useSavedListings";
 import { ListingService } from "@services/listings/listingsService";
 import { FilterListingsDTO } from "@services/listings/types";
-import { filterListings } from "@utils/listingFilters";
 import { useQuery } from "@tanstack/react-query";
+import { filterListings } from "@utils/listingFilters";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 
@@ -33,20 +33,22 @@ export const useListings = (initialFilters?: FilterListingsDTO) => {
 
   const [filters, setFilters] = useState<FilterListingsDTO>(initialFilters || INITIAL_FILTERS);
 
-  const locationFilter = undefined; // All users should see all listings by default regardless of role
+  const locationFilter = user?.role === "ADMIN" ? undefined : user?.officeLocationId;
 
   const { data: rawListings = [], isLoading: listingsLoading, refetch } = useQuery({
     queryKey: ["listings", locationFilter, filters.onlySaved],
     queryFn: async () => {
       if (!user) return [];
-      
+
       let data: ListingRecord[];
       if (filters.onlySaved) {
         data = await ListingService.fetchSavedListings(user.userId);
       } else {
         data = await ListingService.fetchListings(locationFilter);
       }
-      
+
+      // Ensure favorites are fresh too
+      await refreshFavourites();
       return data;
     },
     enabled: !!user,

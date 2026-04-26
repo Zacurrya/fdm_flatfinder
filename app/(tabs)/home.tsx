@@ -5,8 +5,8 @@ import ProfileModal from "@components/profile/ProfileModal";
 import ProfilePic from "@components/profile/ProfilePic";
 import AppTrademark from "@components/ui/AppTrademark";
 import BackgroundCircle from "@components/ui/BackgroundCircle";
-import { useListings } from "@hooks/listings/useListings";
 import { useAuth } from "@hooks/general/useAuth";
+import { useListings } from "@hooks/listings/useListings";
 import { getCityImageById } from "@lib/office-cities";
 import { useState } from "react";
 import { Text, View } from "react-native";
@@ -60,7 +60,7 @@ const Home = () => {
           visible={isProfileVisible}
           onClose={() => setIsProfileVisible(false)}
         />
-        <AppTrademark />
+        <AppTrademark marginTop={0}/>
       </View>
     </ApprovalGuard>
   );
